@@ -2,7 +2,7 @@
 
 ## Contexte
 
-Tu dois développer une application web de suivi de travaux et sinistres pour une copropriété d'environ soixante pavillons (villas) et une soixantaine de garages. Les utilisateurs sont des personnes non techniques : l'interface doit être SIMPLISSIME, mobile-first, et chaque action doit être atteignable en un minimum de clics. L'objectif est un outil simple, accessible et bon marché à héberger.
+Tu dois développer une application web de suivi de travaux et sinistres pour une copropriété de 61 pavillons (villas) et 61 garages. Les utilisateurs sont des personnes non techniques : l'interface doit être SIMPLISSIME, mobile-first, et chaque action doit être atteignable en un minimum de clics. L'objectif est un outil simple, accessible et bon marché à héberger.
 
 ## Rôles et comptes
 
@@ -11,7 +11,7 @@ Tu dois développer une application web de suivi de travaux et sinistres pour un
 - **Conseil syndical** : mêmes droits de validation et de gestion que le syndic.
 - **Administrateur** : gère le référentiel des unités (villas/garages), les rattachements des comptes et les rôles.
 
-L'unité d'œuvre est la **villa ou le garage** (~60 villas, ~60 garages). Un ticket est attribué à **une ou plusieurs unités**. Le référentiel des unités est administrable (création, modification, rattachement des résidents). Les détails exacts des unités seront fournis plus tard : prévoir une saisie/import facile.
+L'unité d'œuvre est la **villa ou le garage** (61 villas, 61 garages). Un ticket est attribué à **une ou plusieurs unités**. Le référentiel des unités est administrable (création, modification, rattachement des résidents). Les détails exacts des unités seront fournis plus tard : prévoir une saisie/import facile.
 
 ## Cycle de vie d'un ticket (simplifié)
 
@@ -50,5 +50,5 @@ Chaque changement d'étape est horodaté et visible dans un fil de suivi lisible
 
 1. Application fonctionnelle couvrant tous les cas ci-dessus.
 2. Schéma de données (unités, comptes, tickets, transitions, fichiers, notifications).
-3. Jeu de données de démonstration : ~60 villas, ~60 garages, quelques comptes de chaque rôle, tickets à différents stades.
+3. Jeu de données de démonstration : 61 villas, 61 garages, quelques comptes de chaque rôle, tickets à différents stades.
 4. Instructions de déploiement simples (un fichier README pas à pas).
