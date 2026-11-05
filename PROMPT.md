@@ -11,7 +11,7 @@ Tu dois développer une application web de suivi de travaux et sinistres pour un
 - **Conseil syndical** : mêmes droits de validation et de gestion que le syndic.
 - **Administrateur** : gère le référentiel des unités (villas/garages), les rattachements des comptes et les rôles.
 
-L'unité d'œuvre est la **villa ou le garage** (61 villas, 61 garages). Un ticket est attribué à **une ou plusieurs unités**. Le référentiel des unités est administrable (création, modification, rattachement des résidents). Les détails exacts des unités seront fournis plus tard : prévoir une saisie/import facile.
+L'unité d'œuvre est la **villa ou le garage** (61 villas, 61 garages). Un ticket est attribué à **une ou plusieurs unités**. Le référentiel des unités est administrable (création, modification, rattachement des résidents). Les unités sont numérotées simplement de **1 à 61** (villas 1 à 61, garages 1 à 61).
 
 ## Cycle de vie d'un ticket (simplifié)
 
