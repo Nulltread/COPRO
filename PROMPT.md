@@ -37,6 +37,14 @@ Chaque changement d'étape est horodaté et visible dans un fil de suivi lisible
 - **Recherche et filtres** : par unité (villa/garage), par état, par catégorie, par coût.
 - **Tableau de bord léger** pour le syndic/conseil : tickets ouverts, en attente de décision, coûts cumulés.
 
+## Stockage des fichiers (photos, devis, factures)
+
+- **Volumes attendus** : ~122 unités, tickets réguliers sur plusieurs années ; chaque ticket peut cumuler photos, devis, factures et décisions. Prévoir quelques dizaines de Go à terme — la compression des images limite fortement la croissance.
+- **Stockage des fichiers** : répertoire de fichiers servi par l'application (hors racine web) **ou** object storage S3-compatible (ex. MinIO auto-hébergé, ou bucket bas coût type Scaleway/OVH). Les métadonnées (nom, type, taille, ticket, étape, auteur, montant pour devis/factures) sont en base de données.
+- **Accès sécurisé** : fichiers servis uniquement via l'application après authentification et vérification des droits (pas d'URL publiques directes) ; les fichiers comptables (factures) ne sont accessibles qu'aux rôles autorisés.
+- **Sauvegarde** : les fichiers sont inclus dans la stratégie de sauvegarde (sauvegarde automatique du répertoire de stockage avec la base de données, rétention suffisante).
+- **Limites** : taille max par fichier (ex. 10 Mo pour PDF, images compressées avant envoi), types MIME autorisés (JPEG, PNG, WebP, PDF).
+
 ## Contraintes techniques
 
 - **Coût d'hébergement minimal et simplicité** : privilégier une stack légère (par exemple une application web monolithique, base de données PostgreSQL ou SQLite, stockage de fichiers local ou object storage S3-compatible, conteneur unique déployable sur un petit VPS ou une PaaS gratuite/bas coût). Pas de dépendance à des services payants.
