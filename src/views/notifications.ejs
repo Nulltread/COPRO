@@ -1,0 +1,16 @@
+<%- include('partials/header', { titre: 'Notifications' }) %>
+<h1>Notifications</h1>
+<% if (notifs.length > 0) { %>
+<form method="post" action="/notifications/lire"><button class="bouton-secondaire">Tout marquer comme lu</button></form>
+<ul class="liste-simple">
+  <% for (const n of notifs) { %>
+    <li class="<%= n.lu ? 'lue' : 'non-lue' %>">
+      <% if (n.ticket_id) { %><a href="/tickets/<%= n.ticket_id %>"><%= n.message %></a><% } else { %><%= n.message %><% } %>
+      <span class="date"><%= n.created_at %></span>
+    </li>
+  <% } %>
+</ul>
+<% } else { %>
+<p class="aide">Aucune notification.</p>
+<% } %>
+<%- include('partials/footer') %>

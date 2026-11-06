@@ -1,0 +1,28 @@
+<%- include('partials/header', { titre: 'Mon profil' }) %>
+<h1>Mon profil</h1>
+<% if (message) { %><p class="info"><%= message %></p><% } %>
+<p><strong><%= user.nom %></strong> — <%= user.email %> — rôle : <%= user.role %></p>
+<% if (mesUnites.length) { %>
+<p>Mes unités : <%= mesUnites.map(u => u.label + ' (' + u.qualite + ')').join(', ') %></p>
+<% } %>
+<form method="post" action="/profil" class="formulaire">
+  <label>Nom
+    <input type="text" name="nom" value="<%= user.nom %>" required>
+  </label>
+  <label>Nouveau mot de passe (laisser vide pour ne pas changer)
+    <input type="password" name="motdepasse" minlength="8" autocomplete="new-password">
+  </label>
+  <button class="bouton" type="submit">Enregistrer</button>
+</form>
+<section class="bloc">
+  <h2>Notifications push</h2>
+  <% if (vapidPublic) { %>
+    <p id="etat-push"><%= pushActive ? 'Activées ✅' : 'Non activées' %></p>
+    <button class="bouton-secondaire" id="bouton-push" type="button">Activer les notifications sur cet appareil</button>
+  <% } else { %>
+    <p class="aide">Les notifications push ne sont pas configurées sur ce serveur.</p>
+  <% } %>
+</section>
+<form method="post" action="/deconnexion"><button class="bouton-secondaire">Se déconnecter</button></form>
+<script>window.VAPID_PUBLIC_KEY = <%- JSON.stringify(vapidPublic || '') %>;</script>
+<%- include('partials/footer') %>

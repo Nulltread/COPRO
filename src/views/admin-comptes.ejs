@@ -1,0 +1,24 @@
+<%- include('partials/header', { titre: 'Comptes' }) %>
+<h1>Comptes</h1>
+<% if (message) { %><p class="info"><%= message %></p><% } %>
+<% if (enAttente.length > 0) { %>
+<h2>En attente de validation</h2>
+<ul class="liste-simple">
+  <% for (const u of enAttente) { %>
+    <li>
+      <strong><%= u.nom %></strong> (<%= u.email %>) — <%= u.unites || 'aucune unité' %>
+      <form method="post" action="/admin/comptes/<%= u.id %>/valider" class="formulaire-ligne">
+        <button class="bouton" type="submit" name="action" value="valider">Valider</button>
+        <button class="bouton-secondaire" type="submit" name="action" value="refuser">Refuser</button>
+      </form>
+    </li>
+  <% } %>
+</ul>
+<% } %>
+<h2>Tous les comptes</h2>
+<ul class="liste-simple">
+  <% for (const u of users) { %>
+    <li><strong><%= u.nom %></strong> — <%= u.role %> — <%= u.statut %> — <%= u.unites || '' %></li>
+  <% } %>
+</ul>
+<%- include('partials/footer') %>

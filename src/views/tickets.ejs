@@ -1,0 +1,38 @@
+<%- include('partials/header', { titre: 'Tickets' }) %>
+<div class="entete-page">
+  <h1>Tickets</h1>
+  <a class="bouton" href="/tickets/nouveau">+ Nouveau ticket</a>
+</div>
+<form method="get" action="/tickets" class="filtres">
+  <select name="etape">
+    <option value="">Tous les états</option>
+    <% for (const e of etapes) { %>
+      <option value="<%= e %>" <%= filtres.etape === e ? 'selected' : '' %>><%= etiquettes[e] %></option>
+    <% } %>
+  </select>
+  <select name="categorie">
+    <option value="">Toutes catégories</option>
+    <% for (const c of categories) { %>
+      <option value="<%= c %>" <%= filtres.categorie === c ? 'selected' : '' %>><%= c %></option>
+    <% } %>
+  </select>
+  <label class="case"><input type="checkbox" name="urgent" value="1" <%= filtres.urgent === '1' ? 'checked' : '' %>> Urgents</label>
+  <button class="bouton-secondaire" type="submit">Filtrer</button>
+</form>
+<% if (tickets.length === 0) { %>
+  <p class="aide">Aucun ticket pour le moment.</p>
+<% } %>
+<ul class="liste-tickets">
+  <% for (const t of tickets) { %>
+    <li class="carte-ticket <%= t.urgent ? 'urgent' : '' %>">
+      <a href="/tickets/<%= t.id %>">
+        <div class="ligne1">
+          <strong><%= t.titre %></strong>
+          <% if (t.urgent) { %><span class="tag-urgent">URGENT</span><% } %>
+        </div>
+        <div class="ligne2"><%= etiquettes[t.etape] %> · <%= t.categorie %> · <%= t.unites || '' %></div>
+      </a>
+    </li>
+  <% } %>
+</ul>
+<%- include('partials/footer') %>

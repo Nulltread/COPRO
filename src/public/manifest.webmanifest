@@ -1,0 +1,12 @@
+{
+  "name": "Copro des Pavillons",
+  "short_name": "Copro",
+  "start_url": "/tickets",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1a5fb4",
+  "lang": "fr",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
