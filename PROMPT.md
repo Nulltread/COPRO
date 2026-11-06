@@ -28,7 +28,7 @@ L'unité d'œuvre est la **villa ou le garage** (61 villas, 61 garages). Un tick
 3. **Attribution** — décision formalisée : choix d'un devis, décision enregistrée et stockée sur le ticket (montant retenu, entreprise, justification). Les devis non retenus restent archivés sur le ticket.
 4. **Planification des travaux** — date(s) d'intervention, entreprise, informations visibles par tous les concernés. **Avenants gérés** : si un surcoût est découvert pendant les travaux, un devis complémentaire (avenant) peut être ajouté au ticket, avec une nouvelle décision enregistrée (montant, justification).
 5. **Réception des travaux** — contrôle du résultat ; ajout de photos de fin de travaux. **Si les travaux ne sont pas satisfaisants, retour possible à l'étape Planification** (avec motif et photos).
-6. **Fin du ticket (clôture)** — récapitulatif : coût total, facture(s) stockée(s), décision, historique.
+6. **Fin du ticket (clôture)** — récapitulatif : coût total, facture(s) stockée(s), décision, historique. Les tickets clôturés sont **archivés sans limite de durée** et restent consultables (historique de la copropriété).
 
 Chaque changement d'étape est horodaté et visible dans un fil de suivi lisible par tous les concernés (historique simple, type fil de discussion avec événements).
 
@@ -39,7 +39,9 @@ Chaque changement d'étape est horodaté et visible dans un fil de suivi lisible
 - **Devis, factures et décision** : stockage des fichiers (PDF/images) sur le ticket, catégorisés (devis / avenant / facture / décision / compte-rendu d'intervention), avec montant associé. Le ticket porte un **coût** : total des devis et avenants retenus, total facturé, écart éventuel.
 - **Mise en concurrence** : vue comparaison des devis (montant, entreprise, délai, avis/commentaires), décision explicite enregistrée.
 - **Suivi simplifié** : vue « métro » du cycle de vie (étapes visibles en une ligne), fil d'actualité du ticket, aucune notion technique exposée à l'utilisateur.
-- **Notifications** : à chaque événement du ticket (création, changement d'étape, nouveau devis, décision, commentaire, refus en réception), notifier systématiquement : le **syndic**, le **conseil syndical**, et les **résidents concernés** (rattachés aux unités du ticket) **s'ils ont un compte**. Canaux : **email, notification in-app, et push** (chaque utilisateur choisit ses canaux dans son profil ; l'email est le canal de repli par défaut).
+- **Notifications** : à chaque événement du ticket (création, changement d'étape, nouveau devis, décision, commentaire, refus en réception), notifier systématiquement : le **syndic**, le **conseil syndical**, et les **résidents concernés** (rattachés aux unités du ticket) **s'ils ont un compte**. Canaux : **email, notification in-app, et web push (PWA)** (chaque utilisateur choisit ses canaux dans son profil ; l'email est le canal de repli par défaut). Le push natif iOS/Android est explicitement hors périmètre v1. Un ticket marqué **urgent** notifie le syndic et le conseil syndical en priorité.
+- **Résidents sans compte** : un email de contact peut être saisi sur le ticket pour notifier (par email uniquement) les résidents concernés qui n'ont pas encore créé de compte.
+- **Multi-occupants** : une unité peut avoir un propriétaire et un locataire rattachés ; les deux sont notifiés et peuvent agir (commenter, ajouter des photos).
 - **Recherche et filtres** : par unité (villa/garage), par état, par catégorie, par coût.
 - **Tableau de bord léger** pour le syndic/conseil : tickets ouverts, en attente de décision, coûts cumulés.
 
