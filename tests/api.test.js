@@ -250,3 +250,31 @@ test('RGPD : export JSON et suppression de compte', async () => {
   const apres = await c.req('GET', '/tickets');
   assert.strictEqual(apres.status, 302);
 });
+
+test('page d\'inscription se rend sans erreur (régression)', async () => {
+  const c = await client();
+  const res = await c.req('GET', '/inscription');
+  assert.strictEqual(res.status, 200);
+  const html = await res.text();
+  assert.ok(html.includes('Villa 1'));
+});
+
+test('filtre par coût minimum sur la liste des tickets', async () => {
+  const cs = await client(); await login(cs, 'syndic@test.local', 'motdepasse1');
+  const cr1 = await client(); await login(cr1, 'r1@test.local', 'motdepasse1');
+  const db = require('../src/db').getDb();
+  const villa1 = db.prepare("SELECT id FROM units WHERE type='villa' AND numero=1").get().id;
+  const res = await cr1.req('POST', '/tickets', { titre: 'Ticket filtre coût', categorie: 'Autre', unite_ids: [String(villa1)] });
+  const tid = Number(res.headers.get('location').split('/').pop());
+  const form = new FormData();
+  form.append('categorie', 'devis');
+  form.append('montant', '500');
+  form.append('fichiers', new Blob(['%PDF-1.4 x'], { type: 'application/pdf' }), 'devis.pdf');
+  await cr1.req('POST', `/tickets/${tid}/fichiers`, undefined, form);
+  const f = db.prepare('SELECT id FROM fichiers WHERE ticket_id = ?').get(tid);
+  await cs.req('POST', `/tickets/${tid}/decision`, { fichier_id: String(f.id), justification: 'retenu' });
+  const liste = await (await cs.req('GET', '/tickets?cout_min=1000')).text();
+  assert.ok(!liste.includes('Ticket filtre coût'));
+  const liste2 = await (await cs.req('GET', '/tickets?cout_min=100')).text();
+  assert.ok(liste2.includes('Ticket filtre coût'));
+});

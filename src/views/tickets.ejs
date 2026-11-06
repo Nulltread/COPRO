@@ -16,6 +16,13 @@
       <option value="<%= c %>" <%= filtres.categorie === c ? 'selected' : '' %>><%= c %></option>
     <% } %>
   </select>
+  <select name="unite">
+    <option value="">Toutes les unités</option>
+    <% for (const u of unitesFiltre) { %>
+      <option value="<%= u.id %>" <%= String(filtres.unite) === String(u.id) ? 'selected' : '' %>><%= u.label %></option>
+    <% } %>
+  </select>
+  <input type="number" name="cout_min" min="0" step="0.01" placeholder="Coût min (€)" value="<%= filtres.cout_min || '' %>" style="max-width:130px">
   <label class="case"><input type="checkbox" name="urgent" value="1" <%= filtres.urgent === '1' ? 'checked' : '' %>> Urgents</label>
   <button class="bouton-secondaire" type="submit">Filtrer</button>
 </form>

@@ -35,6 +35,11 @@ function listeTickets(user, filtres = {}) {
   if (filtres.categorie) { where.push('t.categorie = ?'); params.push(filtres.categorie); }
   if (filtres.unite) { where.push('tu.unit_id = ?'); params.push(Number(filtres.unite)); }
   if (filtres.urgent === '1') { where.push('t.urgent = 1'); }
+  const coutMin = Number(filtres.cout_min);
+  if (filtres.cout_min && !Number.isNaN(coutMin) && coutMin > 0) {
+    where.push(`t.id IN (SELECT ticket_id FROM fichiers WHERE categorie IN ('devis','avenant') AND retenu = 1 GROUP BY ticket_id HAVING COALESCE(SUM(montant),0) >= ?)`);
+    params.push(coutMin);
+  }
   if (where.length) sql += ' WHERE ' + where.join(' AND ');
   sql += ' GROUP BY t.id ORDER BY t.urgent DESC, t.updated_at DESC';
   return db.prepare(sql).all(...params);
@@ -68,10 +73,16 @@ function detailTicket(user, id) {
 
 router.get('/', (req, res) => {
   const tickets = listeTickets(req.user, req.query);
+  const db = getDb();
+  const unitesFiltre = (isGestionnaire(req.user) || isAdmin(req.user))
+    ? db.prepare('SELECT * FROM units ORDER BY type DESC, numero').all()
+    : db.prepare(
+        `SELECT u.* FROM units u JOIN unit_residents ur ON ur.unit_id = u.id WHERE ur.user_id = ? ORDER BY u.type DESC, u.numero`
+      ).all(req.user.id);
   res.render('tickets', {
     user: req.user, tickets,
     categories: categoriesTicket(),
-    etapes: ETAPES, etiquettes: ETIQUETTES_ETAPES,
+    etapes: ETAPES, etiquettes: ETIQUETTES_ETAPES, unitesFiltre,
     filtres: req.query, gestionnaire: isGestionnaire(req.user) || isAdmin(req.user),
     nonLues: require('../notifications').nonLues(req.user.id)
   });

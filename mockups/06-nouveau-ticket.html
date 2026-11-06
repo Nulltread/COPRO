@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1a5fb4">
+  <title>Nouveau ticket — Copro des Pavillons</title>
+  <link rel="stylesheet" href="style.css">
+  
+  
+</head>
+<body>
+
+<header class="barre">
+  <a class="marque" href="/tickets">🏠 Copro des Pavillons</a>
+  <nav class="nav">
+    <a href="/tickets">Tickets</a>
+    <a href="/tickets/nouveau" class="bouton-nav">+ Nouveau</a>
+    <a href="/notifications" class="nav-notif">🔔<span class="badge">1</span></a>
+    
+    
+    
+    <a href="/profil">👤 Martin 1</a>
+  </nav>
+</header>
+
+<main class="contenu">
+
+<h1>Nouveau ticket</h1>
+
+<form method="post" action="/tickets" class="formulaire" enctype="multipart/form-data">
+  <label>Titre court
+    <input type="text" name="titre" required maxlength="120" placeholder="Ex. : fuite sous l'évier">
+  </label>
+  <label>Description
+    <textarea name="description" rows="4" placeholder="Décrivez simplement le problème"></textarea>
+  </label>
+  <label>Catégorie
+    <select name="categorie" required>
+      
+        <option value="Plomberie" >Plomberie</option>
+      
+        <option value="Électricité" >Électricité</option>
+      
+        <option value="Chauffage" >Chauffage</option>
+      
+        <option value="Toiture" >Toiture</option>
+      
+        <option value="Menuiserie" >Menuiserie</option>
+      
+        <option value="Serrurerie" >Serrurerie</option>
+      
+        <option value="Extérieurs / Jardin" >Extérieurs / Jardin</option>
+      
+        <option value="Humidité / Infiltration" >Humidité / Infiltration</option>
+      
+        <option value="Autre" >Autre</option>
+      
+    </select>
+  </label>
+  <fieldset>
+    <legend>Villa(s) / garage(s) concerné(s)</legend>
+    <div class="cases-unites">
+      
+        <label class="case"><input type="checkbox" name="unite_ids" value="1"> Villa 1</label>
+      
+    </div>
+  </fieldset>
+  <label class="case case-urgent"><input type="checkbox" name="urgent" value="1"> 🚨 C'est urgent (fuite, danger…)</label>
+  <label>Photos (compressées automatiquement avant l'envoi)
+    <input type="file" name="fichiers" accept="image/jpeg,image/png,image/webp,application/pdf" multiple id="champ-photos">
+  </label>
+  <div id="apercu-photos" class="apercu"></div>
+  <button type="submit" class="bouton">Déclarer le ticket</button>
+</form>
+</main>
+
+</body>
+</html>
+

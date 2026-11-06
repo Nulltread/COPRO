@@ -15,7 +15,7 @@
   <label>Votre villa ou garage
     <select name="unite_id" required>
       <option value="">— Choisir —</option>
-      <% for (const u of unites) { %>
+      <% for (const u of units) { %>
         <option value="<%= u.id %>"><%= u.label %></option>
       <% } %>
     </select>

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1a5fb4">
+  <title>Tickets — Copro des Pavillons</title>
+  <link rel="stylesheet" href="style.css">
+  
+  
+</head>
+<body>
+
+<header class="barre">
+  <a class="marque" href="/tickets">🏠 Copro des Pavillons</a>
+  <nav class="nav">
+    <a href="/tickets">Tickets</a>
+    <a href="/tickets/nouveau" class="bouton-nav">+ Nouveau</a>
+    <a href="/notifications" class="nav-notif">🔔<span class="badge">3</span></a>
+    
+      <a href="/tableau-de-bord">Tableau de bord</a>
+    
+    
+    
+      <a href="/admin/comptes">Comptes</a>
+    
+    <a href="/profil">👤 Syndic Pro</a>
+  </nav>
+</header>
+
+<main class="contenu">
+
+<div class="entete-page">
+  <h1>Tickets</h1>
+  <a class="bouton" href="/tickets/nouveau">+ Nouveau ticket</a>
+</div>
+<form method="get" action="/tickets" class="filtres">
+  <select name="etape">
+    <option value="">Tous les états</option>
+    
+      <option value="declaration" >Déclaration</option>
+    
+      <option value="consultation" >Consultation des devis</option>
+    
+      <option value="attribution" >Attribution</option>
+    
+      <option value="planification" >Planification des travaux</option>
+    
+      <option value="reception" >Réception des travaux</option>
+    
+      <option value="cloture" >Clôturé</option>
+    
+  </select>
+  <select name="categorie">
+    <option value="">Toutes catégories</option>
+    
+      <option value="Plomberie" >Plomberie</option>
+    
+      <option value="Électricité" >Électricité</option>
+    
+      <option value="Chauffage" >Chauffage</option>
+    
+      <option value="Toiture" >Toiture</option>
+    
+      <option value="Menuiserie" >Menuiserie</option>
+    
+      <option value="Serrurerie" >Serrurerie</option>
+    
+      <option value="Extérieurs / Jardin" >Extérieurs / Jardin</option>
+    
+      <option value="Humidité / Infiltration" >Humidité / Infiltration</option>
+    
+      <option value="Autre" >Autre</option>
+    
+  </select>
+  <select name="unite">
+    <option value="">Toutes les unités</option>
+    
+      <option value="1" >Villa 1</option>
+    
+      <option value="3" >Villa 2</option>
+    
+      <option value="5" >Villa 3</option>
+    
+      <option value="7" >Villa 4</option>
+    
+      <option value="9" >Villa 5</option>
+    
+      <option value="11" >Villa 6</option>
+    
+      <option value="13" >Villa 7</option>
+    
+      <option value="15" >Villa 8</option>
+    
+      <option value="17" >Villa 9</option>
+    
+      <option value="19" >Villa 10</option>
+    
+      <option value="21" >Villa 11</option>
+    
+      <option value="23" >Villa 12</option>
+    
+      <option value="25" >Villa 13</option>
+    
+      <option value="27" >Villa 14</option>
+    
+      <option value="29" >Villa 15</option>
+    
+      <option value="31" >Villa 16</option>
+    
+      <option value="33" >Villa 17</option>
+    
+      <option value="35" >Villa 18</option>
+    
+      <option value="37" >Villa 19</option>
+    
+      <option value="39" >Villa 20</option>
+    
+      <option value="41" >Villa 21</option>
+    
+      <option value="43" >Villa 22</option>
+    
+      <option value="45" >Villa 23</option>
+    
+      <option value="47" >Villa 24</option>
+    
+      <option value="49" >Villa 25</option>
+    
+      <option value="51" >Villa 26</option>
+    
+      <option value="53" >Villa 27</option>
+    
+      <option value="55" >Villa 28</option>
+    
+      <option value="57" >Villa 29</option>
+    
+      <option value="59" >Villa 30</option>
+    
+      <option value="61" >Villa 31</option>
+    
+      <option value="63" >Villa 32</option>
+    
+      <option value="65" >Villa 33</option>
+    
+      <option value="67" >Villa 34</option>
+    
+      <option value="69" >Villa 35</option>
+    
+      <option value="71" >Villa 36</option>
+    
+      <option value="73" >Villa 37</option>
+    
+      <option value="75" >Villa 38</option>
+    
+      <option value="77" >Villa 39</option>
+    
+      <option value="79" >Villa 40</option>
+    
+      <option value="81" >Villa 41</option>
+    
+      <option value="83" >Villa 42</option>
+    
+      <option value="85" >Villa 43</option>
+    
+      <option value="87" >Villa 44</option>
+    
+      <option value="89" >Villa 45</option>
+    
+      <option value="91" >Villa 46</option>
+    
+      <option value="93" >Villa 47</option>
+    
+      <option value="95" >Villa 48</option>
+    
+      <option value="97" >Villa 49</option>
+    
+      <option value="99" >Villa 50</option>
+    
+      <option value="101" >Villa 51</option>
+    
+      <option value="103" >Villa 52</option>
+    
+      <option value="105" >Villa 53</option>
+    
+      <option value="107" >Villa 54</option>
+    
+      <option value="109" >Villa 55</option>
+    
+      <option value="111" >Villa 56</option>
+    
+      <option value="113" >Villa 57</option>
+    
+      <option value="115" >Villa 58</option>
+    
+      <option value="117" >Villa 59</option>
+    
+      <option value="119" >Villa 60</option>
+    
+      <option value="121" >Villa 61</option>
+    
+      <option value="2" >Garage 1</option>
+    
+      <option value="4" >Garage 2</option>
+    
+      <option value="6" >Garage 3</option>
+    
+      <option value="8" >Garage 4</option>
+    
+      <option value="10" >Garage 5</option>
+    
+      <option value="12" >Garage 6</option>
+    
+      <option value="14" >Garage 7</option>
+    
+      <option value="16" >Garage 8</option>
+    
+      <option value="18" >Garage 9</option>
+    
+      <option value="20" >Garage 10</option>
+    
+      <option value="22" >Garage 11</option>
+    
+      <option value="24" >Garage 12</option>
+    
+      <option value="26" >Garage 13</option>
+    
+      <option value="28" >Garage 14</option>
+    
+      <option value="30" >Garage 15</option>
+    
+      <option value="32" >Garage 16</option>
+    
+      <option value="34" >Garage 17</option>
+    
+      <option value="36" >Garage 18</option>
+    
+      <option value="38" >Garage 19</option>
+    
+      <option value="40" >Garage 20</option>
+    
+      <option value="42" >Garage 21</option>
+    
+      <option value="44" >Garage 22</option>
+    
+      <option value="46" >Garage 23</option>
+    
+      <option value="48" >Garage 24</option>
+    
+      <option value="50" >Garage 25</option>
+    
+      <option value="52" >Garage 26</option>
+    
+      <option value="54" >Garage 27</option>
+    
+      <option value="56" >Garage 28</option>
+    
+      <option value="58" >Garage 29</option>
+    
+      <option value="60" >Garage 30</option>
+    
+      <option value="62" >Garage 31</option>
+    
+      <option value="64" >Garage 32</option>
+    
+      <option value="66" >Garage 33</option>
+    
+      <option value="68" >Garage 34</option>
+    
+      <option value="70" >Garage 35</option>
+    
+      <option value="72" >Garage 36</option>
+    
+      <option value="74" >Garage 37</option>
+    
+      <option value="76" >Garage 38</option>
+    
+      <option value="78" >Garage 39</option>
+    
+      <option value="80" >Garage 40</option>
+    
+      <option value="82" >Garage 41</option>
+    
+      <option value="84" >Garage 42</option>
+    
+      <option value="86" >Garage 43</option>
+    
+      <option value="88" >Garage 44</option>
+    
+      <option value="90" >Garage 45</option>
+    
+      <option value="92" >Garage 46</option>
+    
+      <option value="94" >Garage 47</option>
+    
+      <option value="96" >Garage 48</option>
+    
+      <option value="98" >Garage 49</option>
+    
+      <option value="100" >Garage 50</option>
+    
+      <option value="102" >Garage 51</option>
+    
+      <option value="104" >Garage 52</option>
+    
+      <option value="106" >Garage 53</option>
+    
+      <option value="108" >Garage 54</option>
+    
+      <option value="110" >Garage 55</option>
+    
+      <option value="112" >Garage 56</option>
+    
+      <option value="114" >Garage 57</option>
+    
+      <option value="116" >Garage 58</option>
+    
+      <option value="118" >Garage 59</option>
+    
+      <option value="120" >Garage 60</option>
+    
+      <option value="122" >Garage 61</option>
+    
+  </select>
+  <input type="number" name="cout_min" min="0" step="0.01" placeholder="Coût min (€)" value="" style="max-width:130px">
+  <label class="case"><input type="checkbox" name="urgent" value="1" > Urgents</label>
+  <button class="bouton-secondaire" type="submit">Filtrer</button>
+</form>
+
+<ul class="liste-tickets">
+  
+    <li class="carte-ticket urgent">
+      <a href="/tickets/1">
+        <div class="ligne1">
+          <strong>Fuite sous l&#39;évier de la cuisine</strong>
+          <span class="tag-urgent">URGENT</span>
+        </div>
+        <div class="ligne2">Consultation des devis · Plomberie · villa 1</div>
+      </a>
+    </li>
+  
+    <li class="carte-ticket urgent">
+      <a href="/tickets/5">
+        <div class="ligne1">
+          <strong>Infiltration plafond salon — villa 20 et 21</strong>
+          <span class="tag-urgent">URGENT</span>
+        </div>
+        <div class="ligne2">Déclaration · Toiture · villa 20, villa 21</div>
+      </a>
+    </li>
+  
+    <li class="carte-ticket ">
+      <a href="/tickets/2">
+        <div class="ligne1">
+          <strong>Volet roulant bloqué</strong>
+          
+        </div>
+        <div class="ligne2">Attribution · Menuiserie · villa 5</div>
+      </a>
+    </li>
+  
+    <li class="carte-ticket ">
+      <a href="/tickets/3">
+        <div class="ligne1">
+          <strong>Fissure sur le mur du garage</strong>
+          
+        </div>
+        <div class="ligne2">Planification des travaux · Humidité / Infiltration · garage 12</div>
+      </a>
+    </li>
+  
+    <li class="carte-ticket ">
+      <a href="/tickets/4">
+        <div class="ligne1">
+          <strong>Porte d&#39;entrée qui ferme mal</strong>
+          
+        </div>
+        <div class="ligne2">Réception des travaux · Serrurerie · villa 10</div>
+      </a>
+    </li>
+  
+    <li class="carte-ticket ">
+      <a href="/tickets/6">
+        <div class="ligne1">
+          <strong>Chaudière en panne</strong>
+          
+        </div>
+        <div class="ligne2">Clôturé · Chauffage · villa 30</div>
+      </a>
+    </li>
+  
+</ul>
+</main>
+
+</body>
+</html>
+

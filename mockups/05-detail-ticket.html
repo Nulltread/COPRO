@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1a5fb4">
+  <title>Fuite sous l&#39;évier de la cuisine — Copro des Pavillons</title>
+  <link rel="stylesheet" href="style.css">
+  
+  
+</head>
+<body>
+
+<header class="barre">
+  <a class="marque" href="/tickets">🏠 Copro des Pavillons</a>
+  <nav class="nav">
+    <a href="/tickets">Tickets</a>
+    <a href="/tickets/nouveau" class="bouton-nav">+ Nouveau</a>
+    <a href="/notifications" class="nav-notif">🔔<span class="badge">3</span></a>
+    
+      <a href="/tableau-de-bord">Tableau de bord</a>
+    
+    
+    
+      <a href="/admin/comptes">Comptes</a>
+    
+    <a href="/profil">👤 Syndic Pro</a>
+  </nav>
+</header>
+
+<main class="contenu">
+
+<div class="entete-page">
+  <h1>Fuite sous l&#39;évier de la cuisine</h1>
+  <span class="tag-urgent">URGENT</span>
+</div>
+<p class="aide">Plomberie · Villa 1 · déclaré le 2026-11-06 01:00:28</p>
+
+<ol class="metro">
+  
+    <li class="faite">
+      <span class="puce">✓</span>
+      <span class="nom">Déclaration</span>
+    </li>
+  
+    <li class="actuelle">
+      <span class="puce">2</span>
+      <span class="nom">Consultation des devis</span>
+    </li>
+  
+    <li class="">
+      <span class="puce">3</span>
+      <span class="nom">Attribution</span>
+    </li>
+  
+    <li class="">
+      <span class="puce">4</span>
+      <span class="nom">Planification des travaux</span>
+    </li>
+  
+    <li class="">
+      <span class="puce">5</span>
+      <span class="nom">Réception des travaux</span>
+    </li>
+  
+    <li class="">
+      <span class="puce">6</span>
+      <span class="nom">Clôturé</span>
+    </li>
+  
+</ol>
+
+<p>Goutte à goutte depuis ce matin, le siphon fuit.</p>
+
+<section class="bloc">
+  <h2>Coût du ticket</h2>
+  <p>Devis retenus : <strong>0.00 €</strong> · Facturé : <strong>0.00 €</strong> · Écart : <strong>0.00 €</strong></p>
+</section>
+
+
+<section class="bloc">
+  <h2>Changer d'étape</h2>
+  <form method="post" action="/tickets/1/transition" class="formulaire-ligne">
+    <select name="etape">
+      
+        <option value="declaration">Déclaration</option>
+      
+        <option value="attribution">Attribution</option>
+      
+        <option value="planification">Planification des travaux</option>
+      
+        <option value="reception">Réception des travaux</option>
+      
+        <option value="cloture">Clôturé</option>
+      
+    </select>
+    <input type="text" name="motif" placeholder="Motif (obligatoire si retour en planification)">
+    <button class="bouton" type="submit">Valider le passage</button>
+  </form>
+</section>
+
+
+<section class="bloc">
+  <h2>Documents</h2>
+  <div class="docs">
+    
+    
+    
+  </div>
+  
+  <form method="post" action="/tickets/1/fichiers" enctype="multipart/form-data" class="formulaire">
+    <label>Catégorie
+      <select name="categorie">
+        <option value="photo">photo</option><option value="devis">devis</option><option value="avenant">avenant</option><option value="facture">facture</option><option value="decision">decision</option><option value="compte_rendu">compte_rendu</option>
+      </select>
+    </label>
+    <label>Montant (€) — pour devis, avenants, factures
+      <input type="number" step="0.01" min="0" name="montant">
+    </label>
+    <label>Entreprise
+      <input type="text" name="entreprise">
+    </label>
+    <label>Délai
+      <input type="text" name="delai" placeholder="Ex. : 2 semaines">
+    </label>
+    <label>Fichiers (images compressées automatiquement, PDF acceptés)
+      <input type="file" name="fichiers" accept="image/jpeg,image/png,image/webp,application/pdf" multiple required class="champ-fichiers">
+    </label>
+    <div class="apercu"></div>
+    <button class="bouton" type="submit">Ajouter</button>
+  </form>
+  
+</section>
+
+<section class="bloc" id="fil">
+  <h2>Fil de suivi</h2>
+  <ul class="fil">
+    
+      <li><span class="date">2026-11-06 01:00:28</span> <strong>Martin 1</strong> — Ticket déclaré (URGENT) : Fuite sous l&#39;évier de la cuisine</li>
+    
+      <li><span class="date">2026-11-06 01:00:28</span> <strong>Martin 1</strong> — Passage à l&#39;étape « Consultation des devis »</li>
+    
+      <li><span class="date">2026-11-06 01:00:28</span> <strong>Martin 1</strong> — 2 devis ajoutés</li>
+    
+  </ul>
+  
+  <form method="post" action="/tickets/1/commentaire" class="formulaire-ligne">
+    <input type="text" name="contenu" placeholder="Écrire un commentaire…" required>
+    <button class="bouton" type="submit">Envoyer</button>
+  </form>
+  
+</section>
+</main>
+
+</body>
+</html>
+
