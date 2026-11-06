@@ -1,0 +1,20 @@
+{
+  "name": "copro-suivi",
+  "version": "1.0.0",
+  "description": "Suivi de travaux et sinistres pour copropriété de pavillons",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "seed": "node src/db/seed.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0",
+    "cookie-parser": "^1.4.7",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "multer": "^2.0.1",
+    "web-push": "^3.6.7"
+  }
+}

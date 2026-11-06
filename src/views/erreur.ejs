@@ -1,0 +1,5 @@
+<%- include('partials/header', { user: user || null, titre: 'Erreur' }) %>
+<h1>Oups…</h1>
+<p class="erreur"><%= message %></p>
+<p><a class="bouton" href="/tickets">Retour aux tickets</a></p>
+<%- include('partials/footer') %>

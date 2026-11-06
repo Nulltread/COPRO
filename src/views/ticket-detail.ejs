@@ -1,0 +1,108 @@
+<%- include('partials/header', { titre: ticket.titre }) %>
+<div class="entete-page">
+  <h1><%= ticket.titre %></h1>
+  <% if (ticket.urgent) { %><span class="tag-urgent">URGENT</span><% } %>
+</div>
+<p class="aide"><%= ticket.categorie %> · <%= unites.map(u => u.label).join(', ') %> · déclaré le <%= ticket.created_at %></p>
+
+<ol class="metro">
+  <% etapes.forEach((e, i) => { %>
+    <li class="<%= ticket.etape === e ? 'actuelle' : (etapes.indexOf(ticket.etape) > i ? 'faite' : '') %>">
+      <span class="puce"><%= etapes.indexOf(ticket.etape) > i ? '✓' : i + 1 %></span>
+      <span class="nom"><%= etiquettes[e] %></span>
+    </li>
+  <% }) %>
+</ol>
+
+<% if (ticket.description) { %><p><%= ticket.description %></p><% } %>
+
+<section class="bloc">
+  <h2>Coût du ticket</h2>
+  <p>Devis retenus : <strong><%= coutRetenu.toFixed(2) %> €</strong> · Facturé : <strong><%= totalFacture.toFixed(2) %> €</strong> · Écart : <strong><%= (totalFacture - coutRetenu).toFixed(2) %> €</strong></p>
+</section>
+
+<% if (ticket.etape !== 'cloture' && gestionnaire) { %>
+<section class="bloc">
+  <h2>Changer d'étape</h2>
+  <form method="post" action="/tickets/<%= ticket.id %>/transition" class="formulaire-ligne">
+    <select name="etape">
+      <% etapes.forEach(e => { if (e !== ticket.etape) { %>
+        <option value="<%= e %>"><%= etiquettes[e] %></option>
+      <% } }) %>
+    </select>
+    <input type="text" name="motif" placeholder="Motif (obligatoire si retour en planification)">
+    <button class="bouton" type="submit">Valider le passage</button>
+  </form>
+</section>
+<% } %>
+
+<section class="bloc">
+  <h2>Documents</h2>
+  <div class="docs">
+    <% const parCat = {}; fichiers.forEach(f => { (parCat[f.categorie] = parCat[f.categorie] || []).push(f); }); %>
+    <% const nomsCat = { photo: 'Photos', devis: 'Devis', avenant: 'Avenants', facture: 'Factures', decision: 'Décisions', compte_rendu: 'Comptes-rendus' }; %>
+    <% for (const cat of categoriesFichier) { if (!parCat[cat]) continue; %>
+      <h3><%= nomsCat[cat] %></h3>
+      <ul class="liste-docs">
+        <% for (const f of parCat[cat]) { %>
+          <li>
+            <a href="/fichiers/<%= f.id %>" target="_blank" rel="noopener">📄 <%= f.nom_original %></a>
+            <% if (f.montant != null) { %><span class="montant"><%= f.montant.toFixed(2) %> €</span><% } %>
+            <% if (f.entreprise) { %><span class="auteur"><%= f.entreprise %></span><% } %>
+            <% if (f.delai) { %><span class="auteur">délai : <%= f.delai %></span><% } %>
+            <% if (f.retenu) { %><span class="tag-retenu">RETENU</span><% } %>
+            <span class="auteur">par <%= f.auteur_nom %></span>
+          </li>
+        <% } %>
+      </ul>
+      <% if (gestionnaire && (cat === 'devis' || cat === 'avenant')) { %>
+        <form method="post" action="/tickets/<%= ticket.id %>/decision" class="formulaire-ligne">
+          <% for (const f of parCat[cat]) { if (!f.retenu) { %>
+            <label class="case"><input type="radio" name="fichier_id" value="<%= f.id %>" required> <%= f.nom_original %> (<%= f.montant != null ? f.montant + ' €' : '?' %>, <%= f.entreprise || '?' %>)</label>
+          <% } } %>
+          <input type="text" name="justification" placeholder="Justification de la décision">
+          <button class="bouton" type="submit">Enregistrer la décision</button>
+        </form>
+      <% } %>
+    <% } %>
+  </div>
+  <% if (ticket.etape !== 'cloture') { %>
+  <form method="post" action="/tickets/<%= ticket.id %>/fichiers" enctype="multipart/form-data" class="formulaire">
+    <label>Catégorie
+      <select name="categorie">
+        <% for (const c of categoriesFichier) { %><option value="<%= c %>"><%= c %></option><% } %>
+      </select>
+    </label>
+    <label>Montant (€) — pour devis, avenants, factures
+      <input type="number" step="0.01" min="0" name="montant">
+    </label>
+    <label>Entreprise
+      <input type="text" name="entreprise">
+    </label>
+    <label>Délai
+      <input type="text" name="delai" placeholder="Ex. : 2 semaines">
+    </label>
+    <label>Fichiers (images compressées automatiquement, PDF acceptés)
+      <input type="file" name="fichiers" accept="image/jpeg,image/png,image/webp,application/pdf" multiple required class="champ-fichiers">
+    </label>
+    <div class="apercu"></div>
+    <button class="bouton" type="submit">Ajouter</button>
+  </form>
+  <% } %>
+</section>
+
+<section class="bloc" id="fil">
+  <h2>Fil de suivi</h2>
+  <ul class="fil">
+    <% for (const e of evenements) { %>
+      <li><span class="date"><%= e.created_at %></span> <strong><%= e.auteur_nom || 'Système' %></strong> — <%= e.contenu %></li>
+    <% } %>
+  </ul>
+  <% if (ticket.etape !== 'cloture') { %>
+  <form method="post" action="/tickets/<%= ticket.id %>/commentaire" class="formulaire-ligne">
+    <input type="text" name="contenu" placeholder="Écrire un commentaire…" required>
+    <button class="bouton" type="submit">Envoyer</button>
+  </form>
+  <% } %>
+</section>
+<%- include('partials/footer') %>

@@ -1,0 +1,21 @@
+<%- include('partials/header', { titre: 'Tableau de bord' }) %>
+<h1>Tableau de bord</h1>
+<div class="cartes-stats">
+  <div class="carte-stat"><span class="chiffre"><%= ouverts %></span><span class="legende">tickets ouverts</span></div>
+  <div class="carte-stat"><span class="chiffre"><%= enAttenteDecision %></span><span class="legende">en attente de décision</span></div>
+  <div class="carte-stat urgent"><span class="chiffre"><%= urgents %></span><span class="legende">tickets urgents</span></div>
+  <div class="carte-stat"><span class="chiffre"><%= coutRetenu.toFixed(2) %> €</span><span class="legende">coût retenu</span></div>
+  <div class="carte-stat"><span class="chiffre"><%= totalFacture.toFixed(2) %> €</span><span class="legende">total facturé</span></div>
+</div>
+<h2>Activité récente</h2>
+<ul class="liste-tickets">
+  <% for (const t of recents) { %>
+    <li class="carte-ticket <%= t.urgent ? 'urgent' : '' %>">
+      <a href="/tickets/<%= t.id %>">
+        <div class="ligne1"><strong><%= t.titre %></strong> <% if (t.urgent) { %><span class="tag-urgent">URGENT</span><% } %></div>
+        <div class="ligne2"><%= etiquettes[t.etape] %> · <%= t.categorie %> · <%= t.unites || '' %></div>
+      </a>
+    </li>
+  <% } %>
+</ul>
+<%- include('partials/footer') %>

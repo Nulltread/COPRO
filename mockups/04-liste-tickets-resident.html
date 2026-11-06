@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1a5fb4">
+  <title>Tickets — Copro des Pavillons</title>
+  <link rel="stylesheet" href="style.css">
+  
+  
+</head>
+<body>
+
+<header class="barre">
+  <a class="marque" href="/tickets">🏠 Copro des Pavillons</a>
+  <nav class="nav">
+    <a href="/tickets">Tickets</a>
+    <a href="/tickets/nouveau" class="bouton-nav">+ Nouveau</a>
+    <a href="/notifications" class="nav-notif">🔔<span class="badge">1</span></a>
+    
+    
+    
+    <a href="/profil">👤 Martin 1</a>
+  </nav>
+</header>
+
+<main class="contenu">
+
+<div class="entete-page">
+  <h1>Tickets</h1>
+  <a class="bouton" href="/tickets/nouveau">+ Nouveau ticket</a>
+</div>
+<form method="get" action="/tickets" class="filtres">
+  <select name="etape">
+    <option value="">Tous les états</option>
+    
+      <option value="declaration" >Déclaration</option>
+    
+      <option value="consultation" >Consultation des devis</option>
+    
+      <option value="attribution" >Attribution</option>
+    
+      <option value="planification" >Planification des travaux</option>
+    
+      <option value="reception" >Réception des travaux</option>
+    
+      <option value="cloture" >Clôturé</option>
+    
+  </select>
+  <select name="categorie">
+    <option value="">Toutes catégories</option>
+    
+      <option value="Plomberie" >Plomberie</option>
+    
+      <option value="Électricité" >Électricité</option>
+    
+      <option value="Chauffage" >Chauffage</option>
+    
+      <option value="Toiture" >Toiture</option>
+    
+      <option value="Menuiserie" >Menuiserie</option>
+    
+      <option value="Serrurerie" >Serrurerie</option>
+    
+      <option value="Extérieurs / Jardin" >Extérieurs / Jardin</option>
+    
+      <option value="Humidité / Infiltration" >Humidité / Infiltration</option>
+    
+      <option value="Autre" >Autre</option>
+    
+  </select>
+  <select name="unite">
+    <option value="">Toutes les unités</option>
+    
+      <option value="1" >Villa 1</option>
+    
+  </select>
+  <input type="number" name="cout_min" min="0" step="0.01" placeholder="Coût min (€)" value="" style="max-width:130px">
+  <label class="case"><input type="checkbox" name="urgent" value="1" > Urgents</label>
+  <button class="bouton-secondaire" type="submit">Filtrer</button>
+</form>
+
+<ul class="liste-tickets">
+  
+    <li class="carte-ticket urgent">
+      <a href="/tickets/1">
+        <div class="ligne1">
+          <strong>Fuite sous l&#39;évier de la cuisine</strong>
+          <span class="tag-urgent">URGENT</span>
+        </div>
+        <div class="ligne2">Consultation des devis · Plomberie · villa 1</div>
+      </a>
+    </li>
+  
+</ul>
+</main>
+
+</body>
+</html>
+

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1a5fb4">
+  <title>Connexion — Copro des Pavillons</title>
+  <link rel="stylesheet" href="style.css">
+  
+  
+</head>
+<body>
+
+<main class="contenu">
+
+<h1>Connexion</h1>
+
+<form method="post" action="/connexion" class="formulaire">
+  <input type="hidden" name="suite" value="/">
+  <label>Email
+    <input type="email" name="email" required autocomplete="email">
+  </label>
+  <label>Mot de passe
+    <input type="password" name="motdepasse" required autocomplete="current-password">
+  </label>
+  <button type="submit" class="bouton">Se connecter</button>
+</form>
+<p><a href="/inscription">Pas encore de compte ? Créer un compte</a></p>
+</main>
+
+</body>
+</html>
+

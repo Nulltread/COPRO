@@ -1,0 +1,15 @@
+<%- include('partials/header', { user: null, titre: 'Connexion' }) %>
+<h1>Connexion</h1>
+<% if (erreur) { %><p class="erreur"><%= erreur %></p><% } %>
+<form method="post" action="/connexion" class="formulaire">
+  <input type="hidden" name="suite" value="<%= suite %>">
+  <label>Email
+    <input type="email" name="email" required autocomplete="email">
+  </label>
+  <label>Mot de passe
+    <input type="password" name="motdepasse" required autocomplete="current-password">
+  </label>
+  <button type="submit" class="bouton">Se connecter</button>
+</form>
+<p><a href="/inscription">Pas encore de compte ? Créer un compte</a></p>
+<%- include('partials/footer') %>

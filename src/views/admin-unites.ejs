@@ -1,0 +1,21 @@
+<%- include('partials/header', { titre: 'Unités' }) %>
+<h1>Unités (villas et garages)</h1>
+<% if (message) { %><p class="info"><%= message %></p><% } %>
+<ul class="liste-simple">
+  <% for (const u of unites) { %>
+    <li>
+      <strong><%= u.label %></strong> — occupants : <%= u.residents || 'aucun' %>
+      <form method="post" action="/admin/unites/<%= u.id %>/rattacher" class="formulaire-ligne">
+        <select name="user_id">
+          <% for (const r of residents) { %><option value="<%= r.id %>"><%= r.nom %></option><% } %>
+        </select>
+        <select name="qualite">
+          <option value="proprietaire">Propriétaire</option>
+          <option value="locataire">Locataire</option>
+        </select>
+        <button class="bouton-secondaire" type="submit">Rattacher</button>
+      </form>
+    </li>
+  <% } %>
+</ul>
+<%- include('partials/footer') %>
