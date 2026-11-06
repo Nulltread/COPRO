@@ -205,3 +205,48 @@ test('inscription : nouveau compte en attente de validation', async () => {
   const u = db.prepare("SELECT statut FROM users WHERE email='nouveau@test.local'").get();
   assert.strictEqual(u.statut, 'en_attente');
 });
+
+test('décision : un avenant retenu s\'ajoute au devis retenu (cumul)', async () => {
+  const cs = await client(); await login(cs, 'syndic@test.local', 'motdepasse1');
+  const cr1 = await client(); await login(cr1, 'r1@test.local', 'motdepasse1');
+  const db = require('../src/db').getDb();
+  const villa1 = db.prepare("SELECT id FROM units WHERE type='villa' AND numero=1").get().id;
+  const res = await cr1.req('POST', '/tickets', { titre: 'Cumul devis+avenant', categorie: 'Toiture', unite_ids: [String(villa1)] });
+  const tid = Number(res.headers.get('location').split('/').pop());
+  async function addFichier(categorie, montant) {
+    const form = new FormData();
+    form.append('categorie', categorie);
+    form.append('montant', String(montant));
+    form.append('entreprise', 'Entreprise X');
+    form.append('fichiers', new Blob(['%PDF-1.4 x'], { type: 'application/pdf' }), categorie + '.pdf');
+    await cr1.req('POST', `/tickets/${tid}/fichiers`, undefined, form);
+  }
+  await addFichier('devis', 1000);
+  await addFichier('avenant', 250);
+  const fichiers = db.prepare("SELECT * FROM fichiers WHERE ticket_id = ? ORDER BY id").all(tid);
+  await cs.req('POST', `/tickets/${tid}/decision`, { fichier_id: String(fichiers[0].id), justification: 'devis retenu' });
+  await cs.req('POST', `/tickets/${tid}/decision`, { fichier_id: String(fichiers[1].id), justification: 'avenant retenu' });
+  const retenus = db.prepare("SELECT COUNT(*) AS n FROM fichiers WHERE ticket_id = ? AND retenu = 1").get(tid).n;
+  assert.strictEqual(retenus, 2);
+  const total = db.prepare("SELECT COALESCE(SUM(montant),0) AS t FROM fichiers WHERE ticket_id = ? AND retenu = 1").get(tid).t;
+  assert.strictEqual(total, 1250);
+});
+
+test('RGPD : export JSON et suppression de compte', async () => {
+  const c = await client();
+  await c.req('POST', '/inscription', { nom: 'RGPD Test', email: 'rgpd@test.local', motdepasse: 'motdepasse1', unite_id: '1', qualite: 'proprietaire' });
+  const db = require('../src/db').getDb();
+  db.prepare("UPDATE users SET statut = 'valide' WHERE email = 'rgpd@test.local'").run();
+  await login(c, 'rgpd@test.local', 'motdepasse1');
+  const exp = await c.req('GET', '/profil/export');
+  assert.strictEqual(exp.status, 200);
+  const data = await exp.json();
+  assert.strictEqual(data.compte.email, 'rgpd@test.local');
+  assert.ok(Array.isArray(data.tickets));
+  const sup = await c.req('POST', '/profil/supprimer');
+  assert.strictEqual(sup.status, 302);
+  const u = db.prepare("SELECT statut, nom FROM users WHERE email LIKE 'supprime-%'").get();
+  assert.ok(u && u.statut === 'refuse' && u.nom === 'Compte supprimé');
+  const apres = await c.req('GET', '/tickets');
+  assert.strictEqual(apres.status, 302);
+});

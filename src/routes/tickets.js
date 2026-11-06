@@ -199,8 +199,7 @@ router.post('/:id/decision', requireRole('syndic', 'conseil'), (req, res) => {
   const { fichier_id, justification } = req.body;
   const fichier = db.prepare("SELECT * FROM fichiers WHERE id = ? AND ticket_id = ? AND categorie IN ('devis','avenant')").get(Number(fichier_id), id);
   if (!fichier) return res.status(400).render('erreur', { user: req.user, message: 'Devis introuvable.' });
-  db.prepare("UPDATE fichiers SET retenu = 0 WHERE ticket_id = ? AND categorie = 'devis'").run(id);
-  db.prepare("UPDATE fichiers SET retenu = 0 WHERE ticket_id = ? AND categorie = 'avenant' AND retenu = 1").run(id);
+  db.prepare('UPDATE fichiers SET retenu = 0 WHERE ticket_id = ? AND categorie = ?').run(id, fichier.categorie);
   db.prepare('UPDATE fichiers SET retenu = 1 WHERE id = ?').run(fichier.id);
   const donnees = JSON.stringify({ fichier_id: fichier.id, montant: fichier.montant, entreprise: fichier.entreprise, justification: (justification || '').trim() });
   db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu, donnees) VALUES (?, 'decision', ?, ?, ?)")
