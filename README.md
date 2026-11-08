@@ -16,13 +16,18 @@ Application web mobile-first pour suivre les travaux et sinistres d'une copropri
 
 Node.js 22 + Express + SQLite (better-sqlite3), vues EJS rendues côté serveur, PWA (manifest + service worker + web push). Un seul conteneur Docker. Stockage des fichiers sur le disque local du serveur (hors racine web), base SQLite dans `data/`, uploads dans `uploads/`.
 
+## Voir l'interface sans rien installer (mock-up)
+
+Le dossier [`mockups/`](mockups/) contient des pages statiques rendées avec le jeu de données de démo (connexion, inscription, liste des tickets vue syndic et vue résident, détail d'un ticket, formulaire, tableau de bord, notifications). Ouvrez les fichiers `01-…` à `08-…` directement sur GitHub. Régénérer avec `node scripts/render-mockups.js`.
+
 ## Lancer en local
 
 ```bash
 npm install
 npm run seed     # jeu de données de démo (61 villas, 61 garages, comptes, tickets)
 npm start        # http://localhost:3000
-npm test         # tests API
+npm test         # tests API (13 tests)
+node scripts/smoke.js   # vérifications de bout en bout (15 contrôles)
 ```
 
 Comptes de démo (mot de passe `demo1234`) : `syndic@copro.local`, `conseil@copro.local`, `admin@copro.local`, `resident1@copro.local` … `resident61@copro.local`, `locataire1@copro.local` …
