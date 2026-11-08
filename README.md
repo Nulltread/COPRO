@@ -48,6 +48,32 @@ npx web-push generate-vapid-keys
 # renseigner VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY dans .env ou docker-compose.yml
 ```
 
+## Déploiement en production (Scaleway Instance)
+
+L'application tient dans un seul conteneur : un petit VPS suffit (ex. Scaleway Instance DEV1-S, ~4 €/mois, datacenter Paris).
+
+1. **Créer l'Instance** (Ubuntu 24.04 LTS) dans la console Scaleway et noter son IP publique.
+2. **Nom de domaine** : faire pointer un enregistrement A (ex. `copro.mondomaine.fr`) vers cette IP.
+3. **Installer Docker** sur l'instance :
+   ```bash
+   curl -fsSL https://get.docker.com | sh
+   sudo usermod -aG docker $USER   # puis se reconnecter
+   ```
+4. **Cloner le projet** :
+   ```bash
+   git clone https://github.com/Nulltread/COPRO.git /srv/copro
+   cd /srv/copro && git checkout vibe/copro-app-010909
+   ```
+5. **Configurer** : copier `.env.example` en `.env`, renseigner `PORT=3000`, les chemins par défaut, et générer les clés VAPID (`npx web-push generate-vapid-keys`). Remplacer le domaine dans `Caddyfile`.
+6. **Lancer** (HTTPS automatique via Caddy / Let's Encrypt) :
+   ```bash
+   docker compose -f docker-compose.prod.yml up -d --build
+   ```
+7. **Mettre à jour** : `./scripts/deploy.sh` (git pull + rebuild).
+8. **Sauvegarder** : cron quotidien, ex. `0 3 * * * APP_DIR=/srv/copro BACKUP_DIR=/srv/backups /srv/copro/scripts/backup.sh` — sauvegarde la base SQLite (via l'API `backup` de better-sqlite3, sûre à chaud) et archive `uploads/`, rétention 14 jours. Compléter par les snapshots hebdomadaires de l'Instance Scaleway.
+
+Les données persistent dans `./data` et `./uploads` sur le disque de l'instance.
+
 ## Schéma de données
 
 Tables : `units` (villas/garages 1–61), `users` (rôles + statut de validation), `unit_residents` (rattachements multi-occupants), `tickets`, `ticket_units`, `ticket_events` (fil de suivi + décisions), `fichiers` (métadonnées des documents), `notifications`, `push_subscriptions`, `sessions`. Voir `src/db/schema.sql`.
