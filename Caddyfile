@@ -1,3 +1,3 @@
-copro.exemple.fr {
+copro-pinede-gardanne.fr {
     reverse_proxy copro:3000
 }

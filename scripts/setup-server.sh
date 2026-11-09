@@ -31,7 +31,7 @@ PRIV=$(printf '%s\n' "$VAPID" | sed -n 's/^Private Key: //p')
 sed -i "s/^VAPID_PUBLIC_KEY=.*/VAPID_PUBLIC_KEY=$PUB/" .env
 sed -i "s/^VAPID_PRIVATE_KEY=.*/VAPID_PRIVATE_KEY=$PRIV/" .env
 
-sed -i "s/^copro\.exemple\.fr\$/$DOMAIN/" Caddyfile
+sed -i "1s/^[^ ]*/$DOMAIN/" Caddyfile
 
 docker compose -f docker-compose.prod.yml up -d --build
 
