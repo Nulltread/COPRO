@@ -13,6 +13,7 @@ function getDb() {
   db.pragma('foreign_keys = ON');
   const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
   db.exec(schema);
+  require('./migrate').migrate();
   return db;
 }
 
