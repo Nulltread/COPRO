@@ -4,6 +4,21 @@
 
 Tu dois développer une application web de suivi de travaux et sinistres pour une copropriété de 61 pavillons (villas) et 61 garages. Les utilisateurs sont des personnes non techniques : l'interface doit être SIMPLISSIME, mobile-first, et chaque action doit être atteignable en un minimum de clics. L'objectif est un outil simple, accessible et bon marché à héberger.
 
+## Deltas de spec (à cibler pour le dev)
+
+Les évolutions ci-dessous remplacent la version précédente du prompt. Chaque entrée indique la section concernée.
+
+- [ ] **Rôles et comptes** — suppression du « syndic professionnel » ; le conseil syndical devient le seul rôle de gestion des tickets. Auto-inscription (identifiant = email, nom/prénom/téléphone obligatoires, pas de vérification d'email) ; mot de passe changeable dans l'espace compte ; membre du CS = statut additionnel géré collégialement ; **un seul compte admin**, à part.
+- [ ] **Unités** — ajout des **parties communes** (CS rattaché par défaut) ; référentiel **en dur** (non administrable en v1) ; ticket rattaché à une ou plusieurs unités, jamais à une personne ; résident rattachable à plusieurs unités.
+- [ ] **Rattachement d'un résident à une unité** (nouvelle section) — réclamé par le résident, accepté par un résident de la même unité ou le CS ; sans unité validée, pas de création de ticket ; auto-retrait/suppression de compte sans impact sur les tickets.
+- [ ] **Visibilité** — lecture ouverte à tous (fin de la restriction par unité) ; filtres par défaut sur ses unités mais sans restriction ; devis/factures : lecture tous, gestion CS uniquement.
+- [ ] **Cycle de vie du ticket** — nouveaux états : créé → validé par le CS → en consultation → intervention planifiée → travaux acceptés → archivé (remplace Déclaration/Consultation/Attribution/Planification/Réception/Clôture). CS = tous statuts à tout moment en v1. Résolution = acceptée par tous les résidents concernés (un membre CS peut accepter seul) → archivé. Réouverture (CS ou résident) vers le statut d'avant consultation. Édition description/photos à tout moment (même archivé), **loguée avec auteur, log visible par tous**. Suppression : créateur seul si ticket jamais évolué ; CS/admin peuvent supprimer un ticket non évolué d'un compte parti ; CS peut archiver n'importe quel ticket.
+- [ ] **Création de ticket** — unités choisies librement par le créateur (au moins une des siennes, d'autres possibles), modifiables après création ; parties communes = création CS uniquement.
+- [ ] **Compte-rendu d'intervention** — n'est plus un document : champ du ticket rédigé in-app, une instance par unité concernée + une pour le CS, rempli par tout résident concerné.
+- [ ] **Devis et factures** — gestion (ajout/modification) réservée au conseil syndical, lecture ouverte à tous.
+- [ ] **Notifications** — canal unique in-app pour l'instant (suppression de l'email, du web push PWA et de la notification par email des résidents sans compte).
+- [ ] **Stockage** — les fichiers, y compris factures, sont lisibles par tout utilisateur connecté.
+
 ## Rôles et comptes
 
 - **Résident** (copropriétaire ou locataire) : crée des tickets, suit leur avancement, modifie la description et ajoute des photos. **Compte requis pour déclarer un ticket.** Auto-inscription : **identifiant = adresse email**, nom et prénom obligatoires, numéro de téléphone. Pas de vérification d'email en v1. Chacun peut changer son mot de passe dans son espace compte.
