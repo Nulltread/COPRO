@@ -1,4 +1,4 @@
-# Copro des Pavillons — suivi de travaux et sinistres
+# Copro La Pinède de Notre Dame — suivi de travaux et sinistres
 
 Application web mobile-first pour suivre les travaux et sinistres d'une copropriété de pavillons (61 villas, 61 garages). Interface en français, pensée pour des utilisateurs non techniques.
 

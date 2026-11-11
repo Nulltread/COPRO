@@ -5,7 +5,7 @@ self.addEventListener('push', function (event) {
   var data = {};
   try { data = event.data ? event.data.json() : {}; } catch (e) {}
   event.waitUntil(
-    self.registration.showNotification(data.titre || 'Copro des Pavillons', {
+    self.registration.showNotification(data.titre || 'Copro La Pinède de Notre Dame', {
       body: data.message || '',
       tag: 'ticket-' + (data.ticketId || ''),
       data: { ticketId: data.ticketId }
