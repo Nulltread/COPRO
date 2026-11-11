@@ -65,6 +65,8 @@ h3 { font-size: 1rem; margin: 12px 0 4px; }
 fieldset { border: 1px solid #c5c9d1; border-radius: 10px; }
 .entete-page { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .tag-urgent { background: var(--rouge); color: #fff; border-radius: 6px; padding: 3px 8px; font-size: 0.78rem; font-weight: 700; }
+.tag-cs { background: var(--bleu, #1a5fb4); color: #fff; border-radius: 6px; padding: 2px 6px; font-size: 0.75rem; font-weight: 700; }
+.case.ma-unite { background: #e8f0fb; border-radius: 8px; padding: 2px 6px; }
 .tag-retenu { background: var(--vert); color: #fff; border-radius: 6px; padding: 2px 6px; font-size: 0.75rem; font-weight: 700; }
 .filtres { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0 16px; }
 .filtres select { padding: 8px; border-radius: 8px; border: 1px solid #c5c9d1; font-size: 0.95rem; }

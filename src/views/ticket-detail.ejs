@@ -16,22 +16,77 @@
 
 <% if (ticket.description) { %><p><%= ticket.description %></p><% } %>
 
+<% if (peutEditer) { %>
+<section class="bloc">
+  <h2>Modifier le ticket</h2>
+  <form method="post" action="/tickets/<%= ticket.id %>/editer" class="formulaire" enctype="multipart/form-data">
+    <label>Description
+      <textarea name="description" rows="4"><%= ticket.description %></textarea>
+    </label>
+    <label>Ajouter des photos
+      <input type="file" name="fichiers" accept="image/jpeg,image/png,image/webp" multiple class="champ-fichiers">
+    </label>
+    <div class="apercu"></div>
+    <button class="bouton-secondaire" type="submit">Enregistrer les modifications</button>
+  </form>
+</section>
+<% } %>
+
+<% if (peutEditer) { %>
+<section class="bloc">
+  <h2>Unités concernées</h2>
+  <form method="post" action="/tickets/<%= ticket.id %>/unites" class="formulaire">
+    <div class="cases-unites">
+      <% for (const u of unitesModifiables) { %>
+        <label class="case <%= mesUnites.has(u.id) ? 'ma-unite' : '' %>">
+          <input type="checkbox" name="unite_ids" value="<%= u.id %>" <%= unitesIds.includes(u.id) ? 'checked' : '' %>> <%= u.label %><% if (mesUnites.has(u.id)) { %> (votre unité)<% } %>
+        </label>
+      <% } %>
+    </div>
+    <button class="bouton-secondaire" type="submit">Modifier les unités</button>
+  </form>
+</section>
+<% } %>
+
 <section class="bloc">
   <h2>Coût du ticket</h2>
   <p>Devis retenus : <strong><%= coutRetenu.toFixed(2) %> €</strong> · Facturé : <strong><%= totalFacture.toFixed(2) %> €</strong> · Écart : <strong><%= (totalFacture - coutRetenu).toFixed(2) %> €</strong></p>
 </section>
 
-<% if (ticket.etape !== 'cloture' && gestionnaire) { %>
+<% if (gestionnaire) { %>
 <section class="bloc">
-  <h2>Changer d'étape</h2>
+  <h2>Changer d'état</h2>
   <form method="post" action="/tickets/<%= ticket.id %>/transition" class="formulaire-ligne">
     <select name="etape">
       <% etapes.forEach(e => { if (e !== ticket.etape) { %>
         <option value="<%= e %>"><%= etiquettes[e] %></option>
       <% } }) %>
     </select>
-    <input type="text" name="motif" placeholder="Motif (obligatoire si retour en planification)">
+    <input type="text" name="motif" placeholder="Motif (facultatif)">
     <button class="bouton" type="submit">Valider le passage</button>
+  </form>
+</section>
+<% } else if (peutReouvrir) { %>
+<section class="bloc">
+  <h2>Réouvrir le ticket</h2>
+  <form method="post" action="/tickets/<%= ticket.id %>/transition" class="formulaire-ligne">
+    <input type="hidden" name="etape" value="<%= ticket.etape_avant_consultation %>">
+    <button class="bouton" type="submit">Réouvrir (retour à « <%= etiquettes[ticket.etape_avant_consultation] %> »)</button>
+  </form>
+</section>
+<% } %>
+
+<% if (ticket.etape === 'travaux_acceptes' && estConcerne) { %>
+<section class="bloc">
+  <h2>Résolution (travaux acceptés)</h2>
+  <p class="aide">La résolution doit être acceptée par tous les résidents concernés<% if (!gestionnaire) { %> (un membre du conseil syndical peut accepter seul)<% } %> pour archiver le ticket.</p>
+  <ul class="liste-simple">
+    <% for (const r of residents) { %>
+      <li><%= r.nom %> — <% if (resolutions.some(x => x.user_id === r.id)) { %>✅ accepté<% } else { %>⏳ en attente<% } %></li>
+    <% } %>
+  </ul>
+  <form method="post" action="/tickets/<%= ticket.id %>/resolution">
+    <button class="bouton" type="submit">J'accepte la résolution</button>
   </form>
 </section>
 <% } %>
@@ -40,7 +95,7 @@
   <h2>Documents</h2>
   <div class="docs">
     <% const parCat = {}; fichiers.forEach(f => { (parCat[f.categorie] = parCat[f.categorie] || []).push(f); }); %>
-    <% const nomsCat = { photo: 'Photos', devis: 'Devis', avenant: 'Avenants', facture: 'Factures', decision: 'Décisions', compte_rendu: 'Comptes-rendus' }; %>
+    <% const nomsCat = { photo: 'Photos', devis: 'Devis', avenant: 'Avenants', facture: 'Factures', decision: 'Décisions', compte_rendu: 'Comptes-rendus (documents)' }; %>
     <% for (const cat of categoriesFichier) { if (!parCat[cat]) continue; %>
       <h3><%= nomsCat[cat] %></h3>
       <ul class="liste-docs">
@@ -51,7 +106,12 @@
             <% if (f.entreprise) { %><span class="auteur"><%= f.entreprise %></span><% } %>
             <% if (f.delai) { %><span class="auteur">délai : <%= f.delai %></span><% } %>
             <% if (f.retenu) { %><span class="tag-retenu">RETENU</span><% } %>
-            <span class="auteur">par <%= f.auteur_nom %></span>
+            <span class="auteur">par <%= f.auteur_nom || 'Compte supprimé' %></span>
+            <% if (f.categorie === 'photo' && (f.auteur_id === user.id || gestionnaire)) { %>
+              <form method="post" action="/fichiers/<%= f.id %>/supprimer" class="formulaire-ligne" onsubmit="return confirm('Supprimer cette photo ?');">
+                <button class="bouton-secondaire" type="submit">Supprimer</button>
+              </form>
+            <% } %>
           </li>
         <% } %>
       </ul>
@@ -66,28 +126,59 @@
       <% } %>
     <% } %>
   </div>
-  <% if (ticket.etape !== 'cloture') { %>
   <form method="post" action="/tickets/<%= ticket.id %>/fichiers" enctype="multipart/form-data" class="formulaire">
     <label>Catégorie
       <select name="categorie">
-        <% for (const c of categoriesFichier) { %><option value="<%= c %>"><%= c %></option><% } %>
+        <% if (gestionnaire) { %>
+          <% for (const c of categoriesFichier) { %><option value="<%= c %>"><%= c %></option><% } %>
+        <% } else { %>
+          <option value="photo">photo</option>
+          <option value="compte_rendu">compte_rendu</option>
+        <% } %>
       </select>
     </label>
-    <label>Montant (€) — pour devis, avenants, factures
-      <input type="number" step="0.01" min="0" name="montant">
-    </label>
-    <label>Entreprise
-      <input type="text" name="entreprise">
-    </label>
-    <label>Délai
-      <input type="text" name="delai" placeholder="Ex. : 2 semaines">
-    </label>
+    <% if (gestionnaire) { %>
+      <label>Montant (€) — pour devis, avenants, factures
+        <input type="number" step="0.01" min="0" name="montant">
+      </label>
+      <label>Entreprise
+        <input type="text" name="entreprise">
+      </label>
+      <label>Délai
+        <input type="text" name="delai" placeholder="Ex. : 2 semaines">
+      </label>
+    <% } %>
     <label>Fichiers (images compressées automatiquement, PDF acceptés)
       <input type="file" name="fichiers" accept="image/jpeg,image/png,image/webp,application/pdf" multiple required class="champ-fichiers">
     </label>
     <div class="apercu"></div>
     <button class="bouton" type="submit">Ajouter</button>
   </form>
+</section>
+
+<section class="bloc" id="cr">
+  <h2>Comptes-rendus d'intervention</h2>
+  <% const crParUnite = {}; comptesRendus.forEach(cr => { crParUnite[cr.unit_id === null ? 'cs' : cr.unit_id] = cr; }); %>
+  <% for (const u of unites) { const cr = crParUnite[u.id]; %>
+    <h3><%= u.label %></h3>
+    <% if (cr) { %><p><%= cr.contenu %></p><p class="aide">rédigé par <%= cr.auteur_nom || 'Compte supprimé' %> le <%= cr.updated_at %></p><% } %>
+    <% if (estConcerne) { %>
+      <form method="post" action="/tickets/<%= ticket.id %>/cr" class="formulaire-ligne">
+        <input type="hidden" name="unit_id" value="<%= u.id %>">
+        <input type="text" name="contenu" placeholder="Compte-rendu pour <%= u.label %>…" value="<%= cr ? cr.contenu : '' %>" required>
+        <button class="bouton-secondaire" type="submit">Enregistrer</button>
+      </form>
+    <% } %>
+  <% } %>
+  <h3>Conseil syndical</h3>
+  <% const crCS = crParUnite['cs']; %>
+  <% if (crCS) { %><p><%= crCS.contenu %></p><p class="aide">rédigé par <%= crCS.auteur_nom || 'Compte supprimé' %> le <%= crCS.updated_at %></p><% } %>
+  <% if (estConcerne) { %>
+    <form method="post" action="/tickets/<%= ticket.id %>/cr" class="formulaire-ligne">
+      <input type="hidden" name="unit_id" value="cs">
+      <input type="text" name="contenu" placeholder="Compte-rendu pour le conseil syndical…" value="<%= crCS ? crCS.contenu : '' %>" required>
+      <button class="bouton-secondaire" type="submit">Enregistrer</button>
+    </form>
   <% } %>
 </section>
 
@@ -98,11 +189,17 @@
       <li><span class="date"><%= e.created_at %></span> <strong><%= e.auteur_nom || 'Système' %></strong> — <%= e.contenu %></li>
     <% } %>
   </ul>
-  <% if (ticket.etape !== 'cloture') { %>
   <form method="post" action="/tickets/<%= ticket.id %>/commentaire" class="formulaire-ligne">
     <input type="text" name="contenu" placeholder="Écrire un commentaire…" required>
     <button class="bouton" type="submit">Envoyer</button>
   </form>
-  <% } %>
 </section>
+
+<% if (peutSupprimer) { %>
+<section class="bloc">
+  <form method="post" action="/tickets/<%= ticket.id %>/supprimer" onsubmit="return confirm('Supprimer définitivement ce ticket ?');">
+    <button class="bouton-secondaire">🗑 Supprimer le ticket</button>
+  </form>
+</section>
+<% } %>
 <%- include('partials/footer') %>

@@ -1,24 +1,25 @@
 <%- include('partials/header', { titre: 'Comptes' }) %>
 <h1>Comptes</h1>
 <% if (message) { %><p class="info"><%= message %></p><% } %>
-<% if (enAttente.length > 0) { %>
-<h2>En attente de validation</h2>
-<ul class="liste-simple">
-  <% for (const u of enAttente) { %>
-    <li>
-      <strong><%= u.nom %></strong> (<%= u.email %>) — <%= u.unites || 'aucune unité' %>
-      <form method="post" action="/admin/comptes/<%= u.id %>/valider" class="formulaire-ligne">
-        <button class="bouton" type="submit" name="action" value="valider">Valider</button>
-        <button class="bouton-secondaire" type="submit" name="action" value="refuser">Refuser</button>
-      </form>
-    </li>
-  <% } %>
-</ul>
-<% } %>
-<h2>Tous les comptes</h2>
+<p class="aide">Le statut de membre du conseil syndical (CS) se gère collégialement : un membre CS peut s'attribuer ou se retirer ce statut, ou le faire pour un autre membre CS.</p>
 <ul class="liste-simple">
   <% for (const u of users) { %>
-    <li><strong><%= u.nom %></strong> — <%= u.role %> — <%= u.statut %> — <%= u.unites || '' %></li>
+    <li>
+      <strong><%= u.prenom %> <%= u.nom %></strong> — <%= u.email %> — <%= u.unites || 'aucune unité' %>
+      <% if (u.conseil_syndical === 1) { %><span class="tag-cs">CS</span><% } %>
+      <% if (u.role === 'admin') { %><span class="auteur">admin</span><% } %>
+      <% if (u.statut === 'supprime') { %><span class="auteur">compte supprimé</span><% } %>
+      <% if (u.role !== 'admin' && u.conseil_syndical === 1 && (user.conseil_syndical === 1 || user.role === 'admin')) { %>
+        <form method="post" action="/admin/comptes/<%= u.id %>/conseil" class="formulaire-ligne">
+          <button class="bouton-secondaire" type="submit" name="action" value="retirer">Retirer du CS</button>
+        </form>
+      <% } %>
+      <% if (u.role !== 'admin' && u.conseil_syndical === 0 && user.role === 'admin') { %>
+        <form method="post" action="/admin/comptes/<%= u.id %>/conseil" class="formulaire-ligne">
+          <button class="bouton-secondaire" type="submit" name="action" value="ajouter">Ajouter au CS</button>
+        </form>
+      <% } %>
+    </li>
   <% } %>
 </ul>
 <%- include('partials/footer') %>

@@ -4,17 +4,18 @@ Application web mobile-first pour suivre les travaux et sinistres d'une copropri
 
 ## Fonctionnalités
 
-- **Comptes** : résident (propriétaire/locataire), syndic, conseil syndical, administrateur. Inscription réservée aux résidents référencés sur une unité, **validée par le syndic, le conseil syndical ou l'admin**.
-- **Tickets** : déclaration (titre, description, catégorie, une ou plusieurs unités, photos, indicateur « urgent »), puis cycle de vie en 6 étapes validées par le syndic/conseil : Déclaration → Consultation → Attribution → Planification → Réception → Clôture (retour possible de Réception vers Planification avec motif). Fil de suivi horodaté, archivage illimité des tickets clôturés.
-- **Visibilité** : chaque résident ne voit que les tickets de ses propres unités ; syndic/conseil/admin voient tout.
-- **Documents** : photos à chaque étape (compression automatique côté navigateur : max 1600 px, ~80 %), devis, avenants, factures, décisions, comptes-rendus, avec montant/entreprise/délai. Mise en concurrence des devis et décision enregistrée. Coût du ticket : total retenu, total facturé, écart. Fichiers servis uniquement après authentification et vérification des droits.
-- **Notifications** : in-app + **web push (PWA)** pour chaque événement du ticket (création, étape, devis, décision, commentaire, retour en planification). Tickets urgents notifiés en priorité. **Pas d'envoi d'emails** (choix retenu : notifications par l'application).
+- **Comptes** : auto-inscription (email + nom + prénom + téléphone, sans vérification d'email), **un seul compte administrateur**. Le **conseil syndical (CS)** est un statut additionnel géré collégialement par ses membres. Un résident **réclame son rattachement** à une villa/garage, accepté par un résident de la même unité ou le CS ; sans unité validée, pas de création de ticket.
+- **Unités** : 61 villas, 61 garages (numérotés de 1 à 61) + **parties communes** (réservées au CS). Référentiel en dur en v1. Un ticket est rattaché à une ou plusieurs unités ; un résident peut être rattaché à plusieurs unités.
+- **Tickets** : déclaration (titre, description, catégorie, unités choisies librement dont au moins une des siennes, photos, indicateur « urgent »), puis cycle de vie : **Créé → Validé par le CS → En consultation → Intervention planifiée → Travaux acceptés → Archivé**. En v1 le CS passe librement à n'importe quel état. Résolution acceptée par tous les résidents concernés (un membre CS peut accepter seul) → archivé ; réouverture possible vers l'état d'avant consultation. Description/photos modifiables à tout moment (même archivé), chaque modification loguée avec son auteur. Suppression par le créateur uniquement si le ticket n'a jamais évolué. Fil de suivi horodaté, archivage illimité.
+- **Visibilité** : **lecture ouverte à tous** (filtres d'affichage par défaut sur ses unités, sans restriction).
+- **Documents** : photos à chaque étape (compression automatique côté navigateur : max 1600 px, ~80 %). **Devis, avenants, factures gérés uniquement par le CS**, lisibles par tous, avec montant/entreprise/délai et décision enregistrée. **Compte-rendu d'intervention = champ du ticket dans l'app** (une instance par unité + une pour le CS), plus document uploadé possible. Coût du ticket : total retenu, total facturé, écart. Fichiers servis uniquement après authentification.
+- **Notifications** : **in-app uniquement** (pas d'email, pas de web push) pour chaque événement (création, changement d'état, nouveau devis, décision, acceptation de la résolution, réclamation de rattachement) : notifie le CS et les résidents concernés.
 - **Multi-occupants** : propriétaire + locataire d'une même unité sont tous deux notifiés et peuvent agir.
-- **Recherche/filtres** : par état, catégorie, urgence. **Tableau de bord** syndic/conseil : tickets ouverts, en attente de décision, urgents, coûts cumulés.
+- **Recherche/filtres** : par état, catégorie, unité (défaut : ses unités), coût min, urgence. **Tableau de bord** CS/admin : tickets ouverts, en consultation, urgents, coûts cumulés.
 
 ## Stack
 
-Node.js 22 + Express + SQLite (better-sqlite3), vues EJS rendues côté serveur, PWA (manifest + service worker + web push). Un seul conteneur Docker. Stockage des fichiers sur le disque local du serveur (hors racine web), base SQLite dans `data/`, uploads dans `uploads/`.
+Node.js 22 + Express + SQLite (better-sqlite3), vues EJS rendues côté serveur. Un seul conteneur Docker. Stockage des fichiers sur le disque local du serveur (hors racine web), base SQLite dans `data/`, uploads dans `uploads/`.
 
 ## Voir l'interface sans rien installer (mock-up)
 
@@ -26,11 +27,11 @@ Le dossier [`mockups/`](mockups/) contient des pages statiques rendées avec le 
 npm install
 npm run seed     # jeu de données de démo (61 villas, 61 garages, comptes, tickets)
 npm start        # http://localhost:3000
-npm test         # tests API (13 tests)
-node scripts/smoke.js   # vérifications de bout en bout (15 contrôles)
+npm test         # tests API (18 tests)
+node scripts/smoke.js   # vérifications de bout en bout (23 contrôles)
 ```
 
-Comptes de démo (mot de passe `demo1234`) : `syndic@copro.local`, `conseil@copro.local`, `admin@copro.local`, `resident1@copro.local` … `resident61@copro.local`, `locataire1@copro.local` …
+Comptes de démo (mot de passe `demo1234`) : `admin@copro.local` (unique admin), `conseil1@copro.local` et `conseil2@copro.local` (membres du conseil syndical), `resident1@copro.local` … `resident61@copro.local`, `locataire1@copro.local` … `locataire10@copro.local`, `attente@copro.local` (rattachement en attente).
 
 ## Déploiement avec Docker (VPS ou PaaS conteneurisé)
 
@@ -40,13 +41,6 @@ docker compose up -d --build
 ```
 
 Les données persistent dans `./data` et `./uploads` (à sauvegarder régulièrement, ex. cron + `sqlite3 .backup` ou copie du dossier).
-
-Pour activer les notifications push, générer des clés VAPID puis les renseigner :
-
-```bash
-npx web-push generate-vapid-keys
-# renseigner VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY dans .env ou docker-compose.yml
-```
 
 ## Déploiement en production (Scaleway Instance)
 
@@ -64,7 +58,7 @@ L'application tient dans un seul conteneur : un petit VPS suffit (ex. Scaleway I
    git clone https://github.com/Nulltread/COPRO.git /srv/copro
    cd /srv/copro && git checkout vibe/copro-app-010909
    ```
-5. **Configurer** : copier `.env.example` en `.env`, renseigner `PORT=3000`, les chemins par défaut, et générer les clés VAPID (`npx web-push generate-vapid-keys`). Remplacer le domaine dans `Caddyfile`.
+5. **Configurer** : copier `.env.example` en `.env`, renseigner `PORT=3000` et les chemins par défaut. Remplacer le domaine dans `Caddyfile`.
 6. **Lancer** (HTTPS automatique via Caddy / Let's Encrypt) :
    ```bash
    docker compose -f docker-compose.prod.yml up -d --build
@@ -90,8 +84,8 @@ Le workflow exécute `scripts/deploy.sh` sur le serveur (git pull + `docker comp
 
 ## Schéma de données
 
-Tables : `units` (villas/garages 1–61), `users` (rôles + statut de validation), `unit_residents` (rattachements multi-occupants), `tickets`, `ticket_units`, `ticket_events` (fil de suivi + décisions), `fichiers` (métadonnées des documents), `notifications`, `push_subscriptions`, `sessions`. Voir `src/db/schema.sql`.
+Tables : `units` (villas/garages 1–61 + parties communes), `users` (rôles resident/admin + statut `conseil_syndical`), `rattachements` (réclamé par le résident, accepté par un résident de l'unité ou le CS), `unit_residents` (unités validées), `tickets`, `ticket_units`, `ticket_events` (fil de suivi + décisions + éditions), `resolutions` (acceptations des travaux), `comptes_rendus` (une instance par unité + une pour le CS), `fichiers` (métadonnées des documents), `notifications` (in-app), `sessions`. Voir `src/db/schema.sql`.
 
 ## Limites de sécurité
 
-- Mots de passe hachés (scrypt), sessions en cookie HttpOnly, contrôle d'accès par rôle et par unité sur chaque route de ticket/fichier, types MIME et taille max (10 Mo) vérifiés à l'upload, en-têtes `nosniff` sur les fichiers servis.
+- Mots de passe hachés (scrypt), sessions en cookie HttpOnly, contrôle d'accès par rôle/statut sur chaque route (lecture ouverte des tickets, écriture réservée selon les règles du CS), types MIME et taille max (10 Mo) vérifiés à l'upload, en-têtes `nosniff` sur les fichiers servis.

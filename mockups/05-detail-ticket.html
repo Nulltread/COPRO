@@ -7,7 +7,6 @@
   <title>Fuite sous l&#39;évier de la cuisine — Copro La Pinède de Notre Dame</title>
   <link rel="stylesheet" href="style.css">
   
-  
 </head>
 <body>
 
@@ -16,15 +15,15 @@
   <nav class="nav">
     <a href="/tickets">Tickets</a>
     <a href="/tickets/nouveau" class="bouton-nav">+ Nouveau</a>
+    <a href="/rattachements">Rattachements</a>
     <a href="/notifications" class="nav-notif">🔔<span class="badge">3</span></a>
     
       <a href="/tableau-de-bord">Tableau de bord</a>
     
     
-    
       <a href="/admin/comptes">Comptes</a>
     
-    <a href="/profil">👤 Syndic Pro</a>
+    <a href="/profil">👤 Marie <span class="tag-cs">CS</span></a>
   </nav>
 </header>
 
@@ -34,43 +33,563 @@
   <h1>Fuite sous l&#39;évier de la cuisine</h1>
   <span class="tag-urgent">URGENT</span>
 </div>
-<p class="aide">Plomberie · Villa 1 · déclaré le 2026-11-08 22:00:48</p>
+<p class="aide">Plomberie · Villa 1 · déclaré le 2026-11-11 15:37:42</p>
 
 <ol class="metro">
   
     <li class="faite">
       <span class="puce">✓</span>
-      <span class="nom">Déclaration</span>
+      <span class="nom">Créé</span>
+    </li>
+  
+    <li class="faite">
+      <span class="puce">✓</span>
+      <span class="nom">Validé par le conseil syndical</span>
     </li>
   
     <li class="actuelle">
-      <span class="puce">2</span>
-      <span class="nom">Consultation des devis</span>
-    </li>
-  
-    <li class="">
       <span class="puce">3</span>
-      <span class="nom">Attribution</span>
+      <span class="nom">En consultation</span>
     </li>
   
     <li class="">
       <span class="puce">4</span>
-      <span class="nom">Planification des travaux</span>
+      <span class="nom">Intervention planifiée</span>
     </li>
   
     <li class="">
       <span class="puce">5</span>
-      <span class="nom">Réception des travaux</span>
+      <span class="nom">Travaux acceptés</span>
     </li>
   
     <li class="">
       <span class="puce">6</span>
-      <span class="nom">Clôturé</span>
+      <span class="nom">Archivé</span>
     </li>
   
 </ol>
 
 <p>Goutte à goutte depuis ce matin, le siphon fuit.</p>
+
+
+<section class="bloc">
+  <h2>Modifier le ticket</h2>
+  <form method="post" action="/tickets/1/editer" class="formulaire" enctype="multipart/form-data">
+    <label>Description
+      <textarea name="description" rows="4">Goutte à goutte depuis ce matin, le siphon fuit.</textarea>
+    </label>
+    <label>Ajouter des photos
+      <input type="file" name="fichiers" accept="image/jpeg,image/png,image/webp" multiple class="champ-fichiers">
+    </label>
+    <div class="apercu"></div>
+    <button class="bouton-secondaire" type="submit">Enregistrer les modifications</button>
+  </form>
+</section>
+
+
+
+<section class="bloc">
+  <h2>Unités concernées</h2>
+  <form method="post" action="/tickets/1/unites" class="formulaire">
+    <div class="cases-unites">
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="1" checked> Villa 1
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="3" > Villa 2
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="5" > Villa 3
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="7" > Villa 4
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="9" > Villa 5
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="11" > Villa 6
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="13" > Villa 7
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="15" > Villa 8
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="17" > Villa 9
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="19" > Villa 10
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="21" > Villa 11
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="23" > Villa 12
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="25" > Villa 13
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="27" > Villa 14
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="29" > Villa 15
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="31" > Villa 16
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="33" > Villa 17
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="35" > Villa 18
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="37" > Villa 19
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="39" > Villa 20
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="41" > Villa 21
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="43" > Villa 22
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="45" > Villa 23
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="47" > Villa 24
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="49" > Villa 25
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="51" > Villa 26
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="53" > Villa 27
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="55" > Villa 28
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="57" > Villa 29
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="59" > Villa 30
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="61" > Villa 31
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="63" > Villa 32
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="65" > Villa 33
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="67" > Villa 34
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="69" > Villa 35
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="71" > Villa 36
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="73" > Villa 37
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="75" > Villa 38
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="77" > Villa 39
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="79" > Villa 40
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="81" > Villa 41
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="83" > Villa 42
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="85" > Villa 43
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="87" > Villa 44
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="89" > Villa 45
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="91" > Villa 46
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="93" > Villa 47
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="95" > Villa 48
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="97" > Villa 49
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="99" > Villa 50
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="101" > Villa 51
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="103" > Villa 52
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="105" > Villa 53
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="107" > Villa 54
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="109" > Villa 55
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="111" > Villa 56
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="113" > Villa 57
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="115" > Villa 58
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="117" > Villa 59
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="119" > Villa 60
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="121" > Villa 61
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="2" > Garage 1
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="4" > Garage 2
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="6" > Garage 3
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="8" > Garage 4
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="10" > Garage 5
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="12" > Garage 6
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="14" > Garage 7
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="16" > Garage 8
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="18" > Garage 9
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="20" > Garage 10
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="22" > Garage 11
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="24" > Garage 12
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="26" > Garage 13
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="28" > Garage 14
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="30" > Garage 15
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="32" > Garage 16
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="34" > Garage 17
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="36" > Garage 18
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="38" > Garage 19
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="40" > Garage 20
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="42" > Garage 21
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="44" > Garage 22
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="46" > Garage 23
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="48" > Garage 24
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="50" > Garage 25
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="52" > Garage 26
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="54" > Garage 27
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="56" > Garage 28
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="58" > Garage 29
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="60" > Garage 30
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="62" > Garage 31
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="64" > Garage 32
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="66" > Garage 33
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="68" > Garage 34
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="70" > Garage 35
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="72" > Garage 36
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="74" > Garage 37
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="76" > Garage 38
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="78" > Garage 39
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="80" > Garage 40
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="82" > Garage 41
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="84" > Garage 42
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="86" > Garage 43
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="88" > Garage 44
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="90" > Garage 45
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="92" > Garage 46
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="94" > Garage 47
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="96" > Garage 48
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="98" > Garage 49
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="100" > Garage 50
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="102" > Garage 51
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="104" > Garage 52
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="106" > Garage 53
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="108" > Garage 54
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="110" > Garage 55
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="112" > Garage 56
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="114" > Garage 57
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="116" > Garage 58
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="118" > Garage 59
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="120" > Garage 60
+        </label>
+      
+        <label class="case ">
+          <input type="checkbox" name="unite_ids" value="122" > Garage 61
+        </label>
+      
+        <label class="case ma-unite">
+          <input type="checkbox" name="unite_ids" value="123" > Parties communes (votre unité)
+        </label>
+      
+    </div>
+    <button class="bouton-secondaire" type="submit">Modifier les unités</button>
+  </form>
+</section>
+
 
 <section class="bloc">
   <h2>Coût du ticket</h2>
@@ -79,25 +598,27 @@
 
 
 <section class="bloc">
-  <h2>Changer d'étape</h2>
+  <h2>Changer d'état</h2>
   <form method="post" action="/tickets/1/transition" class="formulaire-ligne">
     <select name="etape">
       
-        <option value="declaration">Déclaration</option>
+        <option value="cree">Créé</option>
       
-        <option value="attribution">Attribution</option>
+        <option value="valide_cs">Validé par le conseil syndical</option>
       
-        <option value="planification">Planification des travaux</option>
+        <option value="intervention_planifiee">Intervention planifiée</option>
       
-        <option value="reception">Réception des travaux</option>
+        <option value="travaux_acceptes">Travaux acceptés</option>
       
-        <option value="cloture">Clôturé</option>
+        <option value="archive">Archivé</option>
       
     </select>
-    <input type="text" name="motif" placeholder="Motif (obligatoire si retour en planification)">
+    <input type="text" name="motif" placeholder="Motif (facultatif)">
     <button class="bouton" type="submit">Valider le passage</button>
   </form>
 </section>
+
+
 
 
 <section class="bloc">
@@ -107,28 +628,56 @@
     
     
   </div>
-  
   <form method="post" action="/tickets/1/fichiers" enctype="multipart/form-data" class="formulaire">
     <label>Catégorie
       <select name="categorie">
-        <option value="photo">photo</option><option value="devis">devis</option><option value="avenant">avenant</option><option value="facture">facture</option><option value="decision">decision</option><option value="compte_rendu">compte_rendu</option>
+        
+          <option value="photo">photo</option><option value="devis">devis</option><option value="avenant">avenant</option><option value="facture">facture</option><option value="decision">decision</option><option value="compte_rendu">compte_rendu</option>
+        
       </select>
     </label>
-    <label>Montant (€) — pour devis, avenants, factures
-      <input type="number" step="0.01" min="0" name="montant">
-    </label>
-    <label>Entreprise
-      <input type="text" name="entreprise">
-    </label>
-    <label>Délai
-      <input type="text" name="delai" placeholder="Ex. : 2 semaines">
-    </label>
+    
+      <label>Montant (€) — pour devis, avenants, factures
+        <input type="number" step="0.01" min="0" name="montant">
+      </label>
+      <label>Entreprise
+        <input type="text" name="entreprise">
+      </label>
+      <label>Délai
+        <input type="text" name="delai" placeholder="Ex. : 2 semaines">
+      </label>
+    
     <label>Fichiers (images compressées automatiquement, PDF acceptés)
       <input type="file" name="fichiers" accept="image/jpeg,image/png,image/webp,application/pdf" multiple required class="champ-fichiers">
     </label>
     <div class="apercu"></div>
     <button class="bouton" type="submit">Ajouter</button>
   </form>
+</section>
+
+<section class="bloc" id="cr">
+  <h2>Comptes-rendus d'intervention</h2>
+  
+  
+    <h3>Villa 1</h3>
+    
+    
+      <form method="post" action="/tickets/1/cr" class="formulaire-ligne">
+        <input type="hidden" name="unit_id" value="1">
+        <input type="text" name="contenu" placeholder="Compte-rendu pour Villa 1…" value="" required>
+        <button class="bouton-secondaire" type="submit">Enregistrer</button>
+      </form>
+    
+  
+  <h3>Conseil syndical</h3>
+  
+  
+  
+    <form method="post" action="/tickets/1/cr" class="formulaire-ligne">
+      <input type="hidden" name="unit_id" value="cs">
+      <input type="text" name="contenu" placeholder="Compte-rendu pour le conseil syndical…" value="" required>
+      <button class="bouton-secondaire" type="submit">Enregistrer</button>
+    </form>
   
 </section>
 
@@ -136,20 +685,22 @@
   <h2>Fil de suivi</h2>
   <ul class="fil">
     
-      <li><span class="date">2026-11-08 22:00:48</span> <strong>Martin 1</strong> — Ticket déclaré (URGENT) : Fuite sous l&#39;évier de la cuisine</li>
+      <li><span class="date">2026-11-11 15:37:42</span> <strong>Martin</strong> — Ticket déclaré (URGENT) : Fuite sous l&#39;évier de la cuisine</li>
     
-      <li><span class="date">2026-11-08 22:00:48</span> <strong>Martin 1</strong> — Passage à l&#39;étape « Consultation des devis »</li>
+      <li><span class="date">2026-11-11 15:37:42</span> <strong>Martin</strong> — Passage à l&#39;étape « Validé par le conseil syndical »</li>
     
-      <li><span class="date">2026-11-08 22:00:48</span> <strong>Martin 1</strong> — 2 devis ajoutés</li>
+      <li><span class="date">2026-11-11 15:37:42</span> <strong>Martin</strong> — Passage à l&#39;étape « En consultation »</li>
+    
+      <li><span class="date">2026-11-11 15:37:42</span> <strong>Martin</strong> — 2 devis ajoutés</li>
     
   </ul>
-  
   <form method="post" action="/tickets/1/commentaire" class="formulaire-ligne">
     <input type="text" name="contenu" placeholder="Écrire un commentaire…" required>
     <button class="bouton" type="submit">Envoyer</button>
   </form>
-  
 </section>
+
+
 </main>
 
 </body>

@@ -1,9 +1,0 @@
-<%- include('partials/header', { user, titre: 'Compte' }) %>
-<h1>Votre compte n'est pas encore actif</h1>
-<% if (statut === 'en_attente') { %>
-  <p>Votre compte est en attente de validation par le syndic ou le conseil syndical.</p>
-<% } else { %>
-  <p>Votre demande de compte a été refusée. Contactez le syndic si vous pensez qu'il s'agit d'une erreur.</p>
-<% } %>
-<form method="post" action="/deconnexion"><button class="bouton-secondaire">Se déconnecter</button></form>
-<%- include('partials/footer') %>

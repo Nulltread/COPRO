@@ -25,12 +25,6 @@ cp .env.example .env
 if ! command -v node >/dev/null 2>&1; then
   DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs npm
 fi
-VAPID=$(npx --yes web-push generate-vapid-keys)
-PUB=$(printf '%s\n' "$VAPID" | sed -n 's/^Public Key: //p')
-PRIV=$(printf '%s\n' "$VAPID" | sed -n 's/^Private Key: //p')
-sed -i "s/^VAPID_PUBLIC_KEY=.*/VAPID_PUBLIC_KEY=$PUB/" .env
-sed -i "s/^VAPID_PRIVATE_KEY=.*/VAPID_PRIVATE_KEY=$PRIV/" .env
-
 sed -i "1s/^[^ ]*/$DOMAIN/" Caddyfile
 
 docker compose -f docker-compose.prod.yml up -d --build

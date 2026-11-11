@@ -23,13 +23,4 @@ router.get('/api/non-lues', (req, res) => {
   res.json({ nonLues: require('../notifications').nonLues(req.user.id) });
 });
 
-router.post('/api/push/abonnement', (req, res) => {
-  const { endpoint, keys } = req.body || {};
-  if (!endpoint || !keys || !keys.p256dh || !keys.auth) return res.status(400).json({ erreur: 'Abonnement invalide' });
-  const db = getDb();
-  db.prepare('INSERT OR IGNORE INTO push_subscriptions (user_id, endpoint, p256dh, auth) VALUES (?, ?, ?, ?)')
-    .run(req.user.id, endpoint, keys.p256dh, keys.auth);
-  res.json({ ok: true });
-});
-
 module.exports = router;

@@ -7,7 +7,6 @@
   <title>Tickets — Copro La Pinède de Notre Dame</title>
   <link rel="stylesheet" href="style.css">
   
-  
 </head>
 <body>
 
@@ -16,15 +15,15 @@
   <nav class="nav">
     <a href="/tickets">Tickets</a>
     <a href="/tickets/nouveau" class="bouton-nav">+ Nouveau</a>
+    <a href="/rattachements">Rattachements</a>
     <a href="/notifications" class="nav-notif">🔔<span class="badge">3</span></a>
     
       <a href="/tableau-de-bord">Tableau de bord</a>
     
     
-    
       <a href="/admin/comptes">Comptes</a>
     
-    <a href="/profil">👤 Syndic Pro</a>
+    <a href="/profil">👤 Marie <span class="tag-cs">CS</span></a>
   </nav>
 </header>
 
@@ -34,21 +33,22 @@
   <h1>Tickets</h1>
   <a class="bouton" href="/tickets/nouveau">+ Nouveau ticket</a>
 </div>
+
 <form method="get" action="/tickets" class="filtres">
   <select name="etape">
     <option value="">Tous les états</option>
     
-      <option value="declaration" >Déclaration</option>
+      <option value="cree" >Créé</option>
     
-      <option value="consultation" >Consultation des devis</option>
+      <option value="valide_cs" >Validé par le conseil syndical</option>
     
-      <option value="attribution" >Attribution</option>
+      <option value="consultation" >En consultation</option>
     
-      <option value="planification" >Planification des travaux</option>
+      <option value="intervention_planifiee" >Intervention planifiée</option>
     
-      <option value="reception" >Réception des travaux</option>
+      <option value="travaux_acceptes" >Travaux acceptés</option>
     
-      <option value="cloture" >Clôturé</option>
+      <option value="archive" >Archivé</option>
     
   </select>
   <select name="categorie">
@@ -74,7 +74,10 @@
     
   </select>
   <select name="unite">
-    <option value="">Toutes les unités</option>
+    
+      <option value="" >Mes unités (défaut)</option>
+    
+    <option value="toutes" selected>Toutes les unités</option>
     
       <option value="1" >Villa 1</option>
     
@@ -320,6 +323,8 @@
     
       <option value="122" >Garage 61</option>
     
+      <option value="123" >Parties communes</option>
+    
   </select>
   <input type="number" name="cout_min" min="0" step="0.01" placeholder="Coût min (€)" value="" style="max-width:130px">
   <label class="case"><input type="checkbox" name="urgent" value="1" > Urgents</label>
@@ -334,7 +339,7 @@
           <strong>Fuite sous l&#39;évier de la cuisine</strong>
           <span class="tag-urgent">URGENT</span>
         </div>
-        <div class="ligne2">Consultation des devis · Plomberie · villa 1</div>
+        <div class="ligne2">En consultation · Plomberie · villa 1</div>
       </a>
     </li>
   
@@ -344,7 +349,7 @@
           <strong>Infiltration plafond salon — villa 20 et 21</strong>
           <span class="tag-urgent">URGENT</span>
         </div>
-        <div class="ligne2">Déclaration · Toiture · villa 20, villa 21</div>
+        <div class="ligne2">Créé · Toiture · villa 20, villa 21</div>
       </a>
     </li>
   
@@ -354,7 +359,7 @@
           <strong>Volet roulant bloqué</strong>
           
         </div>
-        <div class="ligne2">Attribution · Menuiserie · villa 5</div>
+        <div class="ligne2">Validé par le conseil syndical · Menuiserie · villa 5</div>
       </a>
     </li>
   
@@ -364,7 +369,7 @@
           <strong>Fissure sur le mur du garage</strong>
           
         </div>
-        <div class="ligne2">Planification des travaux · Humidité / Infiltration · garage 12</div>
+        <div class="ligne2">Intervention planifiée · Humidité / Infiltration · garage 12</div>
       </a>
     </li>
   
@@ -374,17 +379,27 @@
           <strong>Porte d&#39;entrée qui ferme mal</strong>
           
         </div>
-        <div class="ligne2">Réception des travaux · Serrurerie · villa 10</div>
+        <div class="ligne2">Travaux acceptés · Serrurerie · villa 10</div>
       </a>
     </li>
   
     <li class="carte-ticket ">
       <a href="/tickets/6">
         <div class="ligne1">
+          <strong>Éclairage des parties communes en panne</strong>
+          
+        </div>
+        <div class="ligne2">Archivé · Électricité · </div>
+      </a>
+    </li>
+  
+    <li class="carte-ticket ">
+      <a href="/tickets/7">
+        <div class="ligne1">
           <strong>Chaudière en panne</strong>
           
         </div>
-        <div class="ligne2">Clôturé · Chauffage · villa 30</div>
+        <div class="ligne2">Créé · Chauffage · villa 30</div>
       </a>
     </li>
   

@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const { getDb } = require('../db');
 const { requireAuth } = require('../auth');
-const { peutVoirTicket, isGestionnaire } = require('../droits');
+const { peutVoirTicket, isGestionnaire, CATEGORIES_FICHIER_CS } = require('../droits');
 const { notifierTicket } = require('../notifications');
 const { upload, enregistrerFichiers, UPLOAD_DIR } = require('../upload');
 
@@ -18,6 +18,11 @@ router.post('/tickets/:id/fichiers', (req, res) => {
     const db = getDb();
     const { categorie, montant, entreprise, delai } = req.body;
     const catsValides = ['photo', 'devis', 'avenant', 'facture', 'decision', 'compte_rendu'];
+    // Devis, avenants, factures et décisions : réservés au conseil syndical.
+    if (CATEGORIES_FICHIER_CS.includes(categorie) && !isGestionnaire(req.user)) {
+      for (const f of req.files || []) fs.unlinkSync(f.path);
+      return res.status(403).render('erreur', { user: req.user, message: 'Les devis et factures sont gérés uniquement par le conseil syndical.' });
+    }
     const montantValide = montant !== undefined && montant !== null && montant !== '' ? Number(montant) : null;
     if (!catsValides.includes(categorie) || (montantValide !== null && Number.isNaN(montantValide))) {
       for (const f of req.files || []) fs.unlinkSync(f.path);
@@ -36,6 +41,22 @@ router.post('/tickets/:id/fichiers', (req, res) => {
     }
     res.redirect('/tickets/' + id);
   });
+});
+
+// Suppression d'une photo : son auteur ou le conseil syndical.
+router.post('/fichiers/:id/supprimer', (req, res) => {
+  const db = getDb();
+  const f = db.prepare('SELECT * FROM fichiers WHERE id = ?').get(Number(req.params.id));
+  if (!f) return res.status(404).render('erreur', { user: req.user, message: 'Fichier introuvable.' });
+  if (f.categorie !== 'photo' || (f.auteur_id !== req.user.id && !isGestionnaire(req.user))) {
+    return res.status(403).render('erreur', { user: req.user, message: 'Seul l\'auteur d\'une photo (ou le conseil syndical) peut la supprimer.' });
+  }
+  const chemin = path.join(UPLOAD_DIR, f.nom_stockage);
+  db.prepare('DELETE FROM fichiers WHERE id = ?').run(f.id);
+  if (fs.existsSync(chemin)) fs.unlinkSync(chemin);
+  db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'edition', ?, ?)")
+    .run(f.ticket_id, req.user.id, `${req.user.nom} a supprimé une photo (${f.nom_original})`);
+  res.redirect('/tickets/' + f.ticket_id);
 });
 
 router.get('/fichiers/:id', (req, res) => {

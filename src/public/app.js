@@ -1,8 +1,4 @@
 (function () {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').catch(function () {});
-  }
-
   function compresserImage(file, maxDim, qualite) {
     return new Promise(function (resolve) {
       if (!file.type.startsWith('image/')) return resolve(file);
@@ -51,32 +47,4 @@
       });
     });
   });
-
-  var boutonPush = document.getElementById('bouton-push');
-  if (boutonPush && 'serviceWorker' in navigator && 'PushManager' in window && window.VAPID_PUBLIC_KEY) {
-    boutonPush.addEventListener('click', function () {
-      navigator.serviceWorker.ready.then(function (reg) {
-        return reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: (function (b64) {
-            var pad = b64.length % 4 ? '='.repeat(4 - b64.length % 4) : '';
-            var bin = atob(b64 + pad);
-            var arr = new Uint8Array(bin.length);
-            for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-            return arr;
-          })(window.VAPID_PUBLIC_KEY)
-        });
-      }).then(function (sub) {
-        return fetch('/notifications/api/push/abonnement', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(sub.toJSON())
-        });
-      }).then(function () {
-        document.getElementById('etat-push').textContent = 'Activées ✅';
-      }).catch(function () {
-        document.getElementById('etat-push').textContent = 'Activation refusée par le navigateur.';
-      });
-    });
-  }
 })();

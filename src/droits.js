@@ -1,23 +1,63 @@
 const { getDb } = require('./db');
 
-const ROLES_GESTION = ['syndic', 'conseil'];
+// Un membre du conseil syndical (CS) est un resident avec le statut
+// additionnel conseil_syndical = 1, gere collegialement.
+function isCS(user) {
+  return !!user && user.conseil_syndical === 1;
+}
 
+// Le CS (ou l'admin) gere le cycle de vie, les devis/factures, etc.
 function isGestionnaire(user) {
-  return !!user && ROLES_GESTION.includes(user.role);
+  return isCS(user) || isAdmin(user);
 }
 
 function isAdmin(user) {
   return !!user && user.role === 'admin';
 }
 
+function estActif(user) {
+  return !!user && user.statut === 'actif';
+}
+
+// Unites validees d'un compte (rattachements acceptes).
 function unitsDeUser(userId) {
   const db = getDb();
   return db.prepare('SELECT unit_id FROM unit_residents WHERE user_id = ?').all(userId).map(r => r.unit_id);
 }
 
+function qualiteDeUnit(userId, unitId) {
+  const db = getDb();
+  const row = db.prepare('SELECT qualite FROM unit_residents WHERE user_id = ? AND unit_id = ?').get(userId, unitId);
+  return row ? row.qualite : null;
+}
+
+function estUniteCommune(unitId) {
+  const db = getDb();
+  const row = db.prepare("SELECT type FROM units WHERE id = ?").get(Number(unitId));
+  return !!row && row.type === 'communes';
+}
+
+// Lecture ouverte : tout utilisateur connecte voit tous les tickets.
 function peutVoirTicket(user, ticketId) {
-  if (!user) return false;
-  if (isGestionnaire(user) || isAdmin(user)) return true;
+  return estActif(user);
+}
+
+// Peut creer/modifier les unites d'un ticket : au moins une unite validee
+// parmi celles du compte ; les parties communes sont reservees au CS.
+function peutChoisirUnites(user, uniteIds) {
+  if (!estActif(user)) return false;
+  const ids = uniteIds.map(Number);
+  if (ids.length === 0) return false;
+  const mesUnites = new Set(unitsDeUser(user.id));
+  const auMoinsUneSienne = ids.some(id => mesUnites.has(id));
+  const aCommunes = ids.some(id => estUniteCommune(id));
+  if (aCommunes && !isGestionnaire(user)) return false;
+  return auMoinsUneSienne || isGestionnaire(user);
+}
+
+// Resident concerne par un ticket (rattache a une de ses unites).
+function estResidentConcerne(user, ticketId) {
+  if (!estActif(user)) return false;
   const db = getDb();
   const row = db.prepare(
     `SELECT 1 FROM ticket_units tu JOIN unit_residents ur ON ur.unit_id = tu.unit_id
@@ -26,8 +66,25 @@ function peutVoirTicket(user, ticketId) {
   return !!row;
 }
 
-function peutGererTicket(user, ticketId) {
-  return isGestionnaire(user) || (user.role === 'resident' && peutVoirTicket(user, ticketId));
+// Peut editer la description / ajouter des photos : createur, residents
+// concernes, CS et admin — a tout moment, meme archive.
+function peutEditerTicket(user, ticket) {
+  if (!estActif(user) || !ticket) return false;
+  if (isGestionnaire(user)) return true;
+  if (ticket.auteur_id === user.id) return true;
+  return estResidentConcerne(user, ticket.id);
+}
+
+// Suppression : le createur si le ticket n'a jamais evolue ;
+// le CS/admin peut supprimer un ticket non evolue cree par un compte parti.
+function peutSupprimerTicket(user, ticket) {
+  if (!estActif(user) || !ticket) return false;
+  if (ticket.etape !== 'cree') return false;
+  if (ticket.auteur_id === user.id) return true;
+  if (!isGestionnaire(user)) return false;
+  const db = getDb();
+  const auteur = db.prepare('SELECT statut FROM users WHERE id = ?').get(ticket.auteur_id);
+  return !!auteur && auteur.statut === 'supprime';
 }
 
 function categoriesTicket() {
@@ -37,28 +94,36 @@ function categoriesTicket() {
   ];
 }
 
-const ETAPES = ['declaration', 'consultation', 'attribution', 'planification', 'reception', 'cloture'];
+const ETAPES = ['cree', 'valide_cs', 'consultation', 'intervention_planifiee', 'travaux_acceptes', 'archive'];
 
 const ETIQUETTES_ETAPES = {
-  declaration: 'Déclaration',
-  consultation: 'Consultation des devis',
-  attribution: 'Attribution',
-  planification: 'Planification des travaux',
-  reception: 'Réception des travaux',
-  cloture: 'Clôturé'
+  cree: 'Créé',
+  valide_cs: 'Validé par le conseil syndical',
+  consultation: 'En consultation',
+  intervention_planifiee: 'Intervention planifiée',
+  travaux_acceptes: 'Travaux acceptés',
+  archive: 'Archivé'
 };
 
+// En v1 le conseil syndical peut passer le ticket a n'importe quel etat.
 function transitionValide(etapeActuelle, etapeCible) {
-  const i = ETAPES.indexOf(etapeActuelle);
-  const j = ETAPES.indexOf(etapeCible);
-  if (i === -1 || j === -1) return false;
-  if (j === i + 1) return true;
-  // retour de la réception vers la planification en cas de travaux non satisfaisants
-  if (etapeActuelle === 'reception' && etapeCible === 'planification') return true;
-  return false;
+  return ETAPES.includes(etapeActuelle) && ETAPES.includes(etapeCible) && etapeActuelle !== etapeCible;
 }
 
+// Reouverture (CS ou resident) : retour a l'etat d'avant la consultation.
+function peutReouvrir(user, ticket) {
+  if (!estActif(user) || !ticket) return false;
+  if (ticket.etape !== 'archive') return false;
+  return isGestionnaire(user) || estResidentConcerne(user, ticket.id) || ticket.auteur_id === user.id;
+}
+
+// Categories de fichiers reservees au conseil syndical (devis, factures...).
+const CATEGORIES_FICHIER_CS = ['devis', 'avenant', 'facture', 'decision'];
+
 module.exports = {
-  isGestionnaire, isAdmin, unitsDeUser, peutVoirTicket, peutGererTicket,
-  categoriesTicket, ETAPES, ETIQUETTES_ETAPES, transitionValide, ROLES_GESTION
+  isCS, isGestionnaire, isAdmin, estActif,
+  unitsDeUser, qualiteDeUnit, estUniteCommune,
+  peutVoirTicket, peutChoisirUnites, estResidentConcerne, peutEditerTicket, peutSupprimerTicket,
+  categoriesTicket, ETAPES, ETIQUETTES_ETAPES, transitionValide, peutReouvrir,
+  CATEGORIES_FICHIER_CS
 };

@@ -1,6 +1,9 @@
 <%- include('partials/header', { titre: 'Nouveau ticket' }) %>
 <h1>Nouveau ticket</h1>
 <% if (erreur) { %><p class="erreur"><%= erreur %></p><% } %>
+<% if (mesUnites.length === 0) { %>
+  <p class="aide">Votre rattachement à une villa ou un garage doit d'abord être accepté (par un résident de l'unité ou le conseil syndical) avant de pouvoir déclarer un ticket. <a href="/rattachements">Voir mes rattachements</a></p>
+<% } %>
 <form method="post" action="/tickets" class="formulaire" enctype="multipart/form-data">
   <label>Titre court
     <input type="text" name="titre" required maxlength="120" placeholder="Ex. : fuite sous l'évier">
@@ -16,12 +19,17 @@
     </select>
   </label>
   <fieldset>
-    <legend>Villa(s) / garage(s) concerné(s)</legend>
+    <legend>Villa(s) / garage(s) concerné(s) — au moins une de vos unités</legend>
     <div class="cases-unites">
       <% for (const u of unites) { %>
-        <label class="case"><input type="checkbox" name="unite_ids" value="<%= u.id %>"> <%= u.label %></label>
+        <label class="case <%= mesUnites.includes(u.id) ? 'ma-unite' : '' %>">
+          <input type="checkbox" name="unite_ids" value="<%= u.id %>" <%= mesUnites.includes(u.id) ? 'checked' : '' %>> <%= u.label %><% if (mesUnites.includes(u.id)) { %> (votre unité)<% } %>
+        </label>
       <% } %>
     </div>
+    <% if (user.conseil_syndical === 1 || user.role === 'admin') { %>
+      <p class="aide">En tant que membre du conseil syndical, vous pouvez aussi déclarer un ticket sur les parties communes.</p>
+    <% } %>
   </fieldset>
   <label class="case case-urgent"><input type="checkbox" name="urgent" value="1"> 🚨 C'est urgent (fuite, danger…)</label>
   <label>Photos (compressées automatiquement avant l'envoi)

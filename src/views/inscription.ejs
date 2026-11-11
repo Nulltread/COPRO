@@ -1,18 +1,24 @@
 <%- include('partials/header', { user: null, titre: 'Inscription' }) %>
 <h1>Créer un compte</h1>
-<p class="aide">Réservé aux copropriétaires et locataires référencés sur une villa ou un garage. Votre compte sera validé par le syndic ou le conseil syndical.</p>
+<p class="aide">Réservé aux copropriétaires et locataires d'une villa ou d'un garage. Vous réclamez votre rattachement à une unité : il sera accepté par un résident de cette unité ou par le conseil syndical. Tant qu'il n'est pas accepté, vous ne pouvez pas déclarer de ticket.</p>
 <% if (erreur) { %><p class="erreur"><%= erreur %></p><% } %>
 <form method="post" action="/inscription" class="formulaire">
-  <label>Votre nom
-    <input type="text" name="nom" required autocomplete="name">
+  <label>Nom
+    <input type="text" name="nom" required autocomplete="family-name">
   </label>
-  <label>Votre email
+  <label>Prénom
+    <input type="text" name="prenom" required autocomplete="given-name">
+  </label>
+  <label>Téléphone
+    <input type="tel" name="telephone" required autocomplete="tel">
+  </label>
+  <label>Votre email (identifiant de connexion)
     <input type="email" name="email" required autocomplete="email">
   </label>
   <label>Mot de passe (8 caractères min.)
     <input type="password" name="motdepasse" required minlength="8" autocomplete="new-password">
   </label>
-  <label>Votre villa ou garage
+  <label>Villa ou garage auquel vous souhaitez être rattaché
     <select name="unite_id" required>
       <option value="">— Choisir —</option>
       <% for (const u of units) { %>

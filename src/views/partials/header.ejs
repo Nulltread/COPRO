@@ -6,7 +6,6 @@
   <meta name="theme-color" content="#1a5fb4">
   <title><%= typeof titre !== 'undefined' ? titre + ' — ' : '' %>Copro La Pinède de Notre Dame</title>
   <link rel="stylesheet" href="/style.css">
-  <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
 </head>
 <body>
@@ -16,17 +15,15 @@
   <nav class="nav">
     <a href="/tickets">Tickets</a>
     <a href="/tickets/nouveau" class="bouton-nav">+ Nouveau</a>
+    <a href="/rattachements">Rattachements</a>
     <a href="/notifications" class="nav-notif">🔔<% if (nonLues > 0) { %><span class="badge"><%= nonLues %></span><% } %></a>
-    <% if (user.role === 'syndic' || user.role === 'conseil' || user.role === 'admin') { %>
+    <% if (user.conseil_syndical === 1 || user.role === 'admin') { %>
       <a href="/tableau-de-bord">Tableau de bord</a>
     <% } %>
-    <% if (user.role === 'admin') { %>
-      <a href="/admin/unites">Unités</a>
-    <% } %>
-    <% if (user.role === 'syndic' || user.role === 'conseil' || user.role === 'admin') { %>
+    <% if (user.conseil_syndical === 1 || user.role === 'admin') { %>
       <a href="/admin/comptes">Comptes</a>
     <% } %>
-    <a href="/profil">👤 <%= user.nom %></a>
+    <a href="/profil">👤 <%= user.prenom || user.nom %><% if (user.conseil_syndical === 1) { %> <span class="tag-cs">CS</span><% } %></a>
   </nav>
 </header>
 <% } %>

@@ -46,19 +46,20 @@ function requireAuth(req, res, next) {
     }
     return res.status(401).json({ erreur: 'Connexion requise' });
   }
-  if (user.statut !== 'valide') {
-    return res.status(403).render('statut', { user, statut: user.statut });
+  if (user.statut !== 'actif') {
+    destroySession(req.cookies.sid);
+    res.clearCookie('sid');
+    return res.status(403).render('erreur', { user: null, message: 'Ce compte a été supprimé.' });
   }
   next();
 }
 
-function requireRole(...roles) {
-  return (req, res, next) => {
-    if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).render('erreur', { user: req.user, message: 'Action non autorisée.' });
-    }
-    next();
-  };
+function requireGestion(req, res, next) {
+  const { isGestionnaire } = require('./droits');
+  if (!isGestionnaire(req.user)) {
+    return res.status(403).render('erreur', { user: req.user, message: 'Action réservée au conseil syndical.' });
+  }
+  next();
 }
 
-module.exports = { hashPassword, verifyPassword, createSession, getSessionUser, destroySession, requireAuth, requireRole };
+module.exports = { hashPassword, verifyPassword, createSession, getSessionUser, destroySession, requireAuth, requireGestion };

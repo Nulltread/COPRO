@@ -1,0 +1,32 @@
+<%- include('partials/header', { titre: 'Rattachements' }) %>
+<h1>Rattachements</h1>
+<% if (typeof message !== 'undefined' && message) { %><p class="info"><%= message %></p><% } %>
+<% if (miennes.length > 0) { %>
+<h2>Mes demandes</h2>
+<ul class="liste-simple">
+  <% for (const r of miennes) { %>
+    <li><strong><%= r.unite_label %></strong> — <%= r.qualite %> —
+      <% if (r.statut === 'en_attente') { %>⏳ en attente d'acceptation<% } %>
+      <% if (r.statut === 'accepte') { %>✅ accepté<% } %>
+      <% if (r.statut === 'refuse') { %>❌ refusé / retiré<% } %>
+    </li>
+  <% } %>
+</ul>
+<% } %>
+<h2>Demandes à valider</h2>
+<% if (enAttente.length === 0) { %>
+  <p class="aide">Aucune demande en attente.</p>
+<% } else { %>
+<ul class="liste-simple">
+  <% for (const r of enAttente) { %>
+    <li>
+      <strong><%= r.user_prenom %> <%= r.user_nom %></strong> (<%= r.user_email %>) demande à être rattaché à <strong><%= r.unite_label %></strong> en tant que <%= r.qualite %>.
+      <form method="post" action="/rattachements/<%= r.id %>/valider" class="formulaire-ligne">
+        <button class="bouton" type="submit" name="action" value="accepter">Accepter</button>
+        <button class="bouton-secondaire" type="submit" name="action" value="refuser">Refuser</button>
+      </form>
+    </li>
+  <% } %>
+</ul>
+<% } %>
+<%- include('partials/footer') %>

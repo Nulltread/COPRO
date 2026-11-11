@@ -3,6 +3,9 @@
   <h1>Tickets</h1>
   <a class="bouton" href="/tickets/nouveau">+ Nouveau ticket</a>
 </div>
+<% if (mesUnites.length === 0) { %>
+  <p class="aide">Votre rattachement à une villa ou un garage n'est pas encore accepté : vous pouvez consulter tous les tickets, mais pas encore en déclarer. <a href="/rattachements">Voir mes rattachements</a></p>
+<% } %>
 <form method="get" action="/tickets" class="filtres">
   <select name="etape">
     <option value="">Tous les états</option>
@@ -17,7 +20,10 @@
     <% } %>
   </select>
   <select name="unite">
-    <option value="">Toutes les unités</option>
+    <% if (mesUnites.length > 0) { %>
+      <option value="" <%= !filtres.unite ? 'selected' : '' %>>Mes unités (défaut)</option>
+    <% } %>
+    <option value="toutes" <%= filtres.unite === 'toutes' ? 'selected' : '' %>>Toutes les unités</option>
     <% for (const u of unitesFiltre) { %>
       <option value="<%= u.id %>" <%= String(filtres.unite) === String(u.id) ? 'selected' : '' %>><%= u.label %></option>
     <% } %>
