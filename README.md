@@ -74,6 +74,20 @@ L'application tient dans un seul conteneur : un petit VPS suffit (ex. Scaleway I
 
 Les données persistent dans `./data` et `./uploads` sur le disque de l'instance.
 
+### Déploiement automatique (GitHub Actions)
+
+Après le **premier déploiement manuel** (étapes ci-dessus, dont `setup-server.sh` une seule fois), chaque `push` sur la branche `vibe/copro-app-010909` déploie automatiquement via `.github/workflows/deploy.yml`.
+
+Configuration :
+1. Générer une paire de clés dédiée au déploiement : `ssh-keygen -t ed25519 -f ~/.ssh/copro_deploy`
+2. Sur le serveur, autoriser la clé publique : `cat ~/.ssh/copro_deploy.pub >> /root/.ssh/authorized_keys`
+3. Dans GitHub (repo → Settings → Secrets and variables → Actions), créer 3 secrets :
+   - `DEPLOY_HOST` = IP du serveur (ex. `51.159.64.71`)
+   - `DEPLOY_USER` = `root`
+   - `DEPLOY_SSH_KEY` = contenu de la clé **privée** `~/.ssh/copro_deploy`
+
+Le workflow exécute `scripts/deploy.sh` sur le serveur (git pull + `docker compose -f docker-compose.prod.yml up -d --build`).
+
 ## Schéma de données
 
 Tables : `units` (villas/garages 1–61), `users` (rôles + statut de validation), `unit_residents` (rattachements multi-occupants), `tickets`, `ticket_units`, `ticket_events` (fil de suivi + décisions), `fichiers` (métadonnées des documents), `notifications`, `push_subscriptions`, `sessions`. Voir `src/db/schema.sql`.
