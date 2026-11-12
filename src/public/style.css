@@ -60,8 +60,6 @@ h3 { font-size: 1rem; margin: 12px 0 4px; }
   padding: 10px 14px; font-size: 0.95rem; cursor: pointer;
 }
 .case { display: flex !important; flex-direction: row !important; align-items: center; gap: 8px; font-weight: 500 !important; }
-.case-urgent { color: var(--rouge); font-weight: 700 !important; }
-.cases-unites { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .formulaire label.toggle-urgent { flex-direction: row; align-items: center; gap: 10px; font-weight: 700; color: var(--rouge); cursor: pointer; }
 .toggle-case { position: absolute; opacity: 0; width: 1px; height: 1px; }
 .toggle-piste { position: relative; width: 46px; height: 26px; border-radius: 13px; background: #c5c9d1; flex: none; transition: background 0.15s; }
@@ -80,8 +78,20 @@ fieldset { border: 1px solid #c5c9d1; border-radius: 10px; }
 .etape-intervention_planifiee { background: #8e44ad; }
 .etape-travaux_acceptes { background: #26a269; }
 .etape-archive { background: #6b7280; }
+.ligne2 { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 10px; }
+.ligne2-gauche { display: inline-flex; align-items: center; gap: 8px; }
+.mini-metro { display: inline-flex; align-items: center; }
+.mini-puce { width: 10px; height: 10px; border-radius: 50%; background: #dfe3e8; flex: none; }
+.mini-puce.faite { background: #b9bfc9; }
+.mini-puce.etape-cree { background: #1a5fb4; }
+.mini-puce.etape-valide_cs { background: #6e56cf; }
+.mini-puce.etape-consultation { background: #e66100; }
+.mini-puce.etape-intervention_planifiee { background: #8e44ad; }
+.mini-puce.etape-travaux_acceptes { background: #26a269; }
+.mini-puce.etape-archive { background: #6b7280; }
+.mini-lien { width: 10px; height: 2px; background: #dfe3e8; flex: none; }
+.ligne2-unites { margin-left: auto; color: #777; font-size: 0.85rem; text-align: right; }
 .tag-cs { background: var(--bleu, #1a5fb4); color: #fff; border-radius: 6px; padding: 2px 6px; font-size: 0.75rem; font-weight: 700; }
-.case.ma-unite { background: #e8f0fb; border-radius: 8px; padding: 2px 6px; }
 .tag-retenu { background: var(--vert); color: #fff; border-radius: 6px; padding: 2px 6px; font-size: 0.75rem; font-weight: 700; }
 .filtres { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0 16px; }
 .filtres select { padding: 8px; border-radius: 8px; border: 1px solid #c5c9d1; font-size: 0.95rem; }
@@ -121,6 +131,6 @@ fieldset { border: 1px solid #c5c9d1; border-radius: 10px; }
 .apercu { display: flex; flex-wrap: wrap; gap: 8px; }
 .apercu img { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 1px solid #ccc; }
 @media (max-width: 480px) {
-  .cases-unites { grid-template-columns: 1fr; }
   .nav { font-size: 0.85rem; gap: 8px; }
+  .ligne2-unites { width: 100%; text-align: left; }
 }

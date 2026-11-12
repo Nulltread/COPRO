@@ -13,7 +13,18 @@
     <li class="carte-ticket <%= t.urgent ? 'urgent' : '' %>">
       <a href="/tickets/<%= t.id %>">
         <div class="ligne1"><strong><%= t.titre %></strong> <% if (t.urgent) { %><span class="tag-urgent">URGENT</span><% } %></div>
-        <div class="ligne2"><span class="tag-etape etape-<%= t.etape %>"><%= etiquettes[t.etape] %></span> · <%= t.unites || '' %></div>
+        <div class="ligne2">
+          <span class="ligne2-gauche">
+            <span class="mini-metro" aria-hidden="true">
+              <% const idxEtape = etapes.indexOf(t.etape); etapes.forEach((e, i) => { %>
+                <span class="mini-puce <%= t.etape === e ? 'etape-' + e : (idxEtape > i ? 'faite' : '') %>"></span>
+                <% if (i < etapes.length - 1) { %><span class="mini-lien"></span><% } %>
+              <% }) %>
+            </span>
+            <span class="tag-etape etape-<%= t.etape %>"><%= etiquettes[t.etape] %></span>
+          </span>
+          <span class="ligne2-unites"><%= t.unites || '' %></span>
+        </div>
       </a>
     </li>
   <% } %>

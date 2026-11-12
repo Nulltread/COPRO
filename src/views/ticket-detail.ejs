@@ -36,13 +36,14 @@
 <section class="bloc">
   <h2>Unités concernées</h2>
   <form method="post" action="/tickets/<%= ticket.id %>/unites" class="formulaire">
-    <div class="cases-unites">
-      <% for (const u of unitesModifiables) { %>
-        <label class="case <%= mesUnites.has(u.id) ? 'ma-unite' : '' %>">
-          <input type="checkbox" name="unite_ids" value="<%= u.id %>" <%= unitesIds.includes(u.id) ? 'checked' : '' %>> <%= u.label %><% if (mesUnites.has(u.id)) { %> (votre unité)<% } %>
-        </label>
-      <% } %>
-    </div>
+    <label>Unités concernées
+      <select name="unite_ids" multiple required size="10">
+        <% for (const u of unitesModifiables) { %>
+          <option value="<%= u.id %>" <%= unitesIds.includes(u.id) ? 'selected' : '' %>><%= u.label %><% if (mesUnites.has(u.id)) { %> (votre unité)<% } %></option>
+        <% } %>
+      </select>
+    </label>
+    <p class="aide">Maintenez Ctrl (ou Cmd sur Mac) pour sélectionner plusieurs unités.</p>
     <button class="bouton-secondaire" type="submit">Modifier les unités</button>
   </form>
 </section>

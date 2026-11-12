@@ -27,8 +27,8 @@ Ce fichier décrit des comportements **présents dans le code** (`src/`) et **ab
 
 - Le titre est limité à 120 caractères (champ du formulaire). **Pas de catégorie de travaux** (champ supprimé du formulaire, des filtres et de la base).
 - **Tri de la liste** : tickets urgents d'abord, puis par date de création croissante (le plus ancien en premier) ; les tickets archivés sont masqués par défaut (filtre « état = archivé » pour les voir).
-- **Statut affiché en badge coloré** dans la liste des tickets et le tableau de bord.
-- Formulaire de création : unités en **liste multiselect** (Ctrl/Cmd pour multi-sélection, unités personnelles présélectionnées) et **urgence en toggle**.
+- **Statut affiché en mini flowchart** (cercles reliés, étape en cours en couleur + nom du statut) dans la liste des tickets et le tableau de bord ; unités affichées en bas à droite de la carte.
+- Formulaires de **création et d'édition** des unités d'un ticket : **liste multiselect** (Ctrl/Cmd pour multi-sélection, unités personnelles présélectionnées) et **urgence en toggle** (création uniquement).
 - **Filtre « coût min »** calculé sur la somme des devis/avenants **retenus** du ticket.
 - **Commentaires** : tout utilisateur connecté peut commenter tout ticket (pas de restriction aux seuls concernés) ; la notification reprend les 80 premiers caractères du commentaire.
 - **Transition** : le gestionnaire peut viser n'importe quel état (hors état courant), avec un **motif facultatif** enregistré dans le fil ; l'entrée en « consultation » mémorise l'état précédent (`etape_avant_consultation`) utilisé pour la réouverture.

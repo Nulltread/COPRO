@@ -48,6 +48,7 @@ function createApp() {
     ).all();
     res.render('tableau', {
       user: req.user, ouverts, enConsultation, urgents, coutRetenu, totalFacture, recents,
+      etapes: require('./droits').ETAPES,
       etiquettes: require('./droits').ETIQUETTES_ETAPES
     });
   });
