@@ -37,9 +37,12 @@ function estUniteCommune(unitId) {
   return !!row && row.type === 'communes';
 }
 
-// Lecture ouverte : tout utilisateur connecte voit tous les tickets.
+// Lecture ouverte aux comptes rattaches a au moins une unite ; l'admin voit
+// tout. Un resident sans aucune unite validee ne voit aucun ticket.
 function peutVoirTicket(user, ticketId) {
-  return estActif(user);
+  if (!estActif(user)) return false;
+  if (isAdmin(user)) return true;
+  return unitsDeUser(user.id).length > 0;
 }
 
 // Peut creer/modifier les unites d'un ticket : au moins une unite validee

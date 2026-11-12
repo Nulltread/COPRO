@@ -112,6 +112,23 @@ test('pas d\'unité validée = pas de création de ticket', async () => {
   assert.strictEqual(res.status, 403);
 });
 
+test('visibilité : sans unité validée, aucun ticket visible (liste, détail, filtres)', async () => {
+  const r1 = await client(); await login(r1, 'r1@test.local', 'motdepasse1');
+  const { tid } = await creerTicket(r1, [ids.villa1], 'Ticket caché sans unité');
+  const c = await client();
+  await login(c, 'nouveau@test.local', 'motdepasse1');
+  const listeDefaut = await (await c.req('GET', '/tickets')).text();
+  assert.ok(!listeDefaut.includes('Ticket caché sans unité'));
+  const listeToutes = await (await c.req('GET', '/tickets?unite=toutes')).text();
+  assert.ok(!listeToutes.includes('Ticket caché sans unité'));
+  const detail = await c.req('GET', '/tickets/' + tid);
+  assert.strictEqual(detail.status, 404);
+  // L'admin, lui, voit tout sans unité rattachée.
+  const a = await client(); await login(a, 'admin@test.local', 'motdepasse1');
+  const detailAdmin = await a.req('GET', '/tickets/' + tid);
+  assert.strictEqual(detailAdmin.status, 200);
+});
+
 test('rattachement : refusé par un résident d\'une autre unité, accepté par un résident de la même unité', async () => {
   const r2 = await client(); await login(r2, 'r2@test.local', 'motdepasse1');
   const r1 = await client(); await login(r1, 'r1@test.local', 'motdepasse1');

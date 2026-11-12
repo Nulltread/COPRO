@@ -66,6 +66,9 @@ async function main() {
   checks.push(['login compte sans unité validée', att.status === 302]);
   const nv = await req('POST', '/tickets', { titre: 'Non autorisé', categorie: 'Autre', unite_ids: String(await (async () => { const { getDb } = require('../src/db'); return getDb().prepare("SELECT id FROM units WHERE type='villa' AND numero=1").get().id; })()) });
   checks.push(['pas de ticket sans unité validée', nv.status === 403]);
+  const listeAttente = await (await req('GET', '/tickets?unite=toutes')).text();
+  checks.push(['sans unité validée : aucun ticket visible', !listeAttente.includes('Fuite') && !listeAttente.includes('Chaudière')]);
+  checks.push(['sans unité validée : détail ticket introuvable', (await req('GET', '/tickets/1')).status === 404]);
 
   let ok = true;
   for (const [nom, res] of checks) { console.log((res ? 'OK  ' : 'FAIL') + ' ' + nom); if (!res) ok = false; }

@@ -29,16 +29,17 @@ function listeTickets(user, filtres = {}) {
              LEFT JOIN units u ON u.id = tu.unit_id`;
   const params = [];
   const where = [];
-  if (filtres.unite && filtres.unite !== 'toutes') {
+  const mesUnites = unitsDeUser(user.id);
+  if (!isAdmin(user) && mesUnites.length === 0) {
+    // Sans unite validee, aucun ticket n'est visible.
+    where.push('1 = 0');
+  } else if (filtres.unite && filtres.unite !== 'toutes') {
     where.push('tu.unit_id = ?');
     params.push(Number(filtres.unite));
-  } else if (!filtres.unite) {
+  } else if (!filtres.unite && mesUnites.length > 0) {
     // Filtre par defaut : les unites du resident (lecture ouverte sinon).
-    const mesUnites = unitsDeUser(user.id);
-    if (mesUnites.length > 0) {
-      where.push(`t.id IN (SELECT ticket_id FROM ticket_units WHERE unit_id IN (${mesUnites.map(() => '?').join(',')}))`);
-      params.push(...mesUnites);
-    }
+    where.push(`t.id IN (SELECT ticket_id FROM ticket_units WHERE unit_id IN (${mesUnites.map(() => '?').join(',')}))`);
+    params.push(...mesUnites);
   }
   if (filtres.etape) { where.push('t.etape = ?'); params.push(filtres.etape); }
   else { where.push("t.etape != 'archive'"); } // par défaut, les tickets archivés sont masqués
