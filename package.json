@@ -7,6 +7,8 @@
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "seed": "node src/db/seed.js",
+    "comptes-test": "node src/db/comptes-test.js creer",
+    "comptes-test:supprimer": "node src/db/comptes-test.js supprimer",
     "test": "node --test tests/*.test.js"
   },
   "dependencies": {

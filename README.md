@@ -33,6 +33,13 @@ node scripts/smoke.js   # vérifications de bout en bout (23 contrôles)
 
 Comptes de démo (mot de passe `demo1234`) : `admin@copro.local` (unique admin), `conseil1@copro.local` et `conseil2@copro.local` (membres du conseil syndical), `resident1@copro.local` … `resident61@copro.local`, `locataire1@copro.local` … `locataire10@copro.local`, `attente@copro.local` (rattachement en attente).
 
+Comptes de test (création/suppression à la demande, mot de passe `demo1234`) :
+
+```bash
+npm run comptes-test            # crée test-cs@copro.local (conseil syndical) et test-resident@copro.local (villa 1)
+npm run comptes-test:supprimer # supprime ces comptes et leurs tickets de test
+```
+
 ## Déploiement avec Docker (VPS ou PaaS conteneurisé)
 
 ```bash
