@@ -3,7 +3,7 @@
   <h1><%= ticket.titre %></h1>
   <% if (ticket.urgent) { %><span class="tag-urgent">URGENT</span><% } %>
 </div>
-<p class="aide"><%= ticket.categorie %> · <%= unites.map(u => u.label).join(', ') %> · déclaré le <%= ticket.created_at %></p>
+<p class="aide"><%= unites.map(u => u.label).join(', ') %> · déclaré le <%= ticket.created_at %></p>
 
 <ol class="metro">
   <% etapes.forEach((e, i) => { %>

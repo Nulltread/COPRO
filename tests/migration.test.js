@@ -161,6 +161,11 @@ test('migration : anciennes étapes recodées vers le nouveau cycle', () => {
   assert.strictEqual(t.etape_avant_consultation, 'valide_cs');
 });
 
+test('migration : colonne tickets.categorie supprimée', () => {
+  const cols = db.prepare('PRAGMA table_info(tickets)').all().map(c => c.name);
+  assert.ok(!cols.includes('categorie'));
+});
+
 test('migration : push_subscriptions supprimée', () => {
   const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='push_subscriptions'").all();
   assert.strictEqual(tables.length, 0);

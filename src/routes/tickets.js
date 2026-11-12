@@ -5,7 +5,7 @@ const { requireAuth, requireGestion } = require('../auth');
 const {
   isGestionnaire, isAdmin, unitsDeUser, peutVoirTicket, peutChoisirUnites,
   estResidentConcerne, peutEditerTicket, peutSupprimerTicket, peutReouvrir,
-  categoriesTicket, ETAPES, ETIQUETTES_ETAPES, transitionValide
+  ETAPES, ETIQUETTES_ETAPES, transitionValide
 } = require('../droits');
 const { notifierTicket } = require('../notifications');
 const { upload, enregistrerFichiers } = require('../upload');
@@ -41,7 +41,7 @@ function listeTickets(user, filtres = {}) {
     }
   }
   if (filtres.etape) { where.push('t.etape = ?'); params.push(filtres.etape); }
-  if (filtres.categorie) { where.push('t.categorie = ?'); params.push(filtres.categorie); }
+  else { where.push("t.etape != 'archive'"); } // par défaut, les tickets archivés sont masqués
   if (filtres.urgent === '1') { where.push('t.urgent = 1'); }
   const coutMin = Number(filtres.cout_min);
   if (filtres.cout_min && !Number.isNaN(coutMin) && coutMin > 0) {
@@ -49,7 +49,7 @@ function listeTickets(user, filtres = {}) {
     params.push(coutMin);
   }
   if (where.length) sql += ' WHERE ' + where.join(' AND ');
-  sql += ' GROUP BY t.id ORDER BY t.urgent DESC, t.updated_at DESC';
+  sql += ' GROUP BY t.id ORDER BY t.urgent DESC, t.created_at ASC';
   return db.prepare(sql).all(...params);
 }
 
@@ -106,7 +106,6 @@ router.get('/', (req, res) => {
   const unitesFiltre = db.prepare('SELECT * FROM units ORDER BY type DESC, numero').all();
   res.render('tickets', {
     user: req.user, tickets,
-    categories: categoriesTicket(),
     etapes: ETAPES, etiquettes: ETIQUETTES_ETAPES, unitesFiltre,
     filtres: req.query, gestionnaire: isGestionnaire(req.user),
     mesUnites: unitsDeUser(req.user.id),
@@ -118,7 +117,6 @@ router.get('/nouveau', (req, res) => {
   const mesUnites = unitsDeUser(req.user.id);
   res.render('ticket-form', {
     user: req.user, unites: unitesPossibles(req.user), mesUnites,
-    categories: categoriesTicket(),
     ticket: null, erreur: null, nonLues: require('../notifications').nonLues(req.user.id)
   });
 });
@@ -132,18 +130,18 @@ router.post('/', (req, res) => {
 
 function creerTicket(req, res) {
   const db = getDb();
-  const { titre, description, categorie, urgent, unite_ids } = req.body;
+  const { titre, description, urgent, unite_ids } = req.body;
   const ids = Array.isArray(unite_ids) ? unite_ids : [unite_ids].filter(Boolean);
   const mesUnites = unitsDeUser(req.user.id);
-  const erreur = !titre || !categorie || ids.length === 0
-    ? 'Merci de donner un titre, une catégorie et au moins une villa/garage concernée.' : null;
+  const erreur = !titre || ids.length === 0
+    ? 'Merci de donner un titre et au moins une villa/garage concernée.' : null;
   if (erreur || mesUnites.length === 0) {
     for (const f of req.files || []) fs.unlinkSync(f.path);
     const msg = mesUnites.length === 0
       ? 'Votre rattachement à une villa ou un garage doit d\'abord être accepté avant de pouvoir déclarer un ticket.'
       : erreur;
     return res.status(403).render('ticket-form', {
-      user: req.user, unites: unitesPossibles(req.user), mesUnites, categories: categoriesTicket(),
+      user: req.user, unites: unitesPossibles(req.user), mesUnites,
       ticket: req.body, erreur: msg, nonLues: require('../notifications').nonLues(req.user.id)
     });
   }
@@ -152,8 +150,8 @@ function creerTicket(req, res) {
     return res.status(403).render('erreur', { user: req.user, message: 'Au moins une des unités choisies doit être la vôtre (les parties communes sont réservées au conseil syndical).' });
   }
   const info = db.prepare(
-    'INSERT INTO tickets (titre, description, categorie, etape, urgent, auteur_id) VALUES (?, ?, ?, ?, ?, ?)'
-  ).run(titre.trim(), (description || '').trim(), categorie, 'cree', urgent ? 1 : 0, req.user.id);
+    'INSERT INTO tickets (titre, description, etape, urgent, auteur_id) VALUES (?, ?, ?, ?, ?)'
+  ).run(titre.trim(), (description || '').trim(), 'cree', urgent ? 1 : 0, req.user.id);
   const tid = info.lastInsertRowid;
   const ins = db.prepare('INSERT INTO ticket_units (ticket_id, unit_id) VALUES (?, ?)');
   for (const id of ids) ins.run(tid, Number(id));

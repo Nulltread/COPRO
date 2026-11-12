@@ -47,7 +47,6 @@ CREATE TABLE IF NOT EXISTS tickets (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   titre TEXT NOT NULL,
   description TEXT NOT NULL DEFAULT '',
-  categorie TEXT NOT NULL,
   etape TEXT NOT NULL DEFAULT 'cree' CHECK (etape IN ('cree','valide_cs','consultation','intervention_planifiee','travaux_acceptes','archive')),
   etape_avant_consultation TEXT NOT NULL DEFAULT 'valide_cs',
   urgent INTEGER NOT NULL DEFAULT 0,

@@ -51,10 +51,10 @@ h3 { font-size: 1rem; margin: 12px 0 4px; }
 }
 .formulaire-ligne { display: flex; flex-direction: column; gap: 10px; margin: 10px 0; }
 .bouton {
-  background: var(--bleu); color: #fff; border: none; border-radius: 10px;
+  background: #1a5fb4; color: #fff; border: none; border-radius: 10px;
   padding: 14px 18px; font-size: 1rem; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-block; text-align: center;
 }
-.bouton:active { background: var(--bleu-fonce); }
+.bouton:active { background: #154a8a; }
 .bouton-secondaire {
   background: var(--gris); color: var(--texte); border: 1px solid #c5c9d1; border-radius: 10px;
   padding: 10px 14px; font-size: 0.95rem; cursor: pointer;
@@ -62,9 +62,24 @@ h3 { font-size: 1rem; margin: 12px 0 4px; }
 .case { display: flex !important; flex-direction: row !important; align-items: center; gap: 8px; font-weight: 500 !important; }
 .case-urgent { color: var(--rouge); font-weight: 700 !important; }
 .cases-unites { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.formulaire label.toggle-urgent { flex-direction: row; align-items: center; gap: 10px; font-weight: 700; color: var(--rouge); cursor: pointer; }
+.toggle-case { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.toggle-piste { position: relative; width: 46px; height: 26px; border-radius: 13px; background: #c5c9d1; flex: none; transition: background 0.15s; }
+.toggle-piste::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: left 0.15s; }
+.toggle-case:checked + .toggle-piste { background: var(--rouge); }
+.toggle-case:checked + .toggle-piste::after { left: 23px; }
+.toggle-case:focus-visible + .toggle-piste { outline: 2px solid var(--bleu); outline-offset: 2px; }
+select[multiple] { min-height: 180px; }
 fieldset { border: 1px solid #c5c9d1; border-radius: 10px; }
 .entete-page { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .tag-urgent { background: var(--rouge); color: #fff; border-radius: 6px; padding: 3px 8px; font-size: 0.78rem; font-weight: 700; }
+.tag-etape { display: inline-block; border-radius: 20px; padding: 3px 10px; font-size: 0.8rem; font-weight: 700; color: #fff; }
+.etape-cree { background: #1a5fb4; }
+.etape-valide_cs { background: #6e56cf; }
+.etape-consultation { background: #e66100; }
+.etape-intervention_planifiee { background: #8e44ad; }
+.etape-travaux_acceptes { background: #26a269; }
+.etape-archive { background: #6b7280; }
 .tag-cs { background: var(--bleu, #1a5fb4); color: #fff; border-radius: 6px; padding: 2px 6px; font-size: 0.75rem; font-weight: 700; }
 .case.ma-unite { background: #e8f0fb; border-radius: 8px; padding: 2px 6px; }
 .tag-retenu { background: var(--vert); color: #fff; border-radius: 6px; padding: 2px 6px; font-size: 0.75rem; font-weight: 700; }

@@ -25,8 +25,10 @@ Ce fichier décrit des comportements **présents dans le code** (`src/`) et **ab
 
 ## Tickets
 
-- **Catégories en dur** (liste fixe) : Plomberie, Électricité, Chauffage, Toiture, Menuiserie, Serrurerie, Extérieurs / Jardin, Humidité / Infiltration, Autre. Le titre est limité à 120 caractères (champ du formulaire).
-- **Tri de la liste** : tickets urgents d'abord, puis par date de dernière modification décroissante.
+- Le titre est limité à 120 caractères (champ du formulaire). **Pas de catégorie de travaux** (champ supprimé du formulaire, des filtres et de la base).
+- **Tri de la liste** : tickets urgents d'abord, puis par date de création croissante (le plus ancien en premier) ; les tickets archivés sont masqués par défaut (filtre « état = archivé » pour les voir).
+- **Statut affiché en badge coloré** dans la liste des tickets et le tableau de bord.
+- Formulaire de création : unités en **liste multiselect** (Ctrl/Cmd pour multi-sélection, unités personnelles présélectionnées) et **urgence en toggle**.
 - **Filtre « coût min »** calculé sur la somme des devis/avenants **retenus** du ticket.
 - **Commentaires** : tout utilisateur connecté peut commenter tout ticket (pas de restriction aux seuls concernés) ; la notification reprend les 80 premiers caractères du commentaire.
 - **Transition** : le gestionnaire peut viser n'importe quel état (hors état courant), avec un **motif facultatif** enregistré dans le fil ; l'entrée en « consultation » mémorise l'état précédent (`etape_avant_consultation`) utilisé pour la réouverture.

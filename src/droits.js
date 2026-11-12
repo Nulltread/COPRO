@@ -87,13 +87,6 @@ function peutSupprimerTicket(user, ticket) {
   return !!auteur && auteur.statut === 'supprime';
 }
 
-function categoriesTicket() {
-  return [
-    'Plomberie', 'Électricité', 'Chauffage', 'Toiture', 'Menuiserie',
-    'Serrurerie', 'Extérieurs / Jardin', 'Humidité / Infiltration', 'Autre'
-  ];
-}
-
 const ETAPES = ['cree', 'valide_cs', 'consultation', 'intervention_planifiee', 'travaux_acceptes', 'archive'];
 
 const ETIQUETTES_ETAPES = {
@@ -124,6 +117,6 @@ module.exports = {
   isCS, isGestionnaire, isAdmin, estActif,
   unitsDeUser, qualiteDeUnit, estUniteCommune,
   peutVoirTicket, peutChoisirUnites, estResidentConcerne, peutEditerTicket, peutSupprimerTicket,
-  categoriesTicket, ETAPES, ETIQUETTES_ETAPES, transitionValide, peutReouvrir,
+  ETAPES, ETIQUETTES_ETAPES, transitionValide, peutReouvrir,
   CATEGORIES_FICHIER_CS
 };

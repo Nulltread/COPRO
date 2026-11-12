@@ -65,7 +65,7 @@ router.get('/profil/export', (req, res) => {
   const unites = db.prepare(
     `SELECT un.type, un.numero, un.label, ur.qualite FROM units un JOIN unit_residents ur ON ur.unit_id = un.id WHERE ur.user_id = ?`
   ).all(req.user.id);
-  const tickets = db.prepare('SELECT id, titre, description, categorie, etape, urgent, created_at FROM tickets WHERE auteur_id = ?').all(req.user.id);
+  const tickets = db.prepare('SELECT id, titre, description, etape, urgent, created_at FROM tickets WHERE auteur_id = ?').all(req.user.id);
   const notifications = db.prepare('SELECT type, message, lu, created_at FROM notifications WHERE user_id = ?').all(req.user.id);
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Content-Disposition', 'attachment; filename="mes-donnees-copro.json"');

@@ -78,7 +78,7 @@ after(() => { server.close(); fs.rmSync(dbDir, { recursive: true, force: true })
 function db() { return require('../src/db').getDb(); }
 
 async function creerTicket(c, uniteIds, titre = 'Ticket test') {
-  const res = await c.req('POST', '/tickets', { titre, description: 'desc', categorie: 'Autre', unite_ids: uniteIds.map(String) });
+  const res = await c.req('POST', '/tickets', { titre, description: 'desc', unite_ids: uniteIds.map(String) });
   return { res, tid: res.status === 302 ? Number(res.headers.get('location').split('/').pop()) : null };
 }
 
@@ -300,7 +300,7 @@ test('compte-rendu d\'intervention : une instance par unité + une pour le CS', 
 
 test('notifications in-app pour le CS à la création d\'un ticket urgent', async () => {
   const r1 = await client(); await login(r1, 'r1@test.local', 'motdepasse1');
-  const res = await r1.req('POST', '/tickets', { titre: 'Urgence notif', description: '', categorie: 'Plomberie', unite_ids: [String(ids.villa1)], urgent: '1' });
+  const res = await r1.req('POST', '/tickets', { titre: 'Urgence notif', description: '', unite_ids: [String(ids.villa1)], urgent: '1' });
   const tid = Number(res.headers.get('location').split('/').pop());
   const n = db().prepare('SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND ticket_id = ?').get(ids.cs, tid).n;
   assert.ok(n >= 1);
@@ -374,4 +374,24 @@ test('filtre par coût minimum sur la liste des tickets', async () => {
   assert.ok(!liste.includes('Ticket filtre coût'));
   const liste2 = await (await cs.req('GET', '/tickets?unite=toutes&cout_min=100')).text();
   assert.ok(liste2.includes('Ticket filtre coût'));
+});
+
+test('liste : archivés masqués par défaut (filtre etape=archive pour les voir), tri urgence d\'abord puis date croissante', async () => {
+  const r1 = await client(); await login(r1, 'r1@test.local', 'motdepasse1');
+  const cs = await client(); await login(cs, 'cs@test.local', 'motdepasse1');
+  const { tid: t1 } = await creerTicket(r1, [ids.villa1], 'Liste test ancien archivé');
+  const { tid: t2 } = await creerTicket(r1, [ids.villa1], 'Liste test urgent récent');
+  const { tid: t3 } = await creerTicket(r1, [ids.villa1], 'Liste test non urgent récent');
+  db().prepare('UPDATE tickets SET urgent = 1 WHERE id = ?').run(t2);
+  db().prepare("UPDATE tickets SET created_at = '2020-01-01 10:00:00' WHERE id = ?").run(t1);
+  db().prepare("UPDATE tickets SET created_at = '2020-01-02 10:00:00' WHERE id = ?").run(t2);
+  db().prepare("UPDATE tickets SET created_at = '2020-01-03 10:00:00' WHERE id = ?").run(t3);
+  await cs.req('POST', `/tickets/${t1}/transition`, { etape: 'archive' });
+
+  const liste = await (await r1.req('GET', '/tickets')).text();
+  assert.ok(!liste.includes('Liste test ancien archivé'));
+  assert.ok(liste.indexOf('Liste test urgent récent') < liste.indexOf('Liste test non urgent récent'));
+
+  const archives = await (await r1.req('GET', '/tickets?etape=archive')).text();
+  assert.ok(archives.includes('Liste test ancien archivé'));
 });

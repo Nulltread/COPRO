@@ -13,7 +13,7 @@
     <li class="carte-ticket <%= t.urgent ? 'urgent' : '' %>">
       <a href="/tickets/<%= t.id %>">
         <div class="ligne1"><strong><%= t.titre %></strong> <% if (t.urgent) { %><span class="tag-urgent">URGENT</span><% } %></div>
-        <div class="ligne2"><%= etiquettes[t.etape] %> · <%= t.categorie %> · <%= t.unites || '' %></div>
+        <div class="ligne2"><span class="tag-etape etape-<%= t.etape %>"><%= etiquettes[t.etape] %></span> · <%= t.unites || '' %></div>
       </a>
     </li>
   <% } %>

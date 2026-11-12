@@ -14,7 +14,7 @@ En v1, le **conseil syndical peut passer le ticket à n'importe quel statut, à 
 - La liste des unités reste **modifiable après création** (ex. sinistre qui se propage).
 - Les tickets sur les **parties communes sont créables uniquement par le conseil syndical**.
 - Un résident **sans unité validée ne peut pas créer de ticket**.
-- Formulaire minimal : titre court, description simple, catégorie, unités concernées, photos, indicateur « urgent ».
+- Formulaire minimal : titre court, description simple, unités concernées (sélection multiple, les siennes présélectionnées), photos, interrupteur « urgent » en mode toggle.
 
 ## Résolution (travaux acceptés → archivé)
 

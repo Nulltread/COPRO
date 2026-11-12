@@ -10,7 +10,7 @@ const { getDb } = require('./index');
 function migrate() {
   const db = getDb();
   const cols = db.prepare('PRAGMA table_info(users)').all().map(c => c.name);
-  if (cols.includes('conseil_syndical')) return false;
+  if (cols.includes('conseil_syndical')) return sansCategorie(db, false);
 
   db.pragma('foreign_keys = OFF');
   db.exec('BEGIN');
@@ -131,7 +131,18 @@ function migrate() {
     CREATE UNIQUE INDEX IF NOT EXISTS idx_cr_ticket_unite ON comptes_rendus(ticket_id, COALESCE(unit_id, 0));
   `);
   console.log('Migration : ancienne base mise à jour vers le nouveau schéma (rôles CS, unités, cycle de vie).');
-  return true;
+  return sansCategorie(db, true);
+}
+
+// La catégorie de travaux est retirée : on supprime la colonne si elle existe encore.
+function sansCategorie(db, migre) {
+  const tcols = db.prepare('PRAGMA table_info(tickets)').all().map(c => c.name);
+  if (tcols.includes('categorie')) {
+    db.prepare('ALTER TABLE tickets DROP COLUMN categorie').run();
+    console.log('Migration : colonne tickets.categorie supprimée.');
+    return true;
+  }
+  return migre;
 }
 
 module.exports = { migrate };

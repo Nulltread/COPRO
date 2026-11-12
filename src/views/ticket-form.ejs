@@ -11,27 +11,25 @@
   <label>Description
     <textarea name="description" rows="4" placeholder="Décrivez simplement le problème"></textarea>
   </label>
-  <label>Catégorie
-    <select name="categorie" required>
-      <% for (const c of categories) { %>
-        <option value="<%= c %>" <%= ticket && ticket.categorie === c ? 'selected' : '' %>><%= c %></option>
-      <% } %>
-    </select>
-  </label>
   <fieldset>
     <legend>Villa(s) / garage(s) concerné(s) — au moins une de vos unités</legend>
-    <div class="cases-unites">
-      <% for (const u of unites) { %>
-        <label class="case <%= mesUnites.includes(u.id) ? 'ma-unite' : '' %>">
-          <input type="checkbox" name="unite_ids" value="<%= u.id %>" <%= mesUnites.includes(u.id) ? 'checked' : '' %>> <%= u.label %><% if (mesUnites.includes(u.id)) { %> (votre unité)<% } %>
-        </label>
-      <% } %>
-    </div>
+    <label>Unités concernées
+      <select name="unite_ids" multiple required size="10">
+        <% for (const u of unites) { %>
+          <option value="<%= u.id %>" <%= mesUnites.includes(u.id) ? 'selected' : '' %>><%= u.label %><% if (mesUnites.includes(u.id)) { %> (votre unité)<% } %></option>
+        <% } %>
+      </select>
+    </label>
+    <p class="aide">Maintenez Ctrl (ou Cmd sur Mac) pour sélectionner plusieurs unités. Vos unités sont présélectionnées.</p>
     <% if (user.conseil_syndical === 1 || user.role === 'admin') { %>
       <p class="aide">En tant que membre du conseil syndical, vous pouvez aussi déclarer un ticket sur les parties communes.</p>
     <% } %>
   </fieldset>
-  <label class="case case-urgent"><input type="checkbox" name="urgent" value="1"> 🚨 C'est urgent (fuite, danger…)</label>
+  <label class="toggle-urgent">
+    <input type="checkbox" name="urgent" value="1" class="toggle-case">
+    <span class="toggle-piste" aria-hidden="true"></span>
+    <span>🚨 C'est urgent (fuite, danger…)</span>
+  </label>
   <label>Photos (compressées automatiquement avant l'envoi)
     <input type="file" name="fichiers" accept="image/jpeg,image/png,image/webp,application/pdf" multiple id="champ-photos">
   </label>

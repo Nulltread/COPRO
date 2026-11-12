@@ -8,15 +8,9 @@
 <% } %>
 <form method="get" action="/tickets" class="filtres">
   <select name="etape">
-    <option value="">Tous les états</option>
+    <option value="">Tous les états (hors archivés)</option>
     <% for (const e of etapes) { %>
       <option value="<%= e %>" <%= filtres.etape === e ? 'selected' : '' %>><%= etiquettes[e] %></option>
-    <% } %>
-  </select>
-  <select name="categorie">
-    <option value="">Toutes catégories</option>
-    <% for (const c of categories) { %>
-      <option value="<%= c %>" <%= filtres.categorie === c ? 'selected' : '' %>><%= c %></option>
     <% } %>
   </select>
   <select name="unite">
@@ -43,7 +37,7 @@
           <strong><%= t.titre %></strong>
           <% if (t.urgent) { %><span class="tag-urgent">URGENT</span><% } %>
         </div>
-        <div class="ligne2"><%= etiquettes[t.etape] %> · <%= t.categorie %> · <%= t.unites || '' %></div>
+        <div class="ligne2"><span class="tag-etape etape-<%= t.etape %>"><%= etiquettes[t.etape] %></span> · <%= t.unites || '' %></div>
       </a>
     </li>
   <% } %>
