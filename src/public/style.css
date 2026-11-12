@@ -30,7 +30,10 @@ body {
 .barre a { color: #fff; text-decoration: none; }
 .marque { font-weight: 700; font-size: 1.05rem; margin-right: auto; }
 .nav { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 0.92rem; }
-.bouton-nav { background: #fff; color: var(--bleu-fonce); padding: 6px 12px; border-radius: 20px; font-weight: 600; }
+.bouton-nav {
+  border: 1.5px solid rgba(255, 255, 255, 0.85); border-radius: 10px;
+  padding: 6px 12px; font-weight: 600; white-space: nowrap;
+}
 .nav-notif { position: relative; }
 .badge {
   background: var(--rouge); color: #fff; border-radius: 50%;
@@ -129,7 +132,25 @@ fieldset { border: 1px solid #c5c9d1; border-radius: 10px; }
 .chiffre { font-size: 1.35rem; font-weight: 800; }
 .legende { font-size: 0.82rem; color: #555; }
 .apercu { display: flex; flex-wrap: wrap; gap: 8px; }
-.apercu img { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 1px solid #ccc; }
+.apercu .miniature { position: relative; width: 72px; height: 72px; }
+.apercu img { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 1px solid #ccc; display: block; }
+.apercu .poubelle {
+  position: absolute; top: -6px; right: -6px; width: 24px; height: 24px; border-radius: 50%;
+  border: none; background: var(--rouge); color: #fff; font-size: 0.8rem; line-height: 1;
+  cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0;
+}
+.bloc-photos { display: flex; flex-direction: column; gap: 10px; }
+.champ-fichiers-caches { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+.zone-photos {
+  display: flex; align-items: center; gap: 12px; cursor: pointer;
+  border: 1.5px dashed #b9bfc9; border-radius: 12px; background: var(--gris);
+  padding: 14px; color: #555;
+}
+.zone-photos:active { background: #e4e8ee; }
+.zone-photos-plus { font-size: 2rem; font-weight: 300; color: var(--bleu); line-height: 1; }
+.zone-photos-icone { font-size: 1.5rem; }
+.zone-photos-texte { font-weight: 600; font-size: 0.95rem; }
+.zone-photos-texte small { font-weight: 400; color: #777; }
 @media (max-width: 480px) {
   .nav { font-size: 0.85rem; gap: 8px; }
   .ligne2-unites { width: 100%; text-align: left; }

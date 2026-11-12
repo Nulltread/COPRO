@@ -27,23 +27,47 @@
   }
 
   document.querySelectorAll('input[type=file][multiple]').forEach(function (champ) {
+    var conteneur = champ.closest('form').querySelector('.apercu');
+
+    function retirerFichier(index) {
+      var dt = new DataTransfer();
+      Array.prototype.forEach.call(champ.files, function (f, i) {
+        if (i !== index) dt.items.add(f);
+      });
+      champ.files = dt.files;
+      afficherApercu();
+    }
+
+    function afficherApercu() {
+      if (!conteneur) return;
+      conteneur.innerHTML = '';
+      Array.prototype.forEach.call(champ.files, function (f, i) {
+        if (!f.type.startsWith('image/')) return;
+        var miniature = document.createElement('div');
+        miniature.className = 'miniature';
+        var img = document.createElement('img');
+        img.src = URL.createObjectURL(f);
+        img.alt = f.name;
+        var poubelle = document.createElement('button');
+        poubelle.type = 'button';
+        poubelle.className = 'poubelle';
+        poubelle.textContent = '🗑';
+        poubelle.title = 'Supprimer cette photo';
+        poubelle.addEventListener('click', function () { retirerFichier(i); });
+        miniature.appendChild(img);
+        miniature.appendChild(poubelle);
+        conteneur.appendChild(miniature);
+      });
+    }
+
     champ.addEventListener('change', function () {
-      var conteneur = champ.closest('form').querySelector('.apercu');
-      if (conteneur) {
-        conteneur.innerHTML = '';
-        Array.prototype.forEach.call(champ.files, function (f) {
-          if (!f.type.startsWith('image/')) return;
-          var img = document.createElement('img');
-          img.src = URL.createObjectURL(f);
-          conteneur.appendChild(img);
-        });
-      }
       Promise.all(Array.prototype.map.call(champ.files, function (f) {
         return compresserImage(f, 1600, 0.8);
       })).then(function (compresses) {
         var dt = new DataTransfer();
         compresses.forEach(function (f) { dt.items.add(f); });
         champ.files = dt.files;
+        afficherApercu();
       });
     });
   });

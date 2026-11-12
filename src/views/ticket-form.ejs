@@ -8,9 +8,23 @@
   <label>Titre court
     <input type="text" name="titre" required maxlength="120" placeholder="Ex. : fuite sous l'évier">
   </label>
+  <label class="toggle-urgent">
+    <input type="checkbox" name="urgent" value="1" class="toggle-case">
+    <span class="toggle-piste" aria-hidden="true"></span>
+    <span>🚨 C'est urgent (fuite, danger…)</span>
+  </label>
   <label>Description
     <textarea name="description" rows="4" placeholder="Décrivez simplement le problème"></textarea>
   </label>
+  <div class="bloc-photos">
+    <label class="zone-photos">
+      <input type="file" name="fichiers" accept="image/jpeg,image/png,image/webp,application/pdf" multiple id="champ-photos" class="champ-fichiers-caches">
+      <span class="zone-photos-plus" aria-hidden="true">+</span>
+      <span class="zone-photos-icone" aria-hidden="true">📷</span>
+      <span class="zone-photos-texte">Ajouter des photos<br><small>compressées automatiquement avant l'envoi</small></span>
+    </label>
+    <div id="apercu-photos" class="apercu"></div>
+  </div>
   <fieldset>
     <legend>Villa(s) / garage(s) concerné(s) — au moins une de vos unités</legend>
     <label>Unités concernées
@@ -25,15 +39,6 @@
       <p class="aide">En tant que membre du conseil syndical, vous pouvez aussi déclarer un ticket sur les parties communes.</p>
     <% } %>
   </fieldset>
-  <label class="toggle-urgent">
-    <input type="checkbox" name="urgent" value="1" class="toggle-case">
-    <span class="toggle-piste" aria-hidden="true"></span>
-    <span>🚨 C'est urgent (fuite, danger…)</span>
-  </label>
-  <label>Photos (compressées automatiquement avant l'envoi)
-    <input type="file" name="fichiers" accept="image/jpeg,image/png,image/webp,application/pdf" multiple id="champ-photos">
-  </label>
-  <div id="apercu-photos" class="apercu"></div>
   <button type="submit" class="bouton">Déclarer le ticket</button>
 </form>
 <%- include('partials/footer') %>

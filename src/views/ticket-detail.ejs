@@ -23,10 +23,15 @@
     <label>Description
       <textarea name="description" rows="4"><%= ticket.description %></textarea>
     </label>
-    <label>Ajouter des photos
-      <input type="file" name="fichiers" accept="image/jpeg,image/png,image/webp" multiple class="champ-fichiers">
-    </label>
-    <div class="apercu"></div>
+    <div class="bloc-photos">
+      <label class="zone-photos">
+        <input type="file" name="fichiers" accept="image/jpeg,image/png,image/webp" multiple class="champ-fichiers champ-fichiers-caches">
+        <span class="zone-photos-plus" aria-hidden="true">+</span>
+        <span class="zone-photos-icone" aria-hidden="true">📷</span>
+        <span class="zone-photos-texte">Ajouter des photos</span>
+      </label>
+      <div class="apercu"></div>
+    </div>
     <button class="bouton-secondaire" type="submit">Enregistrer les modifications</button>
   </form>
 </section>
@@ -149,10 +154,15 @@
         <input type="text" name="delai" placeholder="Ex. : 2 semaines">
       </label>
     <% } %>
-    <label>Fichiers (images compressées automatiquement, PDF acceptés)
-      <input type="file" name="fichiers" accept="image/jpeg,image/png,image/webp,application/pdf" multiple required class="champ-fichiers">
-    </label>
-    <div class="apercu"></div>
+    <div class="bloc-photos">
+      <label class="zone-photos">
+        <input type="file" name="fichiers" accept="image/jpeg,image/png,image/webp,application/pdf" multiple required class="champ-fichiers champ-fichiers-caches">
+        <span class="zone-photos-plus" aria-hidden="true">+</span>
+        <span class="zone-photos-icone" aria-hidden="true">📷</span>
+        <span class="zone-photos-texte">Ajouter des fichiers<br><small>images compressées automatiquement, PDF acceptés</small></span>
+      </label>
+      <div class="apercu"></div>
+    </div>
     <button class="bouton" type="submit">Ajouter</button>
   </form>
 </section>
