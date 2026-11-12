@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [vibe/copro-app-010909, main]
+    branches: [main]
   pull_request:
     branches: [main]
 

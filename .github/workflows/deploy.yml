@@ -2,7 +2,7 @@ name: Deploy
 
 on:
   push:
-    branches: [vibe/copro-app-010909]
+    branches: [main]
 
 jobs:
   deploy:

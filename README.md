@@ -56,7 +56,7 @@ L'application tient dans un seul conteneur : un petit VPS suffit (ex. Scaleway I
 4. **Cloner le projet** :
    ```bash
    git clone https://github.com/Nulltread/COPRO.git /srv/copro
-   cd /srv/copro && git checkout vibe/copro-app-010909
+   cd /srv/copro && git checkout main
    ```
 5. **Configurer** : copier `.env.example` en `.env`, renseigner `PORT=3000` et les chemins par défaut. Remplacer le domaine dans `Caddyfile`.
 6. **Lancer** (HTTPS automatique via Caddy / Let's Encrypt) :
@@ -70,7 +70,7 @@ Les données persistent dans `./data` et `./uploads` sur le disque de l'instance
 
 ### Déploiement automatique (GitHub Actions)
 
-Après le **premier déploiement manuel** (étapes ci-dessus, dont `setup-server.sh` une seule fois), chaque `push` sur la branche `vibe/copro-app-010909` déploie automatiquement via `.github/workflows/deploy.yml`.
+Après le **premier déploiement manuel** (étapes ci-dessus, dont `setup-server.sh` une seule fois), chaque `push` sur la branche `main` déploie automatiquement via `.github/workflows/deploy.yml`.
 
 Configuration :
 1. Générer une paire de clés dédiée au déploiement : `ssh-keygen -t ed25519 -f ~/.ssh/copro_deploy`

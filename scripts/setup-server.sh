@@ -9,7 +9,7 @@ fi
 DOMAIN="${1:?Usage: sudo $0 <domaine.exemple.fr>}"
 APP_DIR=/srv/copro
 BACKUP_DIR=/srv/backups
-BRANCH=vibe/copro-app-010909
+BRANCH=main
 
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y git curl ca-certificates ufw
