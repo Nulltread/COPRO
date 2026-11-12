@@ -115,6 +115,7 @@ fieldset { border: 1px solid #c5c9d1; border-radius: 10px; }
 .metro li.actuelle .puce { background: var(--bleu); color: #fff; }
 .metro li.actuelle .nom { color: var(--bleu); font-weight: 700; }
 .bloc { border-top: 1px solid #e3e6ea; padding-top: 6px; margin-top: 18px; }
+.install-etapes { padding-left: 22px; margin: 8px 0; display: flex; flex-direction: column; gap: 6px; }
 .liste-docs { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .liste-docs li { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .montant { font-weight: 700; }

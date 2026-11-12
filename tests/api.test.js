@@ -412,3 +412,25 @@ test('liste : archivés masqués par défaut (filtre etape=archive pour les voir
   const archives = await (await r1.req('GET', '/tickets?etape=archive')).text();
   assert.ok(archives.includes('Liste test ancien archivé'));
 });
+
+test('PWA : manifest, service worker, icônes servis ; page profil propose le raccourci écran d\'accueil', async () => {
+  const c = await client(); await login(c, 'r1@test.local', 'motdepasse1');
+
+  const manifest = await c.req('GET', '/manifest.webmanifest');
+  assert.strictEqual(manifest.status, 200);
+  const m = await manifest.json();
+  assert.strictEqual(m.display, 'standalone');
+  assert.ok(m.icons.some(i => i.sizes === '512x512'));
+
+  const sw = await c.req('GET', '/sw.js');
+  assert.strictEqual(sw.status, 200);
+
+  const icone = await c.req('GET', '/icon-192.png');
+  assert.strictEqual(icone.status, 200);
+  assert.ok((icone.headers.get('content-type') || '').includes('image/png'));
+
+  const profil = await (await c.req('GET', '/profil')).text();
+  assert.ok(profil.includes('id="install-etat"'));
+  assert.ok(profil.includes('/manifest.webmanifest'));
+  assert.ok(profil.includes('apple-touch-icon'));
+});

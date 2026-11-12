@@ -1,4 +1,65 @@
 (function () {
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/sw.js').catch(function () {});
+    });
+  }
+
+  var deferredInstall = null;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferredInstall = e;
+    afficherInstall();
+  });
+  window.addEventListener('appinstalled', function () {
+    deferredInstall = null;
+    afficherInstall();
+  });
+
+  function estStandalone() {
+    return (window.matchMedia && (window.matchMedia('(display-mode: standalone)').matches
+      || window.matchMedia('(display-mode: fullscreen)').matches
+      || window.matchMedia('(display-mode: minimal-ui)').matches))
+      || window.navigator.standalone === true;
+  }
+
+  function afficherInstall() {
+    var bloc = document.getElementById('install-etat');
+    if (!bloc) return;
+    bloc.innerHTML = '';
+    if (estStandalone()) {
+      bloc.innerHTML = '<p class="info">✅ L\'application est déjà sur votre écran d\'accueil.</p>';
+      return;
+    }
+    if (deferredInstall) {
+      var bouton = document.createElement('button');
+      bouton.type = 'button';
+      bouton.className = 'bouton';
+      bouton.textContent = '➕ Ajouter à l\'écran d\'accueil';
+      bouton.addEventListener('click', function () {
+        deferredInstall.prompt();
+        deferredInstall.userChoice.then(function () {
+          deferredInstall = null;
+          afficherInstall();
+        });
+      });
+      bloc.appendChild(bouton);
+      return;
+    }
+    var ua = navigator.userAgent || '';
+    var estIOS = /iPhone|iPad|iPod/.test(ua) && !window.MSStream;
+    if (estIOS) {
+      bloc.innerHTML = '<ol class="aide install-etapes">'
+        + '<li>Appuyez sur le bouton <strong>Partager</strong> ⎋ en bas de l\'écran.</li>'
+        + '<li>Faites défiler et choisissez <strong>« Sur l\'écran d\'accueil »</strong>.</li>'
+        + '</ol>';
+    } else {
+      bloc.innerHTML = '<p class="aide">Ouvrez le menu de votre navigateur (⋮) puis choisissez '
+        + '<strong>« Ajouter à l\'écran d\'accueil »</strong> ou <strong>« Installer l\'application »</strong>.</p>';
+    }
+  }
+  afficherInstall();
+
   function compresserImage(file, maxDim, qualite) {
     return new Promise(function (resolve) {
       if (!file.type.startsWith('image/')) return resolve(file);
