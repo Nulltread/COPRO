@@ -15,9 +15,9 @@ Ce fichier réintroduit le **canal email** (retiré en v1 dans `08-notifications
 
 ## Serveur mail
 
-- **Auto-hébergé sur l'instance Scaleway** (même VPS que l'application), déployé en conteneur Docker dédié, séparé du conteneur de l'application. Solution retenue : **Mailcow dockerisé** (interface d'administration web, génération automatique des clés DKIM), ou alternative plus légère (Postfix + alias virtuels) si la RAM de l'instance est insuffisante (prévoir ~1 Go de RAM dédiés ; monter en gamme d'instance si besoin, ex. DEV1-M).
+- **Auto-hébergé sur le serveur Scaleway existant** (Dedibox Start-2-S-SSD, Ubuntu 20.04, IP publique `51.159.64.71`), même serveur que l'application, déployé en conteneur Docker dédié, séparé du conteneur de l'application. Solution retenue : **Mailcow dockerisé** (interface d'administration web, génération automatique des clés DKIM), ou alternative plus légère (Postfix + alias virtuels) si la RAM du serveur est insuffisante (prévoir ~1 Go de RAM dédiés).
 - **Envoi des emails de l'application** via le serveur mail local en SMTP (relais interne authentifié) : aucune dépendance à un service payant, cohérent avec la contrainte de coût minimal de `10-stockage-et-contraintes-techniques.md`. Configuration par variables d'environnement (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`).
-- **Contrainte Scaleway** : le port 25 sortant est bloqué par défaut → demande de déblocage via la console Scaleway (Instance → IP → "unblock port 25"), et configuration du **PTR/rDNS** de l'IP vers `mail.copro-pinede-gardanne.fr` (obligatoire pour la délivrabilité).
+- **Contraintes Scaleway Dedibox** : le port 25 sortant est bloqué par défaut et il n'y a pas de bouton de déblocage dans la console → **ouvrir un ticket au support Scaleway** demandant le déblocage du port 25 sortant pour l'IP `51.159.64.71` (usage légitime, avec SPF/DKIM/DMARC). Le **PTR/rDNS** se règle dans la console Dedibox : Adresses IP publiques → « Modifier » à côté de « Reverse » → remplacer `51-159-64-71.rev.poneytelecom.eu` par `mail.copro-pinede-gardanne.fr` (obligatoire pour la délivrabilité).
 
 ## Enregistrements DNS du domaine
 
