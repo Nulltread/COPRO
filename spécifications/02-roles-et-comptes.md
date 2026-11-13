@@ -4,7 +4,7 @@ Trois niveaux de droits : **résident**, **membre du conseil syndical** (statut 
 
 ## Résident (propriétaire ou locataire)
 
-- Compte de base. **Auto-inscription** : identifiant = adresse email, nom et prénom obligatoires, numéro de téléphone obligatoire. **Pas de vérification d'email en v1** : le compte est actif immédiatement.
+- Compte de base. **Auto-inscription** : identifiant = adresse email, nom et prénom obligatoires, numéro de téléphone obligatoire. **Confirmation par email** : à l'inscription, un email avec lien de confirmation est envoyé (voir `16-serveur-mail-et-domaine.md`) ; le compte est actif immédiatement mais son email reste « non confirmé » tant que le lien n'est pas ouvert.
 - Chacun peut changer son mot de passe dans son espace compte.
 - Un résident crée des tickets, suit leur avancement, commente, ajoute des photos. **Compte requis pour déclarer un ticket.**
 

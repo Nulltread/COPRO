@@ -1,6 +1,6 @@
 # Notifications
 
-**Canal unique en v1 : notification in-app.** Aucun email, aucun web push (les canaux email/PWA du brief initial sont retirés ; le push natif iOS/Android reste hors périmètre).
+**Canaux : notification in-app + email.** Le canal email, retiré en v1, est réintroduit en complément de l'in-app (voir `16-serveur-mail-et-domaine.md`). Aucun web push (le push natif iOS/Android reste hors périmètre).
 
 ## Événements notifiés
 
