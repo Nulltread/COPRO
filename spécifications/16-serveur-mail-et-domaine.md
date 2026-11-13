@@ -17,13 +17,13 @@ Ce fichier réintroduit le **canal email** (retiré en v1 dans `08-notifications
 
 - **Auto-hébergé sur le serveur Scaleway existant** (Dedibox Start-2-S-SSD, Ubuntu 20.04, IP publique `51.159.64.71`), même serveur que l'application, déployé en conteneur Docker dédié, séparé du conteneur de l'application. Solution retenue : **Mailcow dockerisé** (interface d'administration web, génération automatique des clés DKIM), ou alternative plus légère (Postfix + alias virtuels) si la RAM du serveur est insuffisante (prévoir ~1 Go de RAM dédiés).
 - **Envoi des emails de l'application** via le serveur mail local en SMTP (relais interne authentifié) : aucune dépendance à un service payant, cohérent avec la contrainte de coût minimal de `10-stockage-et-contraintes-techniques.md`. Configuration par variables d'environnement (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`).
-- **Contraintes Scaleway Dedibox** : le port 25 sortant est bloqué par défaut et il n'y a pas de bouton de déblocage dans la console → **ouvrir un ticket au support Scaleway** demandant le déblocage du port 25 sortant pour l'IP `51.159.64.71` (usage légitime, avec SPF/DKIM/DMARC). Le **PTR/rDNS** se règle dans la console Dedibox : Adresses IP publiques → « Modifier » à côté de « Reverse » → remplacer `51-159-64-71.rev.poneytelecom.eu` par `mail.copro-pinede-gardanne.fr` (obligatoire pour la délivrabilité).
+- **Contraintes Scaleway Dedibox** : le **PTR/rDNS** (`mail.copro-pinede-gardanne.fr` à la place de `51-159-64-71.rev.poneytelecom.eu`, modifiable via « Modifier » à côté de « Reverse » dans la console) est **recommandé mais reporté** : sans lui, certains destinataires (Gmail notamment) classent les emails en spam. Il reste réversible et sera fait si des problèmes de délivrabilité apparaissent. Le port 25 sortant, bloqué par défaut sur Dedibox sans bouton de déblocage dans la console, sera testé à l'envoi réel : s'il est bloquant, **ouvrir un ticket au support Scaleway** demandant le déblocage du port 25 pour l'IP `51.159.64.71`.
 
 ## Enregistrements DNS du domaine
 
 | Type | Nom | Valeur |
 |---|---|---|
-| A | `mail` | IP publique de l'instance Scaleway |
+| A | `mail` | IP publique du serveur Dedibox `51.159.64.71` (enregistrement créé dans la section **Domains and DNS** de la console Scaleway, avant l'installation du serveur mail, pour permettre le certificat HTTPS) |
 | MX | `@` | `mail.copro-pinede-gardanne.fr` (priorité 10) |
 | TXT (SPF) | `@` | `v=spf1 mx -all` |
 | TXT (DKIM) | `dkim._domainkey` | clé publique générée par le serveur mail |
