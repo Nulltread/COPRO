@@ -48,7 +48,10 @@ async function synchroniserAliasCS() {
   const apiUrl = process.env.MAILCOW_API_URL;
   const apiKey = process.env.MAILCOW_API_KEY;
   if (!apiUrl || !apiKey) return false;
-  const destinations = membresCSAvecEmailVerifie();
+  const membres = membresCSAvecEmailVerifie();
+  // Alias jamais vide (l'API Mailcow refuse une destination vide) : adresse bidon
+  // réservée, inexistante côté serveur, donc jamais délivrée ni stockée.
+  const destinations = membres.length ? membres : [`liste-vide@${process.env.MAIL_DOMAIN || 'copro-pinede-gardanne.fr'}`];
   try {
     let res = await apiPost(apiUrl, apiKey, '/api/v1/edit/alias', {
       address: ALIAS(),
