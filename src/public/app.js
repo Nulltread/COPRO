@@ -132,4 +132,87 @@
       });
     });
   });
+
+  // --- Modale de confirmation générique (form[data-confirm]) ---
+  var modale = document.getElementById('modale');
+  if (modale) {
+    var modaleTitre = document.getElementById('modale-titre');
+    var modaleTexte = document.getElementById('modale-texte');
+    var modaleConfirmer = document.getElementById('modale-confirmer');
+    var modaleAnnuler = document.getElementById('modale-annuler');
+    var formEnAttente = null;
+    var fermerModale = function () { modale.hidden = true; formEnAttente = null; };
+    modaleAnnuler.addEventListener('click', fermerModale);
+    modale.addEventListener('click', function (e) { if (e.target === modale) fermerModale(); });
+    modaleConfirmer.addEventListener('click', function () {
+      var f = formEnAttente;
+      fermerModale();
+      if (f) { f.dataset.confirme = '1'; f.submit(); }
+    });
+    document.querySelectorAll('form[data-confirm]').forEach(function (form) {
+      form.addEventListener('submit', function (e) {
+        if (form.dataset.confirme === '1') return;
+        e.preventDefault();
+        modaleTitre.textContent = form.dataset.confirmTitre || 'Confirmer ?';
+        modaleTexte.textContent = form.dataset.confirm || '';
+        formEnAttente = form;
+        modale.hidden = false;
+      });
+    });
+  }
+
+  // --- Recherche à la volée sur la liste des comptes (spec 17) ---
+  var rechercheComptes = document.getElementById('recherche-comptes');
+  if (rechercheComptes) {
+    var lignes = Array.prototype.slice.call(document.querySelectorAll('#liste-comptes li'));
+    var aucun = document.getElementById('recherche-aucun');
+    rechercheComptes.addEventListener('input', function () {
+      var q = rechercheComptes.value.trim().toLowerCase();
+      var visibles = 0;
+      lignes.forEach(function (li) {
+        var ok = !q || (li.dataset.recherche || li.textContent.toLowerCase()).indexOf(q) !== -1;
+        li.style.display = ok ? '' : 'none';
+        if (ok) visibles++;
+      });
+      if (aucun) aucun.hidden = visibles > 0;
+    });
+  }
+
+  // --- Filtres des tickets appliqués dès la sélection (plus de bouton, spec 22) ---
+  var filtres = document.getElementById('filtres-tickets');
+  if (filtres) {
+    filtres.querySelectorAll('select, input[type=checkbox]').forEach(function (el) {
+      el.addEventListener('change', function () { filtres.submit(); });
+    });
+    var champQ = filtres.querySelector('input[name=q]');
+    var timerQ = null;
+    if (champQ) {
+      champQ.addEventListener('input', function () {
+        clearTimeout(timerQ);
+        timerQ = setTimeout(function () { filtres.submit(); }, 400);
+      });
+    }
+  }
+
+  // --- Devis des consultations : un champ montant par fichier, même ordre ---
+  document.querySelectorAll('input[type=file][data-montants]').forEach(function (champ) {
+    var conteneur = document.getElementById(champ.dataset.montants);
+    if (!conteneur) return;
+    champ.addEventListener('change', function () {
+      conteneur.innerHTML = '';
+      Array.prototype.forEach.call(champ.files, function (f) {
+        var label = document.createElement('label');
+        label.textContent = 'Montant du devis « ' + f.name + ' » (€)';
+        var input = document.createElement('input');
+        input.type = 'number';
+        input.name = 'devis_montant';
+        input.min = '0.01';
+        input.step = '0.01';
+        input.required = true;
+        input.placeholder = 'Montant (€)';
+        label.appendChild(input);
+        conteneur.appendChild(label);
+      });
+    });
+  });
 })();

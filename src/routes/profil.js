@@ -15,7 +15,8 @@ router.get('/profil', (req, res) => {
     `SELECT un.*, ur.qualite FROM units un JOIN unit_residents ur ON ur.unit_id = un.id WHERE ur.user_id = ? ORDER BY un.type DESC, un.numero`
   ).all(req.user.id);
   const mesRattachements = db.prepare(
-    `SELECT r.*, un.label AS unite_label FROM rattachements r JOIN units un ON un.id = r.unit_id
+    `SELECT r.*, un.label AS unite_label, un.type AS unite_type, un.numero AS unite_numero
+     FROM rattachements r JOIN units un ON un.id = r.unit_id
      WHERE r.user_id = ? ORDER BY r.created_at DESC`
   ).all(req.user.id);
   const unitesReclamables = db.prepare("SELECT * FROM units WHERE type != 'communes' ORDER BY type DESC, numero").all();

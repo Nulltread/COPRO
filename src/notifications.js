@@ -16,9 +16,9 @@ function notifierParEmail(userIds, ticketId, message) {
   }
 }
 
-// Canal unique en v1 : notification in-app.
-// Destinataires d'un ticket : le conseil syndical et les residents
-// concernes (rattaches aux unites du ticket), hors auteur de l'evenement.
+// Destinataires d'un evenement sur un ticket (spec 18) : les residents des
+// unites concernees, les membres du CS et l'admin — hors auteur de l'evenement.
+// Le createur n'est notifie qu'en tant que resident d'une unite concernee.
 function destinatairesTicket(ticketId, auteurId) {
   const db = getDb();
   const rows = db.prepare(
@@ -27,7 +27,9 @@ function destinatairesTicket(ticketId, auteurId) {
      JOIN ticket_units tu ON tu.unit_id = ur.unit_id
      WHERE tu.ticket_id = ? AND u.statut = 'actif'
      UNION
-     SELECT id FROM users WHERE conseil_syndical = 1 AND statut = 'actif'`
+     SELECT id FROM users WHERE conseil_syndical = 1 AND statut = 'actif'
+     UNION
+     SELECT id FROM users WHERE role = 'admin' AND statut = 'actif'`
   ).all(ticketId);
   const ids = new Set(rows.map(r => r.id));
   if (auteurId) ids.delete(auteurId);
@@ -70,8 +72,19 @@ function notifierCS(type, message, ticketId = null, auteurId = null) {
   notifierParEmail(ids, ticketId, message);
 }
 
+// Admin + membres du CS (ex. alertes de peremption des rattachements, spec 19).
+function notifierAdminEtCS(type, message, ticketId = null) {
+  const db = getDb();
+  const rows = db.prepare(
+    "SELECT id FROM users WHERE statut = 'actif' AND (role = 'admin' OR conseil_syndical = 1)"
+  ).all();
+  const ids = rows.map(r => r.id);
+  for (const u of rows) creerNotification(u.id, ticketId, type, message);
+  notifierParEmail(ids, ticketId, message);
+}
+
 function nonLues(userId) {
   return getDb().prepare('SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND lu = 0').get(userId).n;
 }
 
-module.exports = { notifierTicket, notifierUser, notifierCS, creerNotification, nonLues, destinatairesTicket };
+module.exports = { notifierTicket, notifierUser, notifierCS, notifierAdminEtCS, creerNotification, nonLues, destinatairesTicket };

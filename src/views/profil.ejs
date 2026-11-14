@@ -43,7 +43,27 @@
 </form>
 <section class="bloc">
   <h2>Mes rattachements</h2>
-  <p><a class="bouton-secondaire" href="/rattachements">Voir l'état de mes rattachements</a></p>
+  <% if (mesRattachements.length === 0) { %>
+    <p class="aide">Aucune demande pour le moment.</p>
+  <% } else { %>
+    <ul class="liste-rattachements">
+      <% for (const r of mesRattachements) { %>
+        <li class="rattachement-pill statut-<%= r.statut %>">
+          <span class="unite-type"><%= r.unite_type === 'villa' ? 'Villa' : (r.unite_type === 'garage' ? 'Garage' : 'Parties communes') %></span>
+          <span class="unite-num"><%= r.unite_numero != null ? r.unite_numero : '—' %></span>
+          <span class="unite-qualite"><%= r.qualite %></span>
+          <% if (r.statut === 'en_attente') { %>
+            <span class="unite-statut en-attente">⏳ en attente</span>
+          <% } else if (r.statut === 'accepte') { %>
+            <span class="unite-statut valide">✅ validé</span>
+          <% } else { %>
+            <span class="unite-statut refuse">❌ refusé</span>
+          <% } %>
+        </li>
+      <% } %>
+    </ul>
+  <% } %>
+  <p class="aide">L'état des demandes à valider se suit depuis les notifications.</p>
 </section>
 <section class="bloc">
   <h2>Rattacher une autre unité</h2>

@@ -1,0 +1,17 @@
+<%- include('partials/header', { titre: 'Administration' }) %>
+<h1>Administration</h1>
+<% if (message) { %><p class="info"><%= message %></p><% } %>
+<% if (erreur) { %><p class="erreur"><%= erreur %></p><% } %>
+<p class="aide">Réglages réservés à l'administrateur.</p>
+<form method="post" action="/admin" class="formulaire">
+  <label>Délai de péremption des demandes de rattachement (en jours)
+    <input type="number" name="peremption_rattachement_jours" min="1" step="1" required value="<%= peremption %>">
+    <span class="aide">Une demande de rattachement en attente est supprimée après ce délai (défaut : 14). Alertes à J-3 et J-1 aux admin et membres du CS.</span>
+  </label>
+  <label>Délai d'archivage automatique des tickets « Travaux acceptés » (en jours)
+    <input type="number" name="archivage_auto_jours" min="1" step="1" required value="<%= archivage %>">
+    <span class="aide">Un ticket « Travaux acceptés » est archivé automatiquement après ce délai, si au moins une facture est jointe (défaut : 31). Alertes à J-3 et J-1.</span>
+  </label>
+  <button class="bouton" type="submit">Enregistrer</button>
+</form>
+<%- include('partials/footer') %>

@@ -1,0 +1,23 @@
+<%- include('partials/header', { titre: 'Modifier une entreprise' }) %>
+<h1>Modifier « <%= entreprise.raison_sociale %> »</h1>
+<% if (erreur) { %><p class="erreur"><%= erreur %></p><% } %>
+<form method="post" action="/entreprises/<%= entreprise.id %>/modifier" class="formulaire">
+  <label>Raison sociale (obligatoire)
+    <input type="text" name="raison_sociale" required value="<%= entreprise.raison_sociale %>">
+  </label>
+  <label>SIREN/SIRET
+    <input type="text" name="siren_siret" value="<%= entreprise.siren_siret %>">
+  </label>
+  <label>Nom du contact
+    <input type="text" name="contact_nom" value="<%= entreprise.contact_nom %>">
+  </label>
+  <label>Téléphone
+    <input type="tel" name="telephone" value="<%= entreprise.telephone %>">
+  </label>
+  <label>Email
+    <input type="email" name="mail" value="<%= entreprise.mail %>">
+  </label>
+  <button class="bouton" type="submit">Enregistrer</button>
+  <a class="bouton-secondaire" href="/entreprises">Annuler</a>
+</form>
+<%- include('partials/footer') %>

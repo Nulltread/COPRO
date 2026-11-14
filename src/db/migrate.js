@@ -28,7 +28,64 @@ function migrate() {
     used_at TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );`);
-  return sansCategorie(db, false);
+  const sansCat = sansCategorie(db, false);
+  // v2 (specs 17-22) : parametres admin, entreprises, consultations, validations
+  // des travaux avec commentaires, peremption des rattachements, archivage auto.
+  if (db.pragma('user_version', { simple: true }) < 2) {
+    migrationV2(db);
+    db.pragma('user_version = 2');
+    console.log('Migration v2 : parametres, entreprises, consultations, peremption, archivage auto.');
+    return true;
+  }
+  return sansCat;
+}
+
+function migrationV2(db) {
+  const addCol = (table, col, def) => {
+    const cols = db.prepare(`PRAGMA table_info(${table})`).all().map(c => c.name);
+    if (!cols.includes(col)) db.prepare(`ALTER TABLE ${table} ADD COLUMN ${col} ${def}`).run();
+  };
+  addCol('tickets', 'acceptes_at', 'TEXT');
+  addCol('tickets', 'notif_archive_j3', 'INTEGER NOT NULL DEFAULT 0');
+  addCol('tickets', 'notif_archive_j1', 'INTEGER NOT NULL DEFAULT 0');
+  addCol('rattachements', 'notif_peremption_j3', 'INTEGER NOT NULL DEFAULT 0');
+  addCol('rattachements', 'notif_peremption_j1', 'INTEGER NOT NULL DEFAULT 0');
+  addCol('fichiers', 'consultation_id', 'INTEGER REFERENCES consultations(id) ON DELETE CASCADE');
+  addCol('resolutions', 'commentaire', "TEXT NOT NULL DEFAULT ''");
+  addCol('resolutions', 'caduque', 'INTEGER NOT NULL DEFAULT 0');
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS parametres (
+      cle TEXT PRIMARY KEY,
+      valeur TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS entreprises (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      raison_sociale TEXT NOT NULL,
+      siren_siret TEXT NOT NULL DEFAULT '',
+      contact_nom TEXT NOT NULL DEFAULT '',
+      telephone TEXT NOT NULL DEFAULT '',
+      mail TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS consultations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      ticket_id INTEGER NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+      entreprise_id INTEGER NOT NULL REFERENCES entreprises(id),
+      date_planifiee TEXT,
+      validee INTEGER NOT NULL DEFAULT 0,
+      caduque INTEGER NOT NULL DEFAULT 0,
+      auteur_id INTEGER NOT NULL REFERENCES users(id),
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_consultations_ticket ON consultations(ticket_id);
+    CREATE INDEX IF NOT EXISTS idx_fichiers_consultation ON fichiers(consultation_id);
+  `);
+  db.prepare("INSERT OR IGNORE INTO parametres (cle, valeur) VALUES ('peremption_rattachement_jours', '14')").run();
+  db.prepare("INSERT OR IGNORE INTO parametres (cle, valeur) VALUES ('archivage_auto_jours', '31')").run();
+  // L'etape 'valide_cs' n'existe plus : les tickets valides passent en consultation.
+  db.prepare("UPDATE tickets SET etape = 'consultation' WHERE etape = 'valide_cs'").run();
 }
 
 function migrationAncienne(db) {
