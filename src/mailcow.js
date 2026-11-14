@@ -61,26 +61,14 @@ async function synchroniserAliasCS() {
   const destinations = membres.length ? membres : [`liste-vide@${process.env.MAIL_DOMAIN || 'copro-pinede-gardanne.fr'}`];
   const goto = destinations.join(', ');
   try {
-    // L'edit cible l'alias par son id : on le récupère d'abord.
-    const actuel = await apiGet(apiUrl, apiKey, '/api/v1/get/alias/' + encodeURIComponent(ALIAS()));
-    let res;
-    if (actuel.status === 200) {
-      const alias = JSON.parse(actuel.body);
-      const id = Array.isArray(alias) ? alias[0] && alias[0].id : alias && alias.id;
-      res = await apiPost(apiUrl, apiKey, '/api/v1/edit/alias', {
-        id,
-        address: ALIAS(),
-        goto,
-        active: '1'
-      });
-    } else {
-      // L'alias n'existe pas encore : on le crée.
-      res = await apiPost(apiUrl, apiKey, '/api/v1/add/alias', {
-        address: ALIAS(),
-        goto,
-        active: '1'
-      });
-    }
+    // L'API Mailcow n'applique pas le goto via edit/alias dans cette version :
+    // on supprime puis recrée l'alias (idempotent) avec la bonne destination.
+    await apiPost(apiUrl, apiKey, '/api/v1/delete/alias', { address: ALIAS() });
+    const res = await apiPost(apiUrl, apiKey, '/api/v1/add/alias', {
+      address: ALIAS(),
+      goto,
+      active: '1'
+    });
     if (res.status < 200 || res.status >= 300) throw new Error(`API Mailcow: ${res.status} ${res.body.slice(0, 200)}`);
     return true;
   } catch (err) {
