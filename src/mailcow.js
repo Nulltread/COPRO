@@ -17,14 +17,14 @@ function membresCSAvecEmailVerifie() {
   ).all().map(r => r.email);
 }
 
-function apiPost(apiUrl, apiKey, path, body) {
+function apiRequest(apiUrl, apiKey, method, path, body) {
   return new Promise((resolve, reject) => {
     const u = new URL(apiUrl);
     const req = https.request({
       hostname: u.hostname,
       port: u.port || 443,
       path,
-      method: 'POST',
+      method,
       servername: process.env.MAILCOW_TLS_SERVERNAME || `mail.${process.env.MAIL_DOMAIN || 'copro-pinede-gardanne.fr'}`,
       // Appel local uniquement (passerelle Docker) : Mailcow sert un certificat
       // auto-signé car 80/443 sont pris par Caddy (pas de Let's Encrypt possible).
@@ -33,7 +33,7 @@ function apiPost(apiUrl, apiKey, path, body) {
       headers: {
         'X-API-Key': apiKey,
         'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(JSON.stringify(body))
+        ...(body ? { 'Content-Length': Buffer.byteLength(JSON.stringify(body)) } : {})
       },
       timeout: 10000
     }, (res) => {
@@ -43,27 +43,41 @@ function apiPost(apiUrl, apiKey, path, body) {
     });
     req.on('timeout', () => req.destroy(new Error('timeout API Mailcow')));
     req.on('error', reject);
-    req.write(JSON.stringify(body));
+    if (body) req.write(JSON.stringify(body));
     req.end();
   });
 }
+
+const apiGet = (u, k, p) => apiRequest(u, k, 'GET', p);
+const apiPost = (u, k, p, b) => apiRequest(u, k, 'POST', p, b);
 
 async function synchroniserAliasCS() {
   const apiUrl = process.env.MAILCOW_API_URL;
   const apiKey = process.env.MAILCOW_API_KEY;
   if (!apiUrl || !apiKey) return false;
-  const destinations = membresCSAvecEmailVerifie();
+  const membres = membresCSAvecEmailVerifie();
+  // Alias jamais vide (l'API refuse un goto vide) : adresse bidon réservée,
+  // inexistante côté serveur, donc jamais délivrée ni stockée.
+  const destinations = membres.length ? membres : [`liste-vide@${process.env.MAIL_DOMAIN || 'copro-pinede-gardanne.fr'}`];
+  const goto = destinations.join(', ');
   try {
-    let res = await apiPost(apiUrl, apiKey, '/api/v1/edit/alias', {
-      address: ALIAS(),
-      goto: destinations.join(', '),
-      active: '1'
-    });
-    if (res.status === 404 || res.status === 400) {
+    // L'edit cible l'alias par son id : on le récupère d'abord.
+    const actuel = await apiGet(apiUrl, apiKey, '/api/v1/get/alias/' + encodeURIComponent(ALIAS()));
+    let res;
+    if (actuel.status === 200) {
+      const alias = JSON.parse(actuel.body);
+      const id = Array.isArray(alias) ? alias[0] && alias[0].id : alias && alias.id;
+      res = await apiPost(apiUrl, apiKey, '/api/v1/edit/alias', {
+        id,
+        address: ALIAS(),
+        goto,
+        active: '1'
+      });
+    } else {
       // L'alias n'existe pas encore : on le crée.
       res = await apiPost(apiUrl, apiKey, '/api/v1/add/alias', {
         address: ALIAS(),
-        goto: destinations.join(', '),
+        goto,
         active: '1'
       });
     }
