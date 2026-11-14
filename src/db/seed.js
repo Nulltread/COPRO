@@ -17,8 +17,9 @@ function seed() {
   }
   const communesId = insUnit.run('communes', null, 'Parties communes').lastInsertRowid;
 
+  // Comptes de démo : email considéré comme vérifié.
   const insUser = db.prepare(
-    'INSERT INTO users (email, password_hash, nom, prenom, telephone, role, conseil_syndical, statut) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    'INSERT INTO users (email, password_hash, nom, prenom, telephone, role, conseil_syndical, statut, email_verifie) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)'
   );
   const insRat = db.prepare('INSERT INTO rattachements (unit_id, user_id, qualite, statut, valide_par, valide_at) VALUES (?, ?, ?, ?, ?, ?)');
   const insRes = db.prepare('INSERT INTO unit_residents (unit_id, user_id, qualite) VALUES (?, ?, ?)');
