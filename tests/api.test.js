@@ -67,6 +67,8 @@ before(async () => {
   insRes.run(ids.communes, ids.cs, 'proprietaire'); // parties communes rattachées au CS
   db.prepare('INSERT INTO rattachements (unit_id, user_id, qualite, statut, valide_par) VALUES (?,?,?,?,?)')
     .run(ids.communes, ids.cs, 'proprietaire', 'accepte', ids.cs);
+  // Comptes de test pré-existants : email considéré comme vérifié.
+  db.prepare('UPDATE users SET email_verifie = 1').run();
 
   const { createApp } = require('../src/app');
   const app = createApp();
@@ -89,21 +91,26 @@ test('connexion avec mauvais mot de passe échoue', async () => {
   assert.strictEqual(res.status, 401);
 });
 
-test('auto-inscription : compte actif sans vérification d\'email, rattachement en attente', async () => {
+test('auto-inscription : compte créé mais connexion bloquée tant que l\'email n\'est pas vérifié', async () => {
   const c = await client();
   const res = await c.req('POST', '/inscription', {
     nom: 'Nouveau', prenom: 'Nina', telephone: '0604', email: 'nouveau@test.local',
     motdepasse: 'motdepasse1', unite_id: String(ids.villa1), qualite: 'locataire'
   });
   assert.strictEqual(res.status, 200);
-  const u = db().prepare("SELECT statut, role FROM users WHERE email='nouveau@test.local'").get();
+  const u = db().prepare("SELECT statut, role, email_verifie FROM users WHERE email='nouveau@test.local'").get();
   assert.strictEqual(u.statut, 'actif');
   assert.strictEqual(u.role, 'resident');
-  const r = db().prepare("SELECT statut FROM rattachements WHERE user_id = ?").get(u ? db().prepare("SELECT id FROM users WHERE email='nouveau@test.local'").get().id : 0);
-  assert.strictEqual(r.statut, 'en_attente');
-  // Peut se connecter tout de suite.
+  assert.strictEqual(u.email_verifie, 0);
+  // Connexion bloquée (403) tant que l'email n'est pas validé.
   const loginRes = await login(c, 'nouveau@test.local', 'motdepasse1');
-  assert.strictEqual(loginRes.status, 302);
+  assert.strictEqual(loginRes.status, 403);
+  // Validation via le lien : la connexion fonctionne ensuite.
+  const jeton = db().prepare("SELECT ev.token FROM email_verifications ev JOIN users u ON u.id = ev.user_id WHERE u.email='nouveau@test.local'").get();
+  const verif = await c.req('GET', '/verifier-email?token=' + jeton.token);
+  assert.strictEqual(verif.status, 302);
+  const loginOk = await login(c, 'nouveau@test.local', 'motdepasse1');
+  assert.strictEqual(loginOk.status, 302);
 });
 
 test('pas d\'unité validée = pas de création de ticket', async () => {
@@ -260,6 +267,8 @@ test('suppression : créateur si jamais évolué ; CS sur ticket non évolué d\
   // ticket non évolué créé par un compte supprimé : le CS peut supprimer
   const parti = await client();
   await parti.req('POST', '/inscription', { nom: 'Parti', prenom: 'Paul', telephone: '0605', email: 'parti@test.local', motdepasse: 'motdepasse1', unite_id: String(ids.villa2), qualite: 'locataire' });
+  const jetonParti = db().prepare("SELECT ev.token FROM email_verifications ev JOIN users u ON u.id=ev.user_id WHERE u.email='parti@test.local'").get();
+  await parti.req('GET', '/verifier-email?token=' + jetonParti.token);
   const ratId = db().prepare("SELECT r.id FROM rattachements r JOIN users u ON u.id=r.user_id WHERE u.email='parti@test.local'").get().id;
   const r2 = await client(); await login(r2, 'r2@test.local', 'motdepasse1');
   await r2.req('POST', `/rattachements/${ratId}/valider`, { action: 'accepter' });
@@ -347,6 +356,8 @@ test('gestion collégiale du statut CS', async () => {
 test('RGPD : export JSON et suppression de compte sans impact sur les tickets', async () => {
   const c = await client();
   await c.req('POST', '/inscription', { nom: 'RGPD', prenom: 'Test', telephone: '0606', email: 'rgpd@test.local', motdepasse: 'motdepasse1', unite_id: String(ids.villa2), qualite: 'proprietaire' });
+  const jetonRgpd = db().prepare("SELECT ev.token FROM email_verifications ev JOIN users u ON u.id=ev.user_id WHERE u.email='rgpd@test.local'").get();
+  await c.req('GET', '/verifier-email?token=' + jetonRgpd.token);
   const ratId = db().prepare("SELECT r.id FROM rattachements r JOIN users u ON u.id=r.user_id WHERE u.email='rgpd@test.local'").get().id;
   const r2 = await client(); await login(r2, 'r2@test.local', 'motdepasse1');
   await r2.req('POST', `/rattachements/${ratId}/valider`, { action: 'accepter' });

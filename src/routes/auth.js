@@ -61,7 +61,7 @@ router.get('/verifier-email', (req, res) => {
 });
 
 router.get('/connexion', (req, res) => {
-  res.render('connexion', { user: null, erreur: null, suite: req.query.suite || '/' });
+  res.render('connexion', { user: null, erreur: null, suite: req.query.suite || '/', message: req.query.message || null, pasVerifie: false, email: '' });
 });
 
 router.post('/connexion', (req, res) => {
@@ -69,15 +69,38 @@ router.post('/connexion', (req, res) => {
   const db = getDb();
   const user = db.prepare('SELECT * FROM users WHERE email = ?').get((email || '').toLowerCase().trim());
   if (!user || !verifyPassword(motdepasse || '', user.password_hash)) {
-    return res.status(401).render('connexion', { user: null, erreur: 'Email ou mot de passe incorrect.', suite: req.body.suite || '/' });
+    return res.status(401).render('connexion', { user: null, erreur: 'Email ou mot de passe incorrect.', suite: req.body.suite || '/', message: null, pasVerifie: false, email: '' });
   }
   if (user.statut !== 'actif') {
-    return res.status(403).render('connexion', { user: null, erreur: 'Ce compte a été supprimé.', suite: req.body.suite || '/' });
+    return res.status(403).render('connexion', { user: null, erreur: 'Ce compte a été supprimé.', suite: req.body.suite || '/', message: null, pasVerifie: false, email: '' });
+  }
+  // Connexion bloquée tant que l'email n'est pas validé (lien envoyé par mail).
+  if (!user.email_verifie) {
+    return res.status(403).render('connexion', {
+      user: null, suite: req.body.suite || '/',
+      erreur: 'Veuillez d\'abord valider votre adresse email via le lien reçu par mail.',
+      pasVerifie: true, email: user.email
+    });
   }
   const sid = createSession(user.id);
   res.cookie('sid', sid, { httpOnly: true, sameSite: 'lax', maxAge: 30 * 86400000 });
   const suite = req.body.suite || '';
   res.redirect(suite.startsWith('/') && suite !== '/' ? suite : '/tickets');
+});
+
+// Renvoi public du lien de validation (depuis la page de connexion si bloqué).
+router.post('/renvoyer-confirmation', (req, res) => {
+  const db = getDb();
+  const email = (req.body.email || '').toLowerCase().trim();
+  const u = email ? db.prepare('SELECT * FROM users WHERE email = ?').get(email) : null;
+  if (u && u.statut === 'actif' && !u.email_verifie) {
+    const dernier = db.prepare('SELECT created_at FROM email_verifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 1').get(u.id);
+    const maintenant = Date.now();
+    if (!dernier || maintenant - new Date(dernier.created_at.replace(' ', 'T') + 'Z').getTime() > 60000) {
+      envoyerMailVerification(u);
+    }
+  }
+  res.redirect('/connexion?message=' + encodeURIComponent('Si ce compte existe et n\'est pas encore validé, un nouvel email de validation vient d\'être envoyé.'));
 });
 
 router.post('/deconnexion', (req, res) => {

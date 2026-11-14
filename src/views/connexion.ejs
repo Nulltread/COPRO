@@ -1,6 +1,13 @@
 <%- include('partials/header', { user: null, titre: 'Connexion' }) %>
 <h1>Connexion</h1>
+<% if (typeof message !== 'undefined' && message) { %><p class="info"><%= message %></p><% } %>
 <% if (erreur) { %><p class="erreur"><%= erreur %></p><% } %>
+<% if (typeof pasVerifie !== 'undefined' && pasVerifie) { %>
+  <form method="post" action="/renvoyer-confirmation" class="formulaire-ligne">
+    <input type="hidden" name="email" value="<%= email %>">
+    <button class="bouton-secondaire" type="submit">Renvoyer le lien de validation</button>
+  </form>
+<% } %>
 <form method="post" action="/connexion" class="formulaire">
   <input type="hidden" name="suite" value="<%= suite %>">
   <label>Email

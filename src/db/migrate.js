@@ -10,10 +10,16 @@ const { getDb } = require('./index');
 function migrate() {
   const db = getDb();
   const cols = db.prepare('PRAGMA table_info(users)').all().map(c => c.name);
-  if (!cols.includes('conseil_syndical')) return migrationAncienne(db);
+  if (!cols.includes('conseil_syndical')) migrationAncienne(db);
   // Ajouts incrémentaux (idempotents) pour les bases existantes.
-  if (!cols.includes('email_verifie')) db.prepare('ALTER TABLE users ADD COLUMN email_verifie INTEGER NOT NULL DEFAULT 0').run();
-  if (!cols.includes('notif_email')) db.prepare('ALTER TABLE users ADD COLUMN notif_email INTEGER NOT NULL DEFAULT 0').run();
+  const cols2 = db.prepare('PRAGMA table_info(users)').all().map(c => c.name);
+  if (!cols2.includes('email_verifie')) db.prepare('ALTER TABLE users ADD COLUMN email_verifie INTEGER NOT NULL DEFAULT 0').run();
+  if (!cols2.includes('notif_email')) db.prepare('ALTER TABLE users ADD COLUMN notif_email INTEGER NOT NULL DEFAULT 0').run();
+  // Les comptes existant avant la vérification par email sont considérés comme vérifiés (une seule fois).
+  if (db.pragma('user_version', { simple: true }) < 1) {
+    db.prepare("UPDATE users SET email_verifie = 1 WHERE statut = 'actif'").run();
+    db.pragma('user_version = 1');
+  }
   db.exec(`CREATE TABLE IF NOT EXISTS email_verifications (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -146,7 +152,6 @@ function migrationAncienne(db) {
     CREATE UNIQUE INDEX IF NOT EXISTS idx_cr_ticket_unite ON comptes_rendus(ticket_id, COALESCE(unit_id, 0));
   `);
   console.log('Migration : ancienne base mise à jour vers le nouveau schéma (rôles CS, unités, cycle de vie).');
-  return sansCategorie(db, true);
 }
 
 // La catégorie de travaux est retirée : on supprime la colonne si elle existe encore.
