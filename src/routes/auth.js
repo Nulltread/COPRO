@@ -76,7 +76,7 @@ router.post('/connexion', (req, res) => {
   }
   const sid = createSession(user.id);
   res.cookie('sid', sid, { httpOnly: true, sameSite: 'lax', maxAge: 30 * 86400000 });
-  res.redirect(req.body.suite && req.body.suite.startsWith('/') ? req.body.suite : '/');
+  res.redirect(req.body.suite && req.body.suite.startsWith('/') ? req.body.suite : '/tickets');
 });
 
 router.post('/deconnexion', (req, res) => {
