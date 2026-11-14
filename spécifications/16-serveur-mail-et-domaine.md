@@ -6,7 +6,7 @@ Ce fichier réintroduit le **canal email** (retiré en v1 dans `08-notifications
 
 1. **Notifications par email** de l'avancée des tickets (en complément des notifications in-app, qui restent le canal principal).
 2. **Confirmation de compte par email** à l'inscription (vérification de l'adresse email des utilisateurs).
-3. **Liste de diffusion du conseil syndical** : une adresse unique (`conseil_syndical@copro-pinede-gardanne.fr`) qui redirige vers les adresses email personnelles (vérifiées) des membres du CS.
+3. **Liste de diffusion du conseil syndical** : une adresse unique (`conseil-syndical@copro-pinede-gardanne.fr`) qui redirige vers les adresses email personnelles (vérifiées) des membres du CS.
 
 **Hors périmètre v1 (noté pour plus tard, non traité)** : envois automatiques depuis le serveur pour des sujets futurs (convocations aux AG, appels de fonds, etc.).
 
@@ -19,7 +19,7 @@ Ce fichier réintroduit le **canal email** (retiré en v1 dans `08-notifications
 
 - **Auto-hébergé sur le serveur Scaleway existant** (Dedibox Start-2-S-SSD, Ubuntu 20.04, IP publique `51.159.64.71`), même serveur que l'application, déployé en conteneur Docker dédié (**Mailcow dockerisé**, installé dans `/opt/mailcow-dockerized` par l'utilisateur `copro`), séparé du conteneur de l'application. Ports web de Mailcow déplacés en **8080/8443** (`HTTP_PORT`/`HTTPS_PORT` dans `mailcow.conf`) car 80/443 sont pris par Caddy : l'interface d'admin est donc sur **https://mail.copro-pinede-gardanne.fr:8443/admin** (l'URL racine `/` est l'interface *utilisateur*, qui n'accepte pas le compte `admin`). Mot de passe admin : défini en base avec le préfixe `{BLF-CRYPT}` + hash bcrypt (un hash bcrypt nu, sans préfixe `{...}`, est rejeté par `verify_hash`). Le réseau interne Docker de Mailcow utilise la plage `172.30.1.0/24` (`IPV4_NETWORK=172.30.1`) pour éviter le chevauchement avec le réseau de l'application.
 - **Mode « redirect seul »** : **aucune boîte mail créée sur le domaine**, le webmail SOGo est **désactivé** (`SKIP_SOGO=y` dans `mailcow.conf`) — aucune interface mail utilisateur. Le serveur ne fait que recevoir les mails des adresses déclarées (alias) et les rediriger, et envoyer les mails de l'application.
-- **Envoi des emails de l'application** via le serveur mail local en SMTP **sans authentification** (l'application tourne sur le même hôte : soumission via `127.0.0.1`/réseau Docker local, `permit_mynetworks`) : aucune dépendance à un service payant. Adresse d'expédition fixe : **`noreply@copro-pinede-gardanne.fr`** (adresse d'envoi uniquement ; aucune réception — voir ci-dessous). Configuration par variables d'environnement (`SMTP_HOST`, `SMTP_PORT`, `MAIL_FROM`).
+- **Envoi des emails de l'application** via le serveur mail local en SMTP **sans authentification** (l'application tourne sur le même hôte : soumission via `127.0.0.1`/réseau Docker local, `permit_mynetworks`) : aucune dépendance à un service payant. Adresse d'expédition fixe : **`noreply@copro-pinede-gardanne.fr`** (adresse d'envoi uniquement ; aucune réception — voir ci-dessous). Configuration par variables d'environnement (`SMTP_HOST` défaut `127.0.0.1`, `SMTP_PORT` défaut `25`, `MAIL_FROM`, `BASE_URL` pour les liens dans les emails, `MAIL_ENABLED=false` pour désactiver l'envoi ; `MAILCOW_API_URL`, `MAILCOW_API_KEY`, `MAIL_DOMAIN` pour la synchro de l'alias CS).
 - **Contraintes Scaleway Dedibox** : le **PTR IPv4 est réglé** (`mail.copro-pinede-gardanne.fr.` — **avec le point final**, exigé par la console — via « Modifier » à côté de « Reverse »). Gmail rejette sinon (550-5.7.25). Le **PTR IPv6 n'a pas pu être réglé** (la console exige un AAAA correspondant ; même après ajout de l'AAAA `mail`, refus « No match found ») — sans conséquence constatée : le test d'envoi vers Gmail a abouti (`status=sent`). Le port 25 sortant **n'est pas bloqué** sur cette Dedibox (envoi direct OK, aucun ticket support nécessaire). Un enregistrement **AAAA** `mail` → IPv6 du serveur a été ajouté pour la cohérence DNS.
 
 ## Enregistrements DNS du domaine
@@ -35,13 +35,14 @@ Ce fichier réintroduit le **canal email** (retiré en v1 dans `08-notifications
 ## Fonctionnalités applicatives
 
 ### Notifications par email des tickets
-- En complément du canal in-app (`08-notifications.md`) : les mêmes événements (création, changement d'état, nouveau document, décision, commentaire, acceptation de la résolution, réclamations/validations de rattachement) déclenchent un **email aux mêmes destinataires**, auteur de l'événement exclu.
+- **Option utilisateur, désactivée par défaut** : chaque compte peut activer « recevoir aussi les notifications par email » dans son espace profil (`users.notif_email`, défaut 0). Seuls les destinataires ayant activé l'option **et** un email vérifié reçoivent le mail.
+- Les mêmes événements que le canal in-app (`08-notifications.md`) déclenchent un **email**, auteur de l'événement exclu. L'email contient un **lien direct** vers la page concernée dans l'application (`/tickets/:id` si la notification porte sur un ticket, sinon `/notifications`).
 - Mention « URGENT » conservée dans l'objet pour les tickets urgents.
-- Les emails sont envoyés en arrière-plan (file d'envoi) pour ne pas ralentir l'interface ; un échec d'envoi ne bloque pas l'action et est journalisé.
+- Les emails sont envoyés en arrière-plan pour ne pas ralentir l'interface ; un échec d'envoi ne bloque pas l'action et est journalisé.
 
-### Confirmation de compte par email
-- À l'inscription, envoi d'un **email de confirmation** contenant un lien unique et expirable.
-- Le compte reste utilisable mais son email est marqué « non confirmé » tant que le lien n'est pas ouvert ; relance possible depuis l'espace compte. (Modifie « pas de vérification d'email en v1 » de `02-roles-et-comptes.md`.)
+### Confirmation de compte par email (vérification)
+- À l'inscription, envoi d'un **email contenant un lien de validation unique et expirable** (`/verifier-email?token=...`). Le clic sur le lien marque l'email comme vérifié (`users.email_verifie = 1`, table `email_verifications`).
+- Le compte reste utilisable mais son email est « non vérifié » tant que le lien n'est pas ouvert ; relance possible depuis l'espace compte (« renvoyer l'email de confirmation »). Un email non vérifié **ne reçoit pas** la liste de diffusion CS. (Modifie « pas de vérification d'email en v1 » de `02-roles-et-comptes.md`.)
 
 ### Liste de diffusion du conseil syndical
 - Alias **`conseil_syndical@copro-pinede-gardanne.fr`** géré **côté serveur mail** (alias virtuel à plusieurs destinataires), redirigeant vers les adresses email personnelles **vérifiées** des comptes ayant le statut conseil syndical (en test : uniquement `sebastien.paletti@gmail.com`, les autres membres seront ajoutés ensuite).

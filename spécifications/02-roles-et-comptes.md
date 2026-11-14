@@ -4,7 +4,7 @@ Trois niveaux de droits : **résident**, **membre du conseil syndical** (statut 
 
 ## Résident (propriétaire ou locataire)
 
-- Compte de base. **Auto-inscription** : identifiant = adresse email, nom et prénom obligatoires, numéro de téléphone obligatoire. **Confirmation par email** : à l'inscription, un email avec lien de confirmation est envoyé (voir `16-serveur-mail-et-domaine.md`) ; le compte est actif immédiatement mais son email reste « non confirmé » tant que le lien n'est pas ouvert.
+- Compte de base. **Auto-inscription** : identifiant = adresse email, nom et prénom obligatoires, numéro de téléphone obligatoire. **Vérification par email** : à l'inscription, un email contenant un **lien de validation** est envoyé (voir `16-serveur-mail-et-domaine.md`) ; le compte est actif immédiatement mais son email reste « non vérifié » (`email_verifie = 0`) tant que le lien n'est pas ouvert. Un email non vérifié ne figure pas dans la liste de diffusion du CS.
 - Chacun peut changer son mot de passe dans son espace compte.
 - Un résident crée des tickets, suit leur avancement, commente, ajoute des photos. **Compte requis pour déclarer un ticket.**
 
