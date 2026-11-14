@@ -1,5 +1,5 @@
 <%- include('partials/header', { user: null, titre: 'Compte créé' }) %>
 <h1>Compte créé ✅</h1>
-<p>Bienvenue <%= typeof nom !== 'undefined' ? nom : '' %> ! Vous pouvez déjà vous connecter. Votre rattachement à l'unité choisie sera accepté par un résident de cette unité ou par le conseil syndical ; vous recevrez une notification dans l'application.</p>
+<p>Bienvenue <%= typeof nom !== 'undefined' ? nom : '' %> ! Vous pouvez déjà vous connecter. Un email vient de vous être envoyé : cliquez sur le lien qu'il contient pour valider votre adresse email. Votre rattachement à l'unité choisie sera accepté par un résident de cette unité ou par le conseil syndical ; vous recevrez une notification dans l'application.</p>
 <p><a class="bouton" href="/connexion">Aller à la connexion</a></p>
 <%- include('partials/footer') %>

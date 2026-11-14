@@ -10,6 +10,7 @@ function tmpEnv() {
   dbDir = fs.mkdtempSync(path.join(os.tmpdir(), 'copro-test-'));
   process.env.DB_PATH = path.join(dbDir, 'test.db');
   process.env.UPLOAD_DIR = path.join(dbDir, 'uploads');
+  process.env.MAIL_ENABLED = 'false';
 }
 
 async function client() {

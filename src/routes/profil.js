@@ -3,6 +3,8 @@ const crypto = require('crypto');
 const { getDb } = require('../db');
 const { requireAuth, hashPassword, destroySession } = require('../auth');
 const { notifierCS } = require('../notifications');
+const { envoyerMailVerification } = require('../mail');
+const { synchroniserAliasCS } = require('../mailcow');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -23,15 +25,24 @@ router.get('/profil', (req, res) => {
   });
 });
 
+// Renvoyer l'email de validation de l'adresse.
+router.post('/profil/renvoyer-confirmation', (req, res) => {
+  const db = getDb();
+  const moi = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
+  if (moi && !moi.email_verifie) envoyerMailVerification(moi);
+  res.redirect('/profil?message=' + encodeURIComponent('Email de validation renvoyé si votre adresse n\'est pas encore vérifiée.'));
+});
+
 router.post('/profil', (req, res) => {
   const db = getDb();
-  const { nom, prenom, telephone, motdepasse } = req.body;
+  const { nom, prenom, telephone, motdepasse, notif_email } = req.body;
   if (nom && nom.trim()) db.prepare('UPDATE users SET nom = ? WHERE id = ?').run(nom.trim(), req.user.id);
   if (prenom && prenom.trim()) db.prepare('UPDATE users SET prenom = ? WHERE id = ?').run(prenom.trim(), req.user.id);
   if (telephone && telephone.trim()) db.prepare('UPDATE users SET telephone = ? WHERE id = ?').run(telephone.trim(), req.user.id);
   if (motdepasse && motdepasse.length >= 8) {
     db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hashPassword(motdepasse), req.user.id);
   }
+  db.prepare('UPDATE users SET notif_email = ? WHERE id = ?').run(notif_email ? 1 : 0, req.user.id);
   res.redirect('/profil?message=' + encodeURIComponent('Profil mis à jour.'));
 });
 
@@ -81,8 +92,9 @@ router.post('/profil/supprimer', (req, res) => {
   db.prepare("UPDATE rattachements SET statut = 'refuse' WHERE user_id = ? AND statut IN ('en_attente','accepte')").run(id);
   db.prepare('DELETE FROM notifications WHERE user_id = ?').run(id);
   db.prepare('DELETE FROM sessions WHERE user_id = ?').run(id);
-  db.prepare('UPDATE users SET email = ?, password_hash = ?, nom = ?, prenom = ?, telephone = ?, statut = ? WHERE id = ?')
+  db.prepare('UPDATE users SET email = ?, password_hash = ?, nom = ?, prenom = ?, telephone = ?, statut = ?, email_verifie = 0 WHERE id = ?')
     .run(`supprime-${id}@invalid.local`, crypto.randomBytes(32).toString('hex'), 'Compte supprimé', '', '', 'supprime', id);
+  synchroniserAliasCS();
   destroySession(req.cookies.sid);
   res.clearCookie('sid');
   res.redirect('/connexion');

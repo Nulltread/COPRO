@@ -29,5 +29,6 @@ En cas de contradiction entre deux fichiers de ce dossier, le fichier au préfix
 | `10-stockage-et-contraintes-techniques.md` | Stockage des fichiers, stack, sécurité, RGPD |
 | `11-comportements-constates-code-fonctionnels.md` | Comportements présents dans le code et absents des specs ci-dessus (inventaire) |
 | `12-comportements-constates-code-techniques.md` | Comportements techniques/sécurité présents dans le code et absents des specs ci-dessus (inventaire) |
+| `16-serveur-mail-et-domaine.md` | Serveur mail auto-hébergé, domaine `copro-pinede-gardanne.fr`, notifications par email, confirmation de compte par email, liste de diffusion du CS |
 
 Les fichiers `11` et `12` sont un inventaire neutre du code existant : ils décrivent ce que fait l'application, sans le prescrire.

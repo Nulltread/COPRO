@@ -3,7 +3,11 @@
 <% if (message) { %><p class="info"><%= message %></p><% } %>
 <p><strong><%= user.prenom %> <%= user.nom %></strong> — <%= user.email %> — <%= user.telephone %>
   <% if (user.conseil_syndical === 1) { %>— <span class="tag-cs">membre du conseil syndical</span><% } %>
-  <% if (user.role === 'admin') { %>— administrateur<% } %></p>
+  <% if (user.email_verifie === 1) { %> — <span class="tag-cs">email vérifié</span><% } else { %> — <strong>email non vérifié</strong>
+    <form method="post" action="/profil/renvoyer-confirmation" class="formulaire-ligne">
+      <button class="bouton-secondaire" type="submit">Renvoyer l'email de validation</button>
+    </form><% } %>
+<% if (user.role === 'admin') { %>— administrateur<% } %></p>
 <% if (mesUnites.length) { %>
 <ul class="liste-simple">
   <% for (const u of mesUnites) { %>
@@ -30,6 +34,10 @@
   </label>
   <label>Nouveau mot de passe (laisser vide pour ne pas changer)
     <input type="password" name="motdepasse" minlength="8" autocomplete="new-password">
+  </label>
+  <label>
+    <input type="checkbox" name="notif_email" value="1" <%= user.notif_email === 1 ? 'checked' : '' %>>
+    Recevoir aussi les notifications par email (en plus de l'application)
   </label>
   <button class="bouton" type="submit">Enregistrer</button>
 </form>
