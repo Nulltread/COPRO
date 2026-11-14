@@ -56,14 +56,14 @@ async function synchroniserAliasCS() {
   try {
     let res = await apiPost(apiUrl, apiKey, '/api/v1/edit/alias', {
       address: ALIAS(),
-      destination: destinations.join(', '),
+      goto: destinations.join(', '),
       active: '1'
     });
     if (res.status === 404 || res.status === 400) {
       // L'alias n'existe pas encore : on le crée.
       res = await apiPost(apiUrl, apiKey, '/api/v1/add/alias', {
         address: ALIAS(),
-        destination: destinations.join(', '),
+        goto: destinations.join(', '),
         active: '1'
       });
     }
