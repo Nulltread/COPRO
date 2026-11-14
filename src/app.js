@@ -23,9 +23,15 @@ function createApp() {
 
   app.use(express.static(path.join(__dirname, 'public')));
 
+  // La racine répond en 200 (redirection côté client) : une 302 sur / provoquait
+  // des ERR_FAILED intermittents dans certains navigateurs.
   app.get('/', (req, res) => {
-    if (!req.user) return res.redirect('/connexion');
-    res.redirect('/tickets');
+    const cible = req.user ? '/tickets' : '/connexion';
+    res.type('html').send(
+      `<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=${cible}">` +
+      `<script>location.replace(${JSON.stringify(cible)})</script>` +
+      `<p><a href="${cible}">Continuer</a></p>`
+    );
   });
 
   app.get('/tableau-de-bord', (req, res) => {
