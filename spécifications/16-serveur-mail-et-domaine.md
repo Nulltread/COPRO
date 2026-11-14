@@ -46,6 +46,7 @@ Ce fichier réintroduit le **canal email** (retiré en v1 dans `08-notifications
 ### Liste de diffusion du conseil syndical
 - Alias **`conseil_syndical@copro-pinede-gardanne.fr`** géré **côté serveur mail** (alias virtuel à plusieurs destinataires), redirigeant vers les adresses email personnelles **vérifiées** des comptes ayant le statut conseil syndical (en test : uniquement `sebastien.paletti@gmail.com`, les autres membres seront ajoutés ensuite).
 - **Aucune boîte mail sur le domaine** : le seul alias est `conseil_syndical@` ; tout autre destinataire du domaine (y compris `noreply@`) est rejeté — les réponses à `noreply@` tombent donc dans le vide (bounce), comme souhaité.
+- **Test d'envoi validé** (14/11/2026) : mail `noreply@` → `conseil_syndical@` → redirect vers Gmail avec `dkim=pass`, `spf=pass`, `dmarc=pass` (250 OK). Classé « spam » par Gmail à cause de la réputation du domaine neuf uniquement — à désamorcer via « Non spam ».
 - La liste des destinataires de `conseil_syndical@` **évolue automatiquement** avec les comptes enregistrés comme membres du CS : l'application resynchronise l'alias via l'API Mailcow à chaque changement (ajout/retrait de membre CS, vérification d'un email) pour pointer vers les adresses personnelles **vérifiées** des membres courants. En attendant ce branchement, l'alias ne contient que l'adresse de test de l'administrateur.
 
 ## Sécurité et délivrabilité
