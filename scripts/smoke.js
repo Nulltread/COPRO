@@ -37,6 +37,8 @@ async function main() {
   checks.push(['titre présent', (await t1.text()).includes('Fuite')]);
   checks.push(['tableau de bord CS', (await req('GET', '/tableau-de-bord')).status === 200]);
   checks.push(['page comptes CS', (await req('GET', '/admin/comptes')).status === 200]);
+  checks.push(['page entreprises CS', (await req('GET', '/entreprises')).status === 200]);
+  checks.push(['panneau admin interdit au CS', (await req('GET', '/admin')).status === 403]);
   checks.push(['page rattachements CS', (await req('GET', '/rattachements')).status === 200]);
   checks.push(['profil', (await req('GET', '/profil')).status === 200]);
   checks.push(['notifications', (await req('GET', '/notifications')).status === 200]);
@@ -47,6 +49,7 @@ async function main() {
   const ca = await req('POST', '/connexion', { email: 'admin@copro.local', motdepasse: 'demo1234' });
   checks.push(['login admin unique', ca.status === 302]);
   checks.push(['admin voit comptes', (await req('GET', '/admin/comptes')).status === 200]);
+  checks.push(['panneau admin', (await req('GET', '/admin')).status === 200]);
   checks.push(['plus de page admin/unites (référentiel en dur)', (await req('GET', '/admin/unites')).status === 404]);
 
   const r = await req('POST', '/connexion', { email: 'resident1@copro.local', motdepasse: 'demo1234' });
@@ -60,6 +63,13 @@ async function main() {
   const formRes = await (await req('GET', '/tickets/nouveau')).text();
   checks.push(['form résident sans parties communes', !formRes.includes('Parties communes')]);
   checks.push(['page rattachements résident', (await req('GET', '/rattachements')).status === 200]);
+  const profilRes = await (await req('GET', '/profil')).text();
+  checks.push(['profil : contrôle custom des rattachements (type + n° + statut)', profilRes.includes('rattachement-pill')]);
+  checks.push(['profil : plus de bouton "voir mes rattachements"', !profilRes.includes("Voir l'état de mes rattachements")]);
+  // transition v2 : ticket 2 encore « créé » -> consultation par le CS
+  const tr = await req('POST', '/connexion', { email: 'conseil1@copro.local', motdepasse: 'demo1234' });
+  const pass = await req('POST', '/tickets/2/passer-consultation');
+  checks.push(['transition créé -> consultation (CS)', pass.status === 302]);
 
   // compte en attente de rattachement : peut se connecter mais pas créer de ticket
   const att = await req('POST', '/connexion', { email: 'attente@copro.local', motdepasse: 'demo1234' });

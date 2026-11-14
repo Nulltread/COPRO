@@ -152,6 +152,25 @@ fieldset { border: 1px solid #c5c9d1; border-radius: 10px; }
 .zone-photos-icone { font-size: 1.5rem; }
 .zone-photos-texte { font-weight: 600; font-size: 0.95rem; }
 .zone-photos-texte small { font-weight: 400; color: #777; }
+.recherche { width: 100%; padding: 10px 12px; border: 1px solid #c5c9d1; border-radius: 10px; font-size: 1rem; margin: 8px 0 12px; }
+.modale-fond { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
+.modale { background: #fff; border-radius: 14px; padding: 18px; max-width: 420px; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+.modale h2 { margin-top: 0; }
+.modale-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px; }
+.liste-rattachements { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.rattachement-pill { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; border: 1px solid #dfe3e8; border-radius: 999px; padding: 8px 14px; width: fit-content; background: #fff; }
+.unite-type { font-weight: 700; }
+.unite-num { background: var(--gris); border-radius: 999px; padding: 2px 10px; font-weight: 700; }
+.unite-qualite { color: #666; font-size: .85rem; }
+.unite-statut.en-attente { color: #b45309; font-weight: 700; }
+.unite-statut.valide { color: var(--vert); font-weight: 700; }
+.unite-statut.refuse { color: var(--rouge); font-weight: 700; }
+.consultation { border: 1px solid #e3e6ea; border-radius: 12px; padding: 10px 14px; margin: 10px 0; }
+.consultation.validee { border-color: var(--vert); }
+.consultation.caduque { opacity: .7; }
+.montants-devis { display: flex; flex-direction: column; gap: 10px; }
+.montants-devis label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
+.montants-devis input { font-size: 1rem; padding: 10px; border: 1px solid #c5c9d1; border-radius: 10px; }
 @media (max-width: 480px) {
   .nav { font-size: 0.85rem; gap: 8px; }
   .ligne2-unites { width: 100%; text-align: left; }

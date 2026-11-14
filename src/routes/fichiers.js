@@ -3,45 +3,16 @@ const path = require('path');
 const fs = require('fs');
 const { getDb } = require('../db');
 const { requireAuth } = require('../auth');
-const { peutVoirTicket, isGestionnaire, CATEGORIES_FICHIER_CS } = require('../droits');
-const { notifierTicket } = require('../notifications');
-const { upload, enregistrerFichiers, UPLOAD_DIR } = require('../upload');
+const { peutVoirTicket, isGestionnaire } = require('../droits');
+const { UPLOAD_DIR } = require('../upload');
 
 const router = express.Router();
 router.use(requireAuth);
 
-router.post('/tickets/:id/fichiers', (req, res) => {
-  const id = Number(req.params.id);
-  if (!peutVoirTicket(req.user, id)) return res.status(403).render('erreur', { user: req.user, message: 'Ticket introuvable.' });
-  upload.array('fichiers', 10)(req, res, (err) => {
-    if (err) return res.status(400).render('erreur', { user: req.user, message: err.message });
-    const db = getDb();
-    const { categorie, montant, entreprise, delai } = req.body;
-    const catsValides = ['photo', 'devis', 'avenant', 'facture', 'decision', 'compte_rendu'];
-    // Devis, avenants, factures et décisions : réservés au conseil syndical.
-    if (CATEGORIES_FICHIER_CS.includes(categorie) && !isGestionnaire(req.user)) {
-      for (const f of req.files || []) fs.unlinkSync(f.path);
-      return res.status(403).render('erreur', { user: req.user, message: 'Les devis et factures sont gérés uniquement par le conseil syndical.' });
-    }
-    const montantValide = montant !== undefined && montant !== null && montant !== '' ? Number(montant) : null;
-    if (!catsValides.includes(categorie) || (montantValide !== null && Number.isNaN(montantValide))) {
-      for (const f of req.files || []) fs.unlinkSync(f.path);
-      return res.status(400).render('erreur', { user: req.user, message: 'Catégorie ou montant invalide.' });
-    }
-    enregistrerFichiers(db, id, categorie, req.files, {
-      montant: montantValide,
-      entreprise: (entreprise || '').trim() || null,
-      delai: (delai || '').trim() || null
-    }, req.user.id);
-    if ((req.files || []).length > 0) {
-      db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'fichier', ?, ?)")
-        .run(id, req.user.id, `${req.user.nom} a ajouté ${req.files.length} fichier(s) (${categorie})`);
-      const t = db.prepare('SELECT * FROM tickets WHERE id = ?').get(id);
-      notifierTicket(t, 'fichier', `${req.user.nom} a ajouté un document (${categorie}) sur « ${t.titre} »`, req.user.id, !!t.urgent);
-    }
-    res.redirect('/tickets/' + id);
-  });
-});
+// La section documents libre disparait (spec 20) : les devis vivent dans les
+// consultations, les factures dans leur section, les photos ne sont ajoutables
+// qu'aux 3 moments cadres. Il ne reste ici que la lecture et la suppression
+// des photos.
 
 // Suppression d'une photo : son auteur ou le conseil syndical.
 router.post('/fichiers/:id/supprimer', (req, res) => {

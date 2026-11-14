@@ -27,6 +27,10 @@
     <% } %>
     <% if (user.conseil_syndical === 1 || user.role === 'admin') { %>
       <a href="/admin/comptes">Comptes</a>
+      <a href="/entreprises">Entreprises</a>
+    <% } %>
+    <% if (user.role === 'admin') { %>
+      <a href="/admin">Administration</a>
     <% } %>
     <a href="/profil">👤 <%= user.prenom || user.nom %><% if (user.conseil_syndical === 1) { %> <span class="tag-cs">CS</span><% } %></a>
   </nav>

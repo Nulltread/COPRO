@@ -1,25 +1,28 @@
 <%- include('partials/header', { titre: 'Comptes' }) %>
 <h1>Comptes</h1>
 <% if (message) { %><p class="info"><%= message %></p><% } %>
-<p class="aide">Le statut de membre du conseil syndical (CS) se gère collégialement : un membre CS peut s'attribuer ou se retirer ce statut, ou le faire pour un autre membre CS.</p>
-<ul class="liste-simple">
+<p class="aide">Le statut de membre du conseil syndical (CS) se gère collégialement : l'administrateur et tout membre du CS peuvent ajouter ou retirer ce statut. Chaque action demande une confirmation.</p>
+<input type="search" id="recherche-comptes" class="recherche" placeholder="Rechercher un compte (nom, prénom, n° de villa/garage, type d'unité)…" autocomplete="off">
+<ul class="liste-simple" id="liste-comptes">
   <% for (const u of users) { %>
-    <li>
+    <li data-recherche="<%= (u.prenom + ' ' + u.nom + ' ' + u.email + ' ' + (u.unites || '')).toLowerCase() %>">
       <strong><%= u.prenom %> <%= u.nom %></strong> — <%= u.email %> — <%= u.unites || 'aucune unité' %>
       <% if (u.conseil_syndical === 1) { %><span class="tag-cs">CS</span><% } %>
       <% if (u.role === 'admin') { %><span class="auteur">admin</span><% } %>
       <% if (u.statut === 'supprime') { %><span class="auteur">compte supprimé</span><% } %>
-      <% if (u.role !== 'admin' && u.conseil_syndical === 1 && (user.conseil_syndical === 1 || user.role === 'admin')) { %>
-        <form method="post" action="/admin/comptes/<%= u.id %>/conseil" class="formulaire-ligne">
-          <button class="bouton-secondaire" type="submit" name="action" value="retirer">Retirer du CS</button>
-        </form>
-      <% } %>
-      <% if (u.role !== 'admin' && u.conseil_syndical === 0 && user.role === 'admin') { %>
-        <form method="post" action="/admin/comptes/<%= u.id %>/conseil" class="formulaire-ligne">
-          <button class="bouton-secondaire" type="submit" name="action" value="ajouter">Ajouter au CS</button>
-        </form>
+      <% if (u.role !== 'admin' && (user.conseil_syndical === 1 || user.role === 'admin')) { %>
+        <% if (u.conseil_syndical === 1) { %>
+          <form method="post" action="/admin/comptes/<%= u.id %>/conseil" class="formulaire-ligne" data-confirm="Confirmer le retrait du conseil syndical de « <%= u.prenom %> <%= u.nom %> » ?" data-confirm-titre="Retirer du conseil syndical">
+            <button class="bouton-secondaire" type="submit" name="action" value="retirer">Retirer du CS</button>
+          </form>
+        <% } else { %>
+          <form method="post" action="/admin/comptes/<%= u.id %>/conseil" class="formulaire-ligne" data-confirm="Confirmer l'ajout de « <%= u.prenom %> <%= u.nom %> » au conseil syndical ?" data-confirm-titre="Ajouter au conseil syndical">
+            <button class="bouton-secondaire" type="submit" name="action" value="ajouter">Ajouter au CS</button>
+          </form>
+        <% } %>
       <% } %>
     </li>
   <% } %>
 </ul>
+<p class="aide" id="recherche-aucun" hidden>Aucun compte ne correspond à cette recherche.</p>
 <%- include('partials/footer') %>

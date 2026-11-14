@@ -1,0 +1,52 @@
+<%- include('partials/header', { titre: 'Entreprises' }) %>
+<h1>Entreprises</h1>
+<% if (message) { %><p class="info"><%= message %></p><% } %>
+<% if (erreur) { %><p class="erreur"><%= erreur %></p><% } %>
+<% if (entreprises.length === 0) { %>
+  <p class="aide">Aucune entreprise enregistrée pour le moment.</p>
+<% } else { %>
+<ul class="liste-simple">
+  <% for (const e of entreprises) { %>
+    <li>
+      <strong><%= e.raison_sociale %></strong>
+      <% if (e.siren_siret) { %><span class="auteur">SIREN/SIRET : <%= e.siren_siret %></span><% } %>
+      <% if (e.contact_nom) { %><span class="auteur">contact : <%= e.contact_nom %></span><% } %>
+      <% if (e.telephone) { %><span class="auteur">tél : <%= e.telephone %></span><% } %>
+      <% if (e.mail) { %><span class="auteur"><%= e.mail %></span><% } %>
+      <span class="formulaire-ligne">
+        <a class="bouton-secondaire" href="/entreprises/<%= e.id %>/modifier">Modifier</a>
+        <% if (e.nb_utilisations > 0) { %>
+          <span class="aide">utilisée dans <%= e.nb_utilisations %> consultation(s) — non supprimable</span>
+        <% } else { %>
+          <form method="post" action="/entreprises/<%= e.id %>/supprimer" data-confirm="Supprimer définitivement l'entreprise « <%= e.raison_sociale %> » ?">
+            <button class="bouton-secondaire" type="submit">Supprimer</button>
+          </form>
+        <% } %>
+      </span>
+    </li>
+  <% } %>
+</ul>
+<% } %>
+<section class="bloc">
+  <h2>Ajouter une entreprise</h2>
+  <form method="post" action="/entreprises" class="formulaire">
+    <label>Raison sociale (obligatoire)
+      <input type="text" name="raison_sociale" required>
+    </label>
+    <label>SIREN/SIRET
+      <input type="text" name="siren_siret">
+    </label>
+    <label>Nom du contact
+      <input type="text" name="contact_nom">
+    </label>
+    <label>Téléphone
+      <input type="tel" name="telephone">
+    </label>
+    <label>Email
+      <input type="email" name="mail">
+    </label>
+    <button class="bouton" type="submit">Ajouter l'entreprise</button>
+  </form>
+  <p class="aide">Une entreprise utilisée dans une consultation d'un ticket (quel que soit son état) ne peut plus être supprimée.</p>
+</section>
+<%- include('partials/footer') %>

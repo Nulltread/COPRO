@@ -85,6 +85,22 @@ async function creerTicket(c, uniteIds, titre = 'Ticket test') {
   return { res, tid: res.status === 302 ? Number(res.headers.get('location').split('/').pop()) : null };
 }
 
+// Consultation complète (entreprise strictement complète + devis + date), créée directement en base.
+function ajouterConsultationComplete(tid, auteurId) {
+  const eid = db().prepare('INSERT INTO entreprises (raison_sociale, siren_siret, contact_nom, telephone, mail) VALUES (?,?,?,?,?)')
+    .run('Entreprise Test SARL', '123456789 00012', 'M. Contact', '0600000000', 'contact@entreprise-test.fr').lastInsertRowid;
+  const cid = db().prepare('INSERT INTO consultations (ticket_id, entreprise_id, date_planifiee, auteur_id) VALUES (?, ?, ?, ?)')
+    .run(tid, eid, '2026-12-01', auteurId).lastInsertRowid;
+  db().prepare("INSERT INTO fichiers (ticket_id, categorie, nom_original, nom_stockage, mime, taille, montant, consultation_id, auteur_id) VALUES (?, 'devis', 'devis.pdf', 'devis-test.pdf', 'application/pdf', 10, 500, ?, ?)")
+    .run(tid, cid, auteurId);
+  return cid;
+}
+
+function ajouterFacture(tid, auteurId, montant = 100) {
+  db().prepare("INSERT INTO fichiers (ticket_id, categorie, nom_original, nom_stockage, mime, taille, montant, auteur_id) VALUES (?, 'facture', 'facture.pdf', 'facture-test.pdf', 'application/pdf', 10, ?, ?)")
+    .run(tid, montant, auteurId);
+}
+
 test('connexion avec mauvais mot de passe échoue', async () => {
   const c = await client();
   const res = await login(c, 'r1@test.local', 'mauvais');
@@ -197,58 +213,94 @@ test('visibilité : lecture ouverte à tous, filtre par défaut sur ses unités'
   assert.ok(listeToutes.includes('Ticket villa 2 visible par tous'));
 });
 
-test('cycle de vie : CS libre sur tous les états, résident limité à la réouverture', async () => {
+test('cycle v2 : créé → consultation (CS/admin seul), archivage avec facture, archivé = figé', async () => {
   const cs = await client(); await login(cs, 'cs@test.local', 'motdepasse1');
   const r1 = await client(); await login(r1, 'r1@test.local', 'motdepasse1');
-  const { tid } = await creerTicket(r1, [ids.villa1], 'Cycle test');
+  const { tid } = await creerTicket(r1, [ids.villa1], 'Cycle v2 test');
   assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'cree');
 
-  // un résident ne peut pas changer d'état (sauf réouverture)
-  const resInterdit = await r1.req('POST', `/tickets/${tid}/transition`, { etape: 'consultation' });
+  // un résident ne peut pas passer en consultation
+  const resInterdit = await r1.req('POST', `/tickets/${tid}/passer-consultation`);
   assert.strictEqual(resInterdit.status, 403);
+  // l'ancienne route de transition libre n'existe plus
+  const resVieux = await cs.req('POST', `/tickets/${tid}/transition`, { etape: 'archive' });
+  assert.strictEqual(resVieux.status, 404);
 
-  // le CS peut sauter directement à n'importe quel état
-  const resSaut = await cs.req('POST', `/tickets/${tid}/transition`, { etape: 'travaux_acceptes' });
-  assert.strictEqual(resSaut.status, 302);
-  assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'travaux_acceptes');
+  // le CS passe en consultation
+  const resOk = await cs.req('POST', `/tickets/${tid}/passer-consultation`);
+  assert.strictEqual(resOk.status, 302);
+  assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'consultation');
 
-  // archivage par le CS, puis réouverture par le résident vers l'état d'avant consultation
-  await cs.req('POST', `/tickets/${tid}/transition`, { etape: 'archive' });
+  // archivage impossible sans facture
+  const resSansFacture = await cs.req('POST', `/tickets/${tid}/archiver`);
+  assert.strictEqual(resSansFacture.status, 400);
+  // un résident ne peut pas archiver
+  const resResident = await r1.req('POST', `/tickets/${tid}/archiver`);
+  assert.strictEqual(resResident.status, 403);
+  // avec une facture, l'archivage fonctionne (même depuis « consultation »)
+  const formFacture = new FormData();
+  formFacture.append('fichier', new Blob(['%PDF-1.4 x'], { type: 'application/pdf' }), 'facture.pdf');
+  formFacture.append('montant', '100');
+  const resFacture = await cs.req('POST', `/tickets/${tid}/factures`, undefined, formFacture);
+  assert.strictEqual(resFacture.status, 302);
+  const resArchive = await cs.req('POST', `/tickets/${tid}/archiver`);
+  assert.strictEqual(resArchive.status, 302);
   assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'archive');
-  const resReouv = await r1.req('POST', `/tickets/${tid}/transition`, { etape: 'valide_cs' });
-  assert.strictEqual(resReouv.status, 302);
-  assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'valide_cs');
+  // archivé = plus jamais éditable
+  const resEdit = await r1.req('POST', `/tickets/${tid}/editer`, { description: 'x' });
+  assert.strictEqual(resEdit.status, 403);
 });
 
-test('résolution : tous les résidents concernés (ou le CS seul) → archivé', async () => {
+test('travaux planifiés → acceptés : tous les propriétaires/locataires concernés doivent valider', async () => {
   const cs = await client(); await login(cs, 'cs@test.local', 'motdepasse1');
+  const r1 = await client(); await login(r1, 'r1@test.local', 'motdepasse1');
   const r2 = await client(); await login(r2, 'r2@test.local', 'motdepasse1');
-  // villa 2 : seul résident = r2 → son acceptation archive le ticket
-  const { tid } = await creerTicket(r2, [ids.villa2], 'Résolution r2 seul');
-  await cs.req('POST', `/tickets/${tid}/transition`, { etape: 'travaux_acceptes' });
-  const res = await r2.req('POST', `/tickets/${tid}/resolution`);
-  assert.strictEqual(res.status, 302);
-  assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'archive');
+  // villa 2 : seul résident = r2
+  const { tid } = await creerTicket(r2, [ids.villa2], 'Validation r2 seul');
+  await cs.req('POST', `/tickets/${tid}/passer-consultation`);
+  const cid = ajouterConsultationComplete(tid, ids.cs);
+  await cs.req('POST', `/tickets/${tid}/consultations/${cid}/valider`);
+  assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'intervention_planifiee');
+  // un résident non concerné ne peut pas valider
+  const resKo = await r1.req('POST', `/tickets/${tid}/valider-travaux`, { commentaire: 'ok' });
+  assert.strictEqual(resKo.status, 403);
+  // r2 (seul concerné) valide → travaux acceptés
+  const resOk = await r2.req('POST', `/tickets/${tid}/valider-travaux`, { commentaire: 'Vu, OK pour moi' });
+  assert.strictEqual(resOk.status, 302);
+  const t = db().prepare('SELECT etape, acceptes_at FROM tickets WHERE id=?').get(tid);
+  assert.strictEqual(t.etape, 'travaux_acceptes');
+  assert.ok(t.acceptes_at);
 
-  // villa 1 : r1 + nouveau concernés ; le CS accepte seul → archivé quand même
-  const { tid: tid2 } = await creerTicket(r2, [ids.villa1, ids.villa2], 'Résolution CS seul');
-  await cs.req('POST', `/tickets/${tid2}/transition`, { etape: 'travaux_acceptes' });
-  const resCS = await cs.req('POST', `/tickets/${tid2}/resolution`);
-  assert.strictEqual(resCS.status, 302);
-  assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid2).etape, 'archive');
+  // ticket multi-résidents (villa 1 : r1 + nouveau, villa 2 : r2) : il faut TOUS valider
+  const { tid: tid2 } = await creerTicket(r2, [ids.villa1, ids.villa2], 'Validation tous requis');
+  await cs.req('POST', `/tickets/${tid2}/passer-consultation`);
+  const cid2 = ajouterConsultationComplete(tid2, ids.cs);
+  await cs.req('POST', `/tickets/${tid2}/consultations/${cid2}/valider`);
+  await r1.req('POST', `/tickets/${tid2}/valider-travaux`, { commentaire: 'ok pour moi' });
+  assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid2).etape, 'intervention_planifiee');
+  // les 2 autres résidents (nouveau@test.local sur villa 1, r2 sur villa 2) valident → acceptés
+  const cNv = await client(); await login(cNv, 'nouveau@test.local', 'motdepasse1');
+  await cNv.req('POST', `/tickets/${tid2}/valider-travaux`, { commentaire: 'ok aussi' });
+  assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid2).etape, 'intervention_planifiee');
+  await r2.req('POST', `/tickets/${tid2}/valider-travaux`, { commentaire: 'ok pour moi aussi' });
+  assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid2).etape, 'travaux_acceptes');
 });
 
-test('édition de la description même archivé, loguée avec auteur visible', async () => {
+test('édition : possible tant que non archivé (loguée avec auteur), interdite une fois archivé', async () => {
   const cs = await client(); await login(cs, 'cs@test.local', 'motdepasse1');
   const r1 = await client(); await login(r1, 'r1@test.local', 'motdepasse1');
   const { tid } = await creerTicket(r1, [ids.villa1], 'Ticket à éditer');
-  await cs.req('POST', `/tickets/${tid}/transition`, { etape: 'archive' });
-  const res = await r1.req('POST', `/tickets/${tid}/editer`, { description: 'Description mise à jour après archivage' });
+  const res = await r1.req('POST', `/tickets/${tid}/editer`, { description: 'Description modifiée' });
   assert.strictEqual(res.status, 302);
-  assert.strictEqual(db().prepare('SELECT description FROM tickets WHERE id=?').get(tid).description, 'Description mise à jour après archivage');
+  assert.strictEqual(db().prepare('SELECT description FROM tickets WHERE id=?').get(tid).description, 'Description modifiée');
   const ev = db().prepare("SELECT * FROM ticket_events WHERE ticket_id=? AND type='edition' ORDER BY id DESC LIMIT 1").get(tid);
   assert.ok(ev);
   assert.strictEqual(ev.auteur_id, ids.r1);
+  // archivage (avec facture) puis édition interdite
+  ajouterFacture(tid, ids.cs, 50);
+  await cs.req('POST', `/tickets/${tid}/archiver`);
+  const res2 = await r1.req('POST', `/tickets/${tid}/editer`, { description: 'après archivage' });
+  assert.strictEqual(res2.status, 403);
 });
 
 test('suppression : créateur si jamais évolué ; CS sur ticket non évolué d\'un compte parti', async () => {
@@ -259,11 +311,15 @@ test('suppression : créateur si jamais évolué ; CS sur ticket non évolué d\
   const resSup = await r1.req('POST', `/tickets/${tid}/supprimer`);
   assert.strictEqual(resSup.status, 302);
   assert.strictEqual(db().prepare('SELECT COUNT(*) AS n FROM tickets WHERE id=?').get(tid).n, 0);
-  // ticket évolué : même le créateur ne peut pas supprimer
+  // ticket passé en consultation : même le créateur ne peut plus supprimer
   const { tid: tid2 } = await creerTicket(r1, [ids.villa1], 'Évolué');
-  await cs.req('POST', `/tickets/${tid2}/transition`, { etape: 'valide_cs' });
+  await cs.req('POST', `/tickets/${tid2}/passer-consultation`);
   const resKo = await r1.req('POST', `/tickets/${tid2}/supprimer`);
   assert.strictEqual(resKo.status, 403);
+  // mais le CS/admin peut supprimer un ticket encore « créé » (même d'un compte supprimé)
+  const { tid: tidKo } = await creerTicket(r1, [ids.villa1], 'Créé CS supprime');
+  const resCsSup = await cs.req('POST', `/tickets/${tidKo}/supprimer`);
+  assert.strictEqual(resCsSup.status, 302);
   // ticket non évolué créé par un compte supprimé : le CS peut supprimer
   const parti = await client();
   await parti.req('POST', '/inscription', { nom: 'Parti', prenom: 'Paul', telephone: '0605', email: 'parti@test.local', motdepasse: 'motdepasse1', unite_id: String(ids.villa2), qualite: 'locataire' });
@@ -281,35 +337,42 @@ test('suppression : créateur si jamais évolué ; CS sur ticket non évolué d\
   assert.strictEqual(db().prepare('SELECT COUNT(*) AS n FROM tickets WHERE id=?').get(tid3).n, 0);
 });
 
-test('fichiers : devis/factures réservés au CS, lecture ouverte à tous', async () => {
+test('section documents supprimée ; factures (PDF + coût) réservées au CS, lecture ouverte', async () => {
   const cs = await client(); await login(cs, 'cs@test.local', 'motdepasse1');
   const r1 = await client(); await login(r1, 'r1@test.local', 'motdepasse1');
   const r2 = await client(); await login(r2, 'r2@test.local', 'motdepasse1');
-  const { tid } = await creerTicket(r1, [ids.villa1], 'Ticket documents');
+  const { tid } = await creerTicket(r1, [ids.villa1], 'Ticket factures');
 
-  const formDevis = new FormData();
-  formDevis.append('categorie', 'devis');
-  formDevis.append('montant', '500');
-  formDevis.append('fichiers', new Blob(['%PDF-1.4 x'], { type: 'application/pdf' }), 'devis.pdf');
-  const resInterdit = await r1.req('POST', `/tickets/${tid}/fichiers`, undefined, formDevis);
+  // l'ancienne route d'upload libre de documents n'existe plus
+  const formVieux = new FormData();
+  formVieux.append('categorie', 'photo');
+  formVieux.append('fichiers', new Blob(['x'], { type: 'image/png' }), 'photo.png');
+  const resVieux = await r1.req('POST', `/tickets/${tid}/fichiers`, undefined, formVieux);
+  assert.strictEqual(resVieux.status, 404);
+
+  // un résident ne peut pas ajouter de facture
+  const formFacture = new FormData();
+  formFacture.append('fichier', new Blob(['%PDF-1.4 x'], { type: 'application/pdf' }), 'facture.pdf');
+  formFacture.append('montant', '500');
+  const resInterdit = await r1.req('POST', `/tickets/${tid}/factures`, undefined, formFacture);
   assert.strictEqual(resInterdit.status, 403);
 
-  const resOK = await cs.req('POST', `/tickets/${tid}/fichiers`, undefined, formDevis);
+  // le CS peut (PDF + coût)
+  const resOK = await cs.req('POST', `/tickets/${tid}/factures`, undefined, formFacture);
   assert.strictEqual(resOK.status, 302);
-  const f = db().prepare('SELECT * FROM fichiers WHERE ticket_id = ?').get(tid);
-  assert.strictEqual(f.categorie, 'devis');
+  const f = db().prepare("SELECT * FROM fichiers WHERE ticket_id = ? AND categorie = 'facture'").get(tid);
+  assert.ok(f);
   assert.strictEqual(f.montant, 500);
 
-  // lecture ouverte : un résident d'une autre unité peut télécharger le devis
+  // lecture ouverte : un résident d'une autre unité peut télécharger la facture
   const okR2 = await r2.req('GET', '/fichiers/' + f.id);
   assert.strictEqual(okR2.status, 200);
 
-  // photo : tout le monde peut en ajouter
-  const formPhoto = new FormData();
-  formPhoto.append('categorie', 'photo');
-  formPhoto.append('fichiers', new Blob(['x'], { type: 'image/png' }), 'photo.png');
-  const resPhoto = await r1.req('POST', `/tickets/${tid}/fichiers`, undefined, formPhoto);
-  assert.strictEqual(resPhoto.status, 302);
+  // montant obligatoire
+  const formSansMontant = new FormData();
+  formSansMontant.append('fichier', new Blob(['%PDF-1.4 x'], { type: 'application/pdf' }), 'f2.pdf');
+  const resSansMontant = await cs.req('POST', `/tickets/${tid}/factures`, undefined, formSansMontant);
+  assert.strictEqual(resSansMontant.status, 400);
 });
 
 test('compte-rendu d\'intervention : une instance par unité + une pour le CS', async () => {
@@ -325,12 +388,28 @@ test('compte-rendu d\'intervention : une instance par unité + une pour le CS', 
   assert.ok(crs.some(c => c.unit_id === null && c.contenu === 'CR conseil syndical'));
 });
 
-test('notifications in-app pour le CS à la création d\'un ticket urgent', async () => {
+test('notifications : uniquement sur les transitions ; destinataires = résidents concernés + CS + admin (hors auteur)', async () => {
+  const cs = await client(); await login(cs, 'cs@test.local', 'motdepasse1');
+  const admin = await client(); await login(admin, 'admin@test.local', 'motdepasse1');
   const r1 = await client(); await login(r1, 'r1@test.local', 'motdepasse1');
+  const r2 = await client(); await login(r2, 'r2@test.local', 'motdepasse1');
+  // création d'un ticket urgent : PAS de notification (seules les transitions notifient)
   const res = await r1.req('POST', '/tickets', { titre: 'Urgence notif', description: '', unite_ids: [String(ids.villa1)], urgent: '1' });
   const tid = Number(res.headers.get('location').split('/').pop());
-  const n = db().prepare('SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND ticket_id = ?').get(ids.cs, tid).n;
-  assert.ok(n >= 1);
+  let n = db().prepare('SELECT COUNT(*) AS n FROM notifications WHERE ticket_id = ?').get(tid).n;
+  assert.strictEqual(n, 0);
+  // commentaire : pas de notification non plus (fil de suivi seul)
+  await r1.req('POST', `/tickets/${tid}/commentaire`, { contenu: 'hello' });
+  n = db().prepare('SELECT COUNT(*) AS n FROM notifications WHERE ticket_id = ?').get(tid).n;
+  assert.strictEqual(n, 0);
+  // transition par le CS : notifie r1 (résident concerné, auteur du ticket mais notifié en tant que concerné),
+  // l'admin, mais PAS l'auteur de la transition (cs) ni r2 (non concerné)
+  await cs.req('POST', `/tickets/${tid}/passer-consultation`);
+  const notif = (uid) => db().prepare('SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND ticket_id = ?').get(uid, tid).n;
+  assert.strictEqual(notif(ids.cs), 0);      // auteur de la transition exclu
+  assert.ok(notif(ids.r1) >= 1);              // résident concerné
+  assert.ok(notif(ids.admin) >= 1);           // admin
+  assert.strictEqual(notif(ids.r2), 0);       // non concerné
 });
 
 test('gestion collégiale du statut CS', async () => {
@@ -340,10 +419,13 @@ test('gestion collégiale du statut CS', async () => {
   // un résident non-CS ne peut pas gérer le statut CS
   const resKo = await r1.req('POST', `/admin/comptes/${ids.r2}/conseil`, { action: 'ajouter' });
   assert.strictEqual(resKo.status, 403);
-  // un membre CS ne peut pas nommer un non-membre
-  const resKo2 = await cs.req('POST', `/admin/comptes/${ids.r2}/conseil`, { action: 'ajouter' });
-  assert.strictEqual(resKo2.status, 403);
-  // un membre CS peut se retirer lui-même
+  // un membre CS peut nommer un non-membre (spec 17) et se retirer lui-même
+  const resAjout = await cs.req('POST', `/admin/comptes/${ids.r2}/conseil`, { action: 'ajouter' });
+  assert.strictEqual(resAjout.status, 302);
+  assert.strictEqual(db().prepare('SELECT conseil_syndical FROM users WHERE id=?').get(ids.r2).conseil_syndical, 1);
+  const resRetrait = await cs.req('POST', `/admin/comptes/${ids.r2}/conseil`, { action: 'retirer' });
+  assert.strictEqual(resRetrait.status, 302);
+  assert.strictEqual(db().prepare('SELECT conseil_syndical FROM users WHERE id=?').get(ids.r2).conseil_syndical, 0);
   const resSelf = await cs.req('POST', `/admin/comptes/${ids.cs}/conseil`, { action: 'retirer' });
   assert.strictEqual(resSelf.status, 302);
   assert.strictEqual(db().prepare('SELECT conseil_syndical FROM users WHERE id=?').get(ids.cs).conseil_syndical, 0);
@@ -388,21 +470,20 @@ test('page d\'inscription se rend sans erreur (régression)', async () => {
   assert.ok(!html.includes('Parties communes'));
 });
 
-test('filtre par coût minimum sur la liste des tickets', async () => {
-  const cs = await client(); await login(cs, 'cs@test.local', 'motdepasse1');
+test('recherche plaintext sur la liste des tickets (titre + description uniquement) ; plus de filtre coût', async () => {
   const r1 = await client(); await login(r1, 'r1@test.local', 'motdepasse1');
-  const { tid } = await creerTicket(r1, [ids.villa1], 'Ticket filtre coût');
-  const form = new FormData();
-  form.append('categorie', 'devis');
-  form.append('montant', '500');
-  form.append('fichiers', new Blob(['%PDF-1.4 x'], { type: 'application/pdf' }), 'devis.pdf');
-  await cs.req('POST', `/tickets/${tid}/fichiers`, undefined, form);
-  const f = db().prepare('SELECT id FROM fichiers WHERE ticket_id = ?').get(tid);
-  await cs.req('POST', `/tickets/${tid}/decision`, { fichier_id: String(f.id), justification: 'retenu' });
-  const liste = await (await cs.req('GET', '/tickets?unite=toutes&cout_min=1000')).text();
-  assert.ok(!liste.includes('Ticket filtre coût'));
-  const liste2 = await (await cs.req('GET', '/tickets?unite=toutes&cout_min=100')).text();
-  assert.ok(liste2.includes('Ticket filtre coût'));
+  await creerTicket(r1, [ids.villa1], 'Fuite évier cuisine');
+  await creerTicket(r1, [ids.villa1], 'Volet roulant bloqué');
+  const liste = await (await r1.req('GET', '/tickets?q=fuite')).text();
+  assert.ok(liste.includes('Fuite évier cuisine'));
+  assert.ok(!liste.includes('Volet roulant bloqué'));
+  // la recherche porte aussi sur la description
+  const liste2 = await (await r1.req('GET', '/tickets?q=roulant')).text();
+  assert.ok(liste2.includes('Volet roulant bloqué'));
+  assert.ok(!liste2.includes('Fuite évier cuisine'));
+  // le paramètre cout_min n'existe plus : ignoré
+  const liste3 = await (await r1.req('GET', '/tickets?cout_min=1000000')).text();
+  assert.ok(liste3.includes('Fuite évier cuisine'));
 });
 
 test('liste : archivés masqués par défaut (filtre etape=archive pour les voir), tri urgence d\'abord puis date croissante', async () => {
@@ -415,7 +496,7 @@ test('liste : archivés masqués par défaut (filtre etape=archive pour les voir
   db().prepare("UPDATE tickets SET created_at = '2020-01-01 10:00:00' WHERE id = ?").run(t1);
   db().prepare("UPDATE tickets SET created_at = '2020-01-02 10:00:00' WHERE id = ?").run(t2);
   db().prepare("UPDATE tickets SET created_at = '2020-01-03 10:00:00' WHERE id = ?").run(t3);
-  await cs.req('POST', `/tickets/${t1}/transition`, { etape: 'archive' });
+  db().prepare("UPDATE tickets SET etape = 'archive' WHERE id = ?").run(t1);
 
   const liste = await (await r1.req('GET', '/tickets')).text();
   assert.ok(!liste.includes('Liste test ancien archivé'));
@@ -423,6 +504,169 @@ test('liste : archivés masqués par défaut (filtre etape=archive pour les voir
 
   const archives = await (await r1.req('GET', '/tickets?etape=archive')).text();
   assert.ok(archives.includes('Liste test ancien archivé'));
+});
+
+test('consultations : création par le CS (entreprise + date + devis), validation exigeant une consultation complète', async () => {
+  const cs = await client(); await login(cs, 'cs@test.local', 'motdepasse1');
+  const r1 = await client(); await login(r1, 'r1@test.local', 'motdepasse1');
+  const { tid } = await creerTicket(r1, [ids.villa1], 'Ticket consultations');
+  // création interdite tant que le ticket n'est pas en consultation
+  const formTropTot = new FormData();
+  formTropTot.append('entreprise_id', 'nouvelle');
+  formTropTot.append('nouvelle_raison_sociale', 'Boîte');
+  formTropTot.append('date_planifiee', '2026-12-01');
+  formTropTot.append('devis_fichiers', new Blob(['%PDF-1.4 x'], { type: 'application/pdf' }), 'd.pdf');
+  formTropTot.append('devis_montant', '300');
+  assert.strictEqual((await cs.req('POST', `/tickets/${tid}/consultations`, undefined, formTropTot)).status, 400);
+  // un résident ne peut pas créer de consultation
+  await cs.req('POST', `/tickets/${tid}/passer-consultation`);
+  assert.strictEqual((await r1.req('POST', `/tickets/${tid}/consultations`, undefined, formTropTot)).status, 403);
+  // création par le CS avec nouvelle entreprise (fiche incomplète) : autorisée
+  const res = await cs.req('POST', `/tickets/${tid}/consultations`, undefined, formTropTot);
+  assert.strictEqual(res.status, 302);
+  const c = db().prepare('SELECT * FROM consultations WHERE ticket_id = ?').get(tid);
+  assert.ok(c);
+  const devis = db().prepare('SELECT * FROM fichiers WHERE consultation_id = ?').get(c.id);
+  assert.ok(devis);
+  assert.strictEqual(devis.categorie, 'devis');
+  assert.strictEqual(devis.montant, 300);
+  // validation d'une consultation incomplète (entreprise non strictement complète) → 400
+  assert.strictEqual((await cs.req('POST', `/tickets/${tid}/consultations/${c.id}/valider`)).status, 400);
+  assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'consultation');
+  // entreprise complétée → validation OK → travaux planifiés
+  db().prepare("UPDATE entreprises SET siren_siret='123 456 789 00012', contact_nom='M. Contact', telephone='0600', mail='c@e.fr' WHERE id = ?").run(c.entreprise_id);
+  assert.strictEqual((await cs.req('POST', `/tickets/${tid}/consultations/${c.id}/valider`)).status, 302);
+  assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'intervention_planifiee');
+  assert.strictEqual(db().prepare('SELECT validee FROM consultations WHERE id=?').get(c.id).validee, 1);
+  // une fois en planifié, plus de création/modification de consultation
+  const resApres = await cs.req('POST', `/tickets/${tid}/consultations`, undefined, formTropTot);
+  assert.strictEqual(resApres.status, 400);
+});
+
+test('entreprises : CRUD réservé au CS/admin, non supprimable si utilisée dans une consultation', async () => {
+  const cs = await client(); await login(cs, 'cs@test.local', 'motdepasse1');
+  const r1 = await client(); await login(r1, 'r1@test.local', 'motdepasse1');
+  // un résident n'a pas accès à la page
+  assert.strictEqual((await r1.req('GET', '/entreprises')).status, 403);
+  // ajout
+  const res = await cs.req('POST', '/entreprises', { raison_sociale: 'Maçonnerie Test', siren_siret: '987 654 321 00098', contact_nom: 'Mme Test', telephone: '0699', mail: 'm@t.fr' });
+  assert.strictEqual(res.status, 302);
+  const e = db().prepare("SELECT * FROM entreprises WHERE raison_sociale = 'Maçonnerie Test'").get();
+  assert.ok(e);
+  // raison sociale obligatoire
+  assert.strictEqual((await cs.req('POST', '/entreprises', { raison_sociale: '' })).status, 400);
+  // suppression OK tant qu'inutilisée
+  assert.strictEqual((await cs.req('POST', `/entreprises/${e.id}/supprimer`)).status, 302);
+  assert.strictEqual(db().prepare('SELECT COUNT(*) AS n FROM entreprises WHERE id = ?').get(e.id).n, 0);
+  // utilisée dans une consultation → non supprimable, mais modifiable
+  const { tid } = await creerTicket(r1, [ids.villa1], 'Ticket entreprise');
+  const e2 = db().prepare('INSERT INTO entreprises (raison_sociale, siren_siret, contact_nom, telephone, mail) VALUES (?,?,?,?,?)')
+    .run('Utilisée SARL', '1', 'c', 't', 'm').lastInsertRowid;
+  db().prepare('INSERT INTO consultations (ticket_id, entreprise_id, date_planifiee, auteur_id) VALUES (?, ?, ?, ?)')
+    .run(tid, e2, '2026-12-01', ids.cs);
+  assert.strictEqual((await cs.req('POST', `/entreprises/${e2}/supprimer`)).status, 403);
+  assert.strictEqual((await cs.req('POST', `/entreprises/${e2}/modifier`, { raison_sociale: 'Utilisée SARL renommée', siren_siret: '1', contact_nom: 'c', telephone: 't', mail: 'm' })).status, 302);
+  assert.strictEqual(db().prepare('SELECT raison_sociale FROM entreprises WHERE id = ?').get(e2).raison_sociale, 'Utilisée SARL renommée');
+});
+
+test('panneau d\'administration : réservé à l\'admin, réglages péremption + archivage auto', async () => {
+  const admin = await client(); await login(admin, 'admin@test.local', 'motdepasse1');
+  const cs = await client(); await login(cs, 'cs@test.local', 'motdepasse1');
+  assert.strictEqual((await cs.req('GET', '/admin')).status, 403);
+  assert.strictEqual((await cs.req('POST', '/admin', { peremption_rattachement_jours: '7', archivage_auto_jours: '20' })).status, 403);
+  assert.strictEqual((await admin.req('GET', '/admin')).status, 200);
+  const res = await admin.req('POST', '/admin', { peremption_rattachement_jours: '7', archivage_auto_jours: '20' });
+  assert.strictEqual(res.status, 302);
+  const { getParametre } = require('../src/parametres');
+  assert.strictEqual(getParametre('peremption_rattachement_jours'), '7');
+  assert.strictEqual(getParametre('archivage_auto_jours'), '20');
+  // valeurs invalides → 400
+  assert.strictEqual((await admin.req('POST', '/admin', { peremption_rattachement_jours: '0', archivage_auto_jours: '20' })).status, 400);
+  // on remet les défauts pour ne pas influencer les autres tests
+  await admin.req('POST', '/admin', { peremption_rattachement_jours: '14', archivage_auto_jours: '31' });
+  assert.strictEqual(getParametre('peremption_rattachement_jours'), '14');
+});
+
+test('réouverture d\'un ticket « travaux acceptés » (commentaire + photo obligatoires) → retour en consultation, caduques', async () => {
+  const cs = await client(); await login(cs, 'cs@test.local', 'motdepasse1');
+  const r2 = await client(); await login(r2, 'r2@test.local', 'motdepasse1');
+  const { tid } = await creerTicket(r2, [ids.villa2], 'Réouverture test');
+  await cs.req('POST', `/tickets/${tid}/passer-consultation`);
+  const cid = ajouterConsultationComplete(tid, ids.cs);
+  await cs.req('POST', `/tickets/${tid}/consultations/${cid}/valider`);
+  await r2.req('POST', `/tickets/${tid}/valider-travaux`, { commentaire: 'ok' });
+  assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'travaux_acceptes');
+  // sans commentaire → 400
+  const formSans = new FormData();
+  formSans.append('commentaire', '');
+  formSans.append('photos', new Blob(['x'], { type: 'image/png' }), 'p.png');
+  assert.strictEqual((await r2.req('POST', `/tickets/${tid}/reouvrir`, undefined, formSans)).status, 400);
+  // sans photo → 400
+  const formSansPhoto = new FormData();
+  formSansPhoto.append('commentaire', 'je rouvre');
+  assert.strictEqual((await r2.req('POST', `/tickets/${tid}/reouvrir`, undefined, formSansPhoto)).status, 400);
+  // avec commentaire + photo → retour en consultation
+  const form = new FormData();
+  form.append('commentaire', 'Le problème revient');
+  form.append('photos', new Blob(['x'], { type: 'image/png' }), 'p.png');
+  const res = await r2.req('POST', `/tickets/${tid}/reouvrir`, undefined, form);
+  assert.strictEqual(res.status, 302);
+  const t = db().prepare('SELECT etape, acceptes_at FROM tickets WHERE id=?').get(tid);
+  assert.strictEqual(t.etape, 'consultation');
+  assert.strictEqual(t.acceptes_at, null);
+  // consultations et validations précédentes caduques (conservées en lecture seule)
+  assert.strictEqual(db().prepare('SELECT caduque FROM consultations WHERE id=?').get(cid).caduque, 1);
+  assert.strictEqual(db().prepare('SELECT caduque FROM resolutions WHERE ticket_id=?').get(tid).caduque, 1);
+  // la consultation caduque ne permet plus de valider
+  assert.strictEqual((await cs.req('POST', `/tickets/${tid}/consultations/${cid}/valider`)).status, 400);
+  // la photo de réouverture est bien enregistrée
+  const nbPhotos = db().prepare("SELECT COUNT(*) AS n FROM fichiers WHERE ticket_id=? AND categorie='photo'").get(tid).n;
+  assert.ok(nbPhotos >= 1);
+});
+
+test('péremption des demandes de rattachement (tâche périodique) + alertes J-3/J-1 aux admin et CS', async () => {
+  const { executerTaches } = require('../src/taches');
+  // demande de 20 jours → périmée (14 j) → supprimée
+  db().prepare("INSERT INTO rattachements (unit_id, user_id, qualite, statut, created_at) VALUES (?, ?, 'locataire', 'en_attente', datetime('now', '-20 days'))").run(ids.garage1, ids.r2);
+  // demande de 12 jours → alerte J-3 (et J-1), pas encore supprimée
+  const r12 = db().prepare("INSERT INTO rattachements (unit_id, user_id, qualite, statut, created_at) VALUES (?, ?, 'locataire', 'en_attente', datetime('now', '-12 days'))").run(ids.villa1, ids.r2).lastInsertRowid;
+  executerTaches();
+  assert.strictEqual(db().prepare('SELECT COUNT(*) AS n FROM rattachements WHERE unit_id=? AND user_id=?').get(ids.garage1, ids.r2).n, 0);
+  const r = db().prepare('SELECT * FROM rattachements WHERE id=?').get(r12);
+  assert.ok(r);
+  assert.strictEqual(r.notif_peremption_j3, 1);
+  const nAdmin = db().prepare("SELECT COUNT(*) AS n FROM notifications WHERE user_id=? AND type='peremption'").get(ids.admin).n;
+  const nCs = db().prepare("SELECT COUNT(*) AS n FROM notifications WHERE user_id=? AND type='peremption'").get(ids.cs).n;
+  assert.ok(nAdmin >= 1);
+  assert.ok(nCs >= 1);
+  // après péremption, une nouvelle demande sur la même unité est possible
+  db().prepare("INSERT INTO rattachements (unit_id, user_id, qualite, statut) VALUES (?, ?, 'proprietaire', 'en_attente')").run(ids.garage1, ids.r2);
+  assert.ok(db().prepare('SELECT COUNT(*) AS n FROM rattachements WHERE unit_id=? AND user_id=?').get(ids.garage1, ids.r2).n >= 1);
+});
+
+test('archivage automatique des « travaux acceptés » après le délai (uniquement avec facture) + alerte J-3', async () => {
+  const { executerTaches } = require('../src/taches');
+  const r1 = await client(); await login(r1, 'r1@test.local', 'motdepasse1');
+  // avec facture, acceptés depuis 40 jours → archivé automatiquement
+  const { tid } = await creerTicket(r1, [ids.villa1], 'Archivage auto avec facture');
+  db().prepare("UPDATE tickets SET etape='travaux_acceptes', acceptes_at=datetime('now','-40 days') WHERE id=?").run(tid);
+  ajouterFacture(tid, ids.cs, 100);
+  // sans facture, acceptés depuis 40 jours → PAS archivé
+  const { tid: tid2 } = await creerTicket(r1, [ids.villa1], 'Archivage auto sans facture');
+  db().prepare("UPDATE tickets SET etape='travaux_acceptes', acceptes_at=datetime('now','-40 days') WHERE id=?").run(tid2);
+  // 29 jours (délai 31, alerte J-3 à 28 jours) → alerte envoyée, pas archivé
+  const { tid: tid4 } = await creerTicket(r1, [ids.villa1], 'Alerte J-3 archivage');
+  db().prepare("UPDATE tickets SET etape='travaux_acceptes', acceptes_at=datetime('now','-29 days') WHERE id=?").run(tid4);
+  executerTaches();
+  assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'archive');
+  assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid2).etape, 'travaux_acceptes');
+  assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid4).etape, 'travaux_acceptes');
+  assert.strictEqual(db().prepare('SELECT notif_archive_j3 FROM tickets WHERE id=?').get(tid4).notif_archive_j3, 1);
+  // notification de la transition d'archivage auto (CS + résident concerné + admin)
+  const nCs = db().prepare('SELECT COUNT(*) AS n FROM notifications WHERE user_id=? AND ticket_id=? AND type=?').get(ids.cs, tid, 'changement_etape').n;
+  const nR1 = db().prepare('SELECT COUNT(*) AS n FROM notifications WHERE user_id=? AND ticket_id=? AND type=?').get(ids.r1, tid, 'changement_etape').n;
+  const nAdmin = db().prepare('SELECT COUNT(*) AS n FROM notifications WHERE user_id=? AND ticket_id=? AND type=?').get(ids.admin, tid, 'changement_etape').n;
+  assert.ok(nCs >= 1 && nR1 >= 1 && nAdmin >= 1);
 });
 
 test('PWA : manifest, service worker, icônes servis ; page profil propose le raccourci écran d\'accueil', async () => {

@@ -44,7 +44,9 @@ function createApp() {
     ).get().n;
     const urgents = db.prepare("SELECT COUNT(*) AS n FROM tickets WHERE urgent = 1 AND etape != 'archive'").get().n;
     const coutRetenu = db.prepare(
-      "SELECT COALESCE(SUM(montant),0) AS total FROM fichiers WHERE categorie IN ('devis','avenant') AND retenu = 1"
+      `SELECT COALESCE(SUM(f.montant),0) AS total FROM fichiers f
+       JOIN consultations c ON c.id = f.consultation_id
+       WHERE f.categorie = 'devis' AND c.validee = 1 AND c.caduque = 0`
     ).get().total;
     const totalFacture = db.prepare("SELECT COALESCE(SUM(montant),0) AS total FROM fichiers WHERE categorie = 'facture'").get().total;
     const recents = db.prepare(
@@ -63,6 +65,7 @@ function createApp() {
   app.use('/tickets', require('./routes/tickets').router);
   app.use('/', require('./routes/fichiers'));
   app.use('/admin', require('./routes/admin'));
+  app.use('/entreprises', require('./routes/entreprises'));
   app.use('/rattachements', require('./routes/rattachements'));
   app.use('/', require('./routes/profil'));
   app.use('/notifications', require('./routes/notifications'));

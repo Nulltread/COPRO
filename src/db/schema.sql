@@ -44,6 +44,8 @@ CREATE TABLE IF NOT EXISTS rattachements (
   valide_par INTEGER REFERENCES users(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   valide_at TEXT,
+  notif_peremption_j3 INTEGER NOT NULL DEFAULT 0,
+  notif_peremption_j1 INTEGER NOT NULL DEFAULT 0,
   UNIQUE (unit_id, user_id)
 );
 
@@ -59,10 +61,13 @@ CREATE TABLE IF NOT EXISTS tickets (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   titre TEXT NOT NULL,
   description TEXT NOT NULL DEFAULT '',
-  etape TEXT NOT NULL DEFAULT 'cree' CHECK (etape IN ('cree','valide_cs','consultation','intervention_planifiee','travaux_acceptes','archive')),
-  etape_avant_consultation TEXT NOT NULL DEFAULT 'valide_cs',
+  etape TEXT NOT NULL DEFAULT 'cree' CHECK (etape IN ('cree','consultation','intervention_planifiee','travaux_acceptes','archive')),
+  etape_avant_consultation TEXT NOT NULL DEFAULT 'cree',
   urgent INTEGER NOT NULL DEFAULT 0,
   auteur_id INTEGER NOT NULL REFERENCES users(id),
+  acceptes_at TEXT,
+  notif_archive_j3 INTEGER NOT NULL DEFAULT 0,
+  notif_archive_j1 INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -83,12 +88,49 @@ CREATE TABLE IF NOT EXISTS ticket_events (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- Acceptations de la resolution (travaux acceptes) par les residents concernes.
+-- Validations des travaux (planifie -> acceptes) par les residents concernes.
+-- caduque = 1 : validation conservee en lecture seule apres une reouverture.
 CREATE TABLE IF NOT EXISTS resolutions (
   ticket_id INTEGER NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  commentaire TEXT NOT NULL DEFAULT '',
+  caduque INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (ticket_id, user_id)
+);
+
+-- Parametres globaux (panneau d'administration, reserve a l'admin).
+CREATE TABLE IF NOT EXISTS parametres (
+  cle TEXT PRIMARY KEY,
+  valeur TEXT NOT NULL
+);
+
+-- Referentiel des entreprises (gere par le CS et l'admin).
+CREATE TABLE IF NOT EXISTS entreprises (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  raison_sociale TEXT NOT NULL,
+  siren_siret TEXT NOT NULL DEFAULT '',
+  contact_nom TEXT NOT NULL DEFAULT '',
+  telephone TEXT NOT NULL DEFAULT '',
+  mail TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Consultations d'un ticket (etape 'consultation') : entreprise + date +
+-- un ou plusieurs devis (table fichiers, categorie 'devis', consultation_id).
+-- validee = 1 : retenue par le CS pour passer en travaux planifies.
+-- caduque = 1 : conservee en lecture seule apres une reouverture.
+CREATE TABLE IF NOT EXISTS consultations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ticket_id INTEGER NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+  entreprise_id INTEGER NOT NULL REFERENCES entreprises(id),
+  date_planifiee TEXT,
+  validee INTEGER NOT NULL DEFAULT 0,
+  caduque INTEGER NOT NULL DEFAULT 0,
+  auteur_id INTEGER NOT NULL REFERENCES users(id),
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 -- Comptes-rendus d'intervention : une instance par unite du ticket (unit_id)
@@ -115,6 +157,7 @@ CREATE TABLE IF NOT EXISTS fichiers (
   entreprise TEXT,
   delai TEXT,
   retenu INTEGER NOT NULL DEFAULT 0,
+  consultation_id INTEGER REFERENCES consultations(id) ON DELETE CASCADE,
   auteur_id INTEGER NOT NULL REFERENCES users(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -144,4 +187,6 @@ CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, lu);
 CREATE INDEX IF NOT EXISTS idx_unit_residents_user ON unit_residents(user_id);
 CREATE INDEX IF NOT EXISTS idx_rattachements_user ON rattachements(user_id, statut);
 CREATE INDEX IF NOT EXISTS idx_rattachements_unit ON rattachements(unit_id, statut);
+-- Index sur consultations/fichiers.crees dans migrate.js (migration v2) :
+-- une vieille base n'a pas encore ces colonnes au moment de lire ce fichier.
 CREATE INDEX IF NOT EXISTS idx_resolutions_ticket ON resolutions(ticket_id);
