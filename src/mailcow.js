@@ -56,7 +56,7 @@ async function synchroniserAliasCS() {
   try {
     let res = await apiPost(apiUrl, apiKey, '/api/v1/edit/alias', {
       address: ALIAS(),
-      destination: destinations,
+      destination: destinations.join(', '),
       active: '1'
     });
     if (res.status === 404 || res.status === 400) {
