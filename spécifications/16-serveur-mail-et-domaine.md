@@ -46,7 +46,8 @@ Ce fichier réintroduit le **canal email** (retiré en v1 dans `08-notifications
 ### Liste de diffusion du conseil syndical
 - Alias **`conseil_syndical@copro-pinede-gardanne.fr`** géré **côté serveur mail** (alias virtuel à plusieurs destinataires), redirigeant vers les adresses email personnelles **vérifiées** des comptes ayant le statut conseil syndical (en test : uniquement `sebastien.paletti@gmail.com`, les autres membres seront ajoutés ensuite).
 - Alias **`noreply@copro-pinede-gardanne.fr`** : adresse d'expédition de l'application, redirigée vers l'adresse personnelle de l'administrateur (pour recueillir les réponses éventuelles).
-- **Aucune boîte mail sur le domaine** : seules ces adresses d'alias existent ; tout autre destinataire du domaine est rejeté. La liste des destinataires est maintenue manuellement dans l'interface d'admin du serveur mail (petit effectif, pas de gestion dans l'application en v1).
+- **Aucune boîte mail sur le domaine** : seules ces adresses d'alias existent ; tout autre destinataire du domaine est rejeté.
+- La liste des destinataires de `conseil_syndical@` **évolue automatiquement** avec les comptes enregistrés comme membres du CS : l'application resynchronise l'alias via l'API Mailcow à chaque changement (ajout/retrait de membre CS, vérification d'un email) pour pointer vers les adresses personnelles **vérifiées** des membres courants. En attendant ce branchement, l'alias ne contient que l'adresse de test de l'administrateur.
 
 ## Sécurité et délivrabilité
 
