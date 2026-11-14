@@ -26,6 +26,10 @@ function apiPost(apiUrl, apiKey, path, body) {
       path,
       method: 'POST',
       servername: process.env.MAILCOW_TLS_SERVERNAME || `mail.${process.env.MAIL_DOMAIN || 'copro-pinede-gardanne.fr'}`,
+      // Appel local uniquement (passerelle Docker) : Mailcow sert un certificat
+      // auto-signé car 80/443 sont pris par Caddy (pas de Let's Encrypt possible).
+      // L'appel reste authentifié par la clé API.
+      rejectUnauthorized: false,
       headers: {
         'X-API-Key': apiKey,
         'Content-Type': 'application/json',
