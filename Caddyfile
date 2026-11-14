@@ -1,3 +1,9 @@
+{
+	servers :443 {
+		protocols h1 h2
+	}
+}
+
 copro-pinede-gardanne.fr {
-    reverse_proxy copro:3000
+	reverse_proxy copro:3000
 }
