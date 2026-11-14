@@ -2,6 +2,7 @@ const express = require('express');
 const { getDb } = require('../db');
 const { requireAuth } = require('../auth');
 const { isGestionnaire, isCS, isAdmin } = require('../droits');
+const { synchroniserAliasCS } = require('../mailcow');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -41,6 +42,7 @@ router.post('/comptes/:id/conseil', (req, res) => {
     }
   }
   db.prepare('UPDATE users SET conseil_syndical = ? WHERE id = ?').run(veutCS ? 1 : 0, cible.id);
+  synchroniserAliasCS();
   res.redirect('/admin/comptes?message=' + encodeURIComponent(
     veutCS ? `${cible.prenom} ${cible.nom} est maintenant membre du conseil syndical.` : `${cible.prenom} ${cible.nom} n'est plus membre du conseil syndical.`
   ));

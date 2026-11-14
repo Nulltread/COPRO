@@ -1,4 +1,20 @@
 const { getDb } = require('./db');
+const { envoyerMailNotification, config } = require('./mail');
+
+// Envoi du canal email (option utilisateur, email vérifié uniquement),
+// en complément de la notification in-app. Lien direct vers la page concernée.
+function notifierParEmail(userIds, ticketId, message) {
+  if (!userIds.length) return;
+  const db = getDb();
+  const baseUrl = config().baseUrl;
+  const lien = ticketId ? `${baseUrl}/tickets/${ticketId}` : `${baseUrl}/notifications`;
+  const destinataires = db.prepare(
+    'SELECT id, email, prenom FROM users WHERE id IN (' + userIds.map(() => '?').join(',') + ') AND notif_email = 1 AND email_verifie = 1 AND statut = \'actif\''
+  ).all(...userIds);
+  for (const u of destinataires) {
+    envoyerMailNotification({ to: u.email, prenom: u.prenom, subject: message, lien });
+  }
+}
 
 // Canal unique en v1 : notification in-app.
 // Destinataires d'un ticket : le conseil syndical et les residents
@@ -29,6 +45,7 @@ function notifierTicket(ticket, type, message, auteurId, urgent = false) {
   for (const userId of destinataires) {
     creerNotification(userId, ticket.id, type, message);
   }
+  notifierParEmail(destinataires, ticket.id, urgent ? `URGENT — ${message}` : message);
   return destinataires.length;
 }
 
@@ -38,15 +55,19 @@ function notifierUser(userId, ticketId, type, message) {
   const u = db.prepare('SELECT statut FROM users WHERE id = ?').get(userId);
   if (!u || u.statut !== 'actif') return;
   creerNotification(userId, ticketId, type, message);
+  notifierParEmail([userId], ticketId, message);
 }
 
 function notifierCS(type, message, ticketId = null, auteurId = null) {
   const db = getDb();
   const cs = db.prepare("SELECT id FROM users WHERE conseil_syndical = 1 AND statut = 'actif'").all();
+  const ids = [];
   for (const u of cs) {
     if (auteurId && u.id === auteurId) continue;
     creerNotification(u.id, ticketId, type, message);
+    ids.push(u.id);
   }
+  notifierParEmail(ids, ticketId, message);
 }
 
 function nonLues(userId) {

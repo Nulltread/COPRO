@@ -10,7 +10,22 @@ const { getDb } = require('./index');
 function migrate() {
   const db = getDb();
   const cols = db.prepare('PRAGMA table_info(users)').all().map(c => c.name);
-  if (cols.includes('conseil_syndical')) return sansCategorie(db, false);
+  if (!cols.includes('conseil_syndical')) return migrationAncienne(db);
+  // Ajouts incrémentaux (idempotents) pour les bases existantes.
+  if (!cols.includes('email_verifie')) db.prepare('ALTER TABLE users ADD COLUMN email_verifie INTEGER NOT NULL DEFAULT 0').run();
+  if (!cols.includes('notif_email')) db.prepare('ALTER TABLE users ADD COLUMN notif_email INTEGER NOT NULL DEFAULT 0').run();
+  db.exec(`CREATE TABLE IF NOT EXISTS email_verifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token TEXT NOT NULL UNIQUE,
+    expires_at TEXT NOT NULL,
+    used_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );`);
+  return sansCategorie(db, false);
+}
+
+function migrationAncienne(db) {
 
   db.pragma('foreign_keys = OFF');
   db.exec('BEGIN');
