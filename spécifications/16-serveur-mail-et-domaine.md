@@ -41,9 +41,9 @@ Ce fichier réintroduit le **canal email** (retiré en v1 dans `08-notifications
 - Le compte reste utilisable mais son email est marqué « non confirmé » tant que le lien n'est pas ouvert ; relance possible depuis l'espace compte. (Modifie « pas de vérification d'email en v1 » de `02-roles-et-comptes.md`.)
 
 ### Liste de diffusion du conseil syndical
-- Alias **`conseil@copro-pinede-gardanne.fr`** géré **côté serveur mail** (alias virtuel à plusieurs destinataires), redirigeant vers les adresses email des comptes ayant le statut conseil syndical.
+- Alias **`conseil_syndical@copro-pinede-gardanne.fr`** géré **côté serveur mail** (alias virtuel à plusieurs destinataires), redirigeant vers les adresses email des comptes ayant le statut conseil syndical (en test : uniquement `sebastien.paletti@gmail.com`, les autres membres seront ajoutés ensuite).
 - La liste des destinataires est maintenue manuellement dans l'interface d'admin du serveur mail (petit effectif, pas de gestion dans l'application en v1).
-- Boîtes aux lettres individuelles : chaque membre du CS peut recevoir sur son adresse personnelle habituelle ; seules les adresses du domaine (ex. `conseil@`, `admin@`) passent par le serveur mail.
+- Boîtes aux lettres individuelles : chaque membre du CS peut recevoir sur son adresse personnelle habituelle ; seules les adresses du domaine (ex. `conseil_syndical@`, `admin@`) passent par le serveur mail.
 
 ## Sécurité et délivrabilité
 
