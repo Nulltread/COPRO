@@ -160,6 +160,7 @@ fieldset { border: 1px solid #c5c9d1; border-radius: 10px; }
 .bouton-secondaire.danger { color: var(--rouge); border-color: var(--rouge); }
 .champ-fichiers-visible { font-size: 0.95rem; padding: 10px; border: 1px solid #c5c9d1; border-radius: 10px; background: #fff; width: 100%; }
 .modale-fond { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
+.modale-fond[hidden] { display: none; }
 .modale { background: #fff; border-radius: 14px; padding: 18px; max-width: 420px; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
 .modale h2 { margin-top: 0; }
 .modale-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px; }
