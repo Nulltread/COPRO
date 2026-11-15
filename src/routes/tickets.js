@@ -4,7 +4,7 @@ const path = require('path');
 const { getDb } = require('../db');
 const { requireAuth } = require('../auth');
 const {
-  isGestionnaire, isAdmin, unitsDeUser, peutVoirTicket, peutChoisirUnites,
+  isGestionnaire, isAdmin, isCS, unitsDeUser, peutVoirTicket, peutChoisirUnites,
   estResidentConcerne, peutEditerTicket, peutEditerUnites, peutSupprimerTicket,
   infosValidation, peutValiderTravaux, peutReouvrir, dateArchivageAuto,
   nbFactures, peutArchiver, consultationComplete,
@@ -486,7 +486,8 @@ router.post('/:id/valider-travaux', (req, res) => {
   if (!peutValiderTravaux(req.user, ticket)) {
     return res.status(403).render('erreur', { user: req.user, message: 'Seuls les propriétaires/locataires des unités concernées et les membres du conseil syndical peuvent valider (travaux / réception).' });
   }
-  const estReception = isGestionnaire(req.user) && req.body.action === 'reception';
+  // Réception des travaux : réservée à un membre du CS (l'admin est exclu du quorum, spec 25).
+  const estReception = isCS(req.user) && req.body.action === 'reception';
   if (estReception && nbFactures(ticket.id) === 0) {
     return res.status(400).render('erreur', { user: req.user, message: 'La réception des travaux nécessite au moins une facture jointe au ticket (section Factures).' });
   }
@@ -505,23 +506,24 @@ router.post('/:id/valider-travaux', (req, res) => {
       .run(ticket.id, req.user.id, estReception
         ? `${req.user.nom} a validé la réception des travaux${commentaire ? ` — « ${commentaire.slice(0, 120)} »` : ''}`
         : `${req.user.nom} a validé les travaux${commentaire ? ` — « ${commentaire.slice(0, 120)} »` : ''}${(req.files || []).length ? ` (${req.files.length} photo(s))` : ''}`);
-    // Passage a "travaux acceptes" : tous les residents concernes ont validé
-    // ET au moins un membre du CS a validé la réception (facture requise).
-    const { residents } = infosValidation(ticket.id);
+    // Passage a "travaux acceptes" (spec 25) : au moins UN représentant par
+    // unité concernée a validé, ET au moins un membre du CS (jamais l'admin)
+    // a validé la réception (facture requise).
+    const { parUnite } = infosValidation(ticket.id);
     const validees = new Set(
       db.prepare('SELECT user_id FROM resolutions WHERE ticket_id = ? AND caduque = 0').all(ticket.id).map(r => r.user_id)
     );
-    const tousResidents = residents.every(r => validees.has(r.id));
+    const chaqueUniteOK = parUnite.every(u => u.residents.some(r => validees.has(r.id)));
     const receptionOK = db.prepare(
       `SELECT COUNT(*) AS n FROM resolutions r JOIN users u ON u.id = r.user_id
-       WHERE r.ticket_id = ? AND r.caduque = 0 AND (u.conseil_syndical = 1 OR u.role = 'admin') AND u.statut = 'actif'`
+       WHERE r.ticket_id = ? AND r.caduque = 0 AND u.conseil_syndical = 1 AND u.role != 'admin' AND u.statut = 'actif'`
     ).get(ticket.id).n > 0;
-    if (tousResidents && receptionOK) {
+    if (chaqueUniteOK && receptionOK) {
       db.prepare("UPDATE tickets SET etape = 'travaux_acceptes', acceptes_at = datetime('now'), notif_archive_j3 = 0, notif_archive_j1 = 0, updated_at = datetime('now') WHERE id = ?").run(ticket.id);
       db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'changement_etape', ?, ?)")
-        .run(ticket.id, req.user.id, 'Tous les concernés ont validé et la réception est validée — passage à « Travaux acceptés »');
+        .run(ticket.id, req.user.id, 'Un représentant par unité a validé et la réception est validée — passage à « Travaux acceptés »');
       const t = db.prepare('SELECT * FROM tickets WHERE id = ?').get(ticket.id);
-      notifierTicket(t, 'changement_etape', `Le ticket « ${t.titre} » passe à l'étape « Travaux acceptés » (travaux validés + réception validée)`, req.user.id, !!t.urgent);
+      notifierTicket(t, 'changement_etape', `Le ticket « ${t.titre} » passe à l'étape « Travaux acceptés » (représentants des unités + réception CS validés)`, req.user.id, !!t.urgent);
     }
     res.redirect('/tickets/' + ticket.id);
   });
@@ -627,7 +629,7 @@ router.post('/:id/cr', (req, res) => {
   const ticket = db.prepare('SELECT * FROM tickets WHERE id = ?').get(id);
   if (!ticket) return res.status(404).render('erreur', { user: req.user, message: 'Ticket introuvable.' });
   if (!peutRedigerCR(req.user, ticket)) {
-    return res.status(403).render('erreur', { user: req.user, message: 'Seules les personnes concernées (résidents des unités, membres du CS, admin) peuvent rédiger leur compte-rendu, à partir de « Travaux planifiés ».' });
+    return res.status(403).render('erreur', { user: req.user, message: 'Seules les personnes concernées (résidents des unités, membres du CS — admin exclu) peuvent rédiger leur bilan, à partir de « Travaux planifiés ».' });
   }
   upload.array('photos', 10)(req, res, (err) => {
     if (err) return res.status(400).render('erreur', { user: req.user, message: err.message });
@@ -649,7 +651,7 @@ router.post('/:id/cr', (req, res) => {
       enregistrerFichiers(db, id, 'photo', req.files, {}, req.user.id, 'compte_rendu');
     }
     db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'compte_rendu', ?, ?)")
-      .run(id, req.user.id, `${req.user.nom} a rédigé son compte-rendu d'intervention${(req.files || []).length ? ` (${req.files.length} photo(s))` : ''}`);
+      .run(id, req.user.id, `${req.user.nom} a rédigé son bilan de l’intervention${(req.files || []).length ? ` (${req.files.length} photo(s))` : ''}`);
     res.redirect('/tickets/' + id + '#cr');
   });
 });

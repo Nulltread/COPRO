@@ -79,44 +79,50 @@ function unitesDuTicket(ticketId) {
   ).all(ticketId);
 }
 
-// Qui doit valider les travaux (planifie -> acceptes) :
-// - tous les proprietaires/locataires actifs des unites concernees
-//   (garage = villa, meme process ; parties communes exclues ici) ;
-// - si le ticket touche les parties communes : au moins un membre du CS.
+// Qui doit valider les travaux (planifie -> acceptes), spec 25 :
+// - au moins UN représentant (proprietaire ou locataire) par unité concernée
+//   (villa/garage ; parties communes exclues ici) ;
+// - au moins un membre du CS (jamais l'admin) pour la réception des travaux.
+// Retourne la liste par unité avec ses résidents actifs.
 function infosValidation(ticketId) {
   const db = getDb();
   const unites = unitesDuTicket(ticketId);
   const aCommunes = unites.some(u => u.type === 'communes');
-  const nonCommunes = unites.filter(u => u.type !== 'communes').map(u => u.id);
-  let residents = [];
-  if (nonCommunes.length > 0) {
-    residents = db.prepare(
-      `SELECT DISTINCT u.id, u.nom, u.prenom FROM users u
-       JOIN unit_residents ur ON ur.user_id = u.id
-       WHERE ur.unit_id IN (${nonCommunes.map(() => '?').join(',')}) AND u.statut = 'actif'
-       ORDER BY u.nom`
-    ).all(...nonCommunes);
-  }
-  return { residents, besoinCS: aCommunes, aCommunes };
+  const nonCommunes = unites.filter(u => u.type !== 'communes');
+  const parUnite = nonCommunes.map(u => {
+    const residents = db.prepare(
+      `SELECT DISTINCT u2.id, u2.nom, u2.prenom FROM users u2
+       JOIN unit_residents ur ON ur.user_id = u2.id
+       WHERE ur.unit_id = ? AND u2.statut = 'actif' AND u2.role != 'admin'
+       ORDER BY u2.nom`
+    ).all(u.id);
+    return { id: u.id, label: u.label, residents };
+  });
+  const residents = parUnite.flatMap(u => u.residents);
+  return { parUnite, residents, aCommunes };
 }
 
+// Peut valider en « travaux planifiés » : un résident d'une unité concernée
+// (représentant de l'unité) OU un membre du CS (réception — l'admin est exclu
+// du quorum, spec 25).
 function peutValiderTravaux(user, ticket) {
   if (!estActif(user) || !ticket || ticket.etape !== 'intervention_planifiee') return false;
-  // Résident concerné (unités non communes) : valide les travaux.
-  // Membre du CS / admin : valide la RÉCEPTION des travaux (facture requise, spec 24).
+  if (user.role === 'admin' && !isCS(user)) return false; // admin jamais dans le quorum
   const { residents } = infosValidation(ticket.id);
   if (residents.some(r => r.id === user.id)) return true;
-  return isGestionnaire(user);
+  return isCS(user);
 }
 
 // Reouverture (travaux acceptes -> consultation) : tout proprietaire/locataire
-// concerne (parties communes : au moins un membre du CS), dans le delai regle.
+// concerne, ou un membre du CS pour les parties communes (admin exclu du quorum),
+// dans le delai regle.
 function peutReouvrir(user, ticket) {
   if (!estActif(user) || !ticket || ticket.etape !== 'travaux_acceptes') return false;
   if (!dansDelaiArchivage(ticket)) return false;
-  const { residents, besoinCS } = infosValidation(ticket.id);
+  if (user.role === 'admin' && !isCS(user)) return false;
+  const { residents, aCommunes } = infosValidation(ticket.id);
   if (residents.some(r => r.id === user.id)) return true;
-  return besoinCS && isGestionnaire(user);
+  return aCommunes && isCS(user);
 }
 
 function dansDelaiArchivage(ticket) {
@@ -150,25 +156,28 @@ function peutEditerUnites(user, ticket) {
   return isGestionnaire(user);
 }
 
-// Personnes concernees pour les comptes-rendus d'intervention :
-// residents des unites du ticket + membres du CS + admin (actifs).
+// Personnes concernees pour les BILANS de l'intervention (spec 25) :
+// residents des unites du ticket + membres du CS — l'admin en est exclu
+// (jamais dans le quorum d'une action).
 function personnesConcerneesCR(ticketId) {
   const db = getDb();
   return db.prepare(
     `SELECT DISTINCT u.id, u.nom, u.prenom, u.role, u.conseil_syndical FROM users u
      LEFT JOIN unit_residents ur ON ur.user_id = u.id
      LEFT JOIN ticket_units tu ON tu.unit_id = ur.unit_id
-     WHERE u.statut = 'actif' AND (tu.ticket_id = ? OR u.conseil_syndical = 1 OR u.role = 'admin')
+     WHERE u.statut = 'actif' AND u.role != 'admin'
+       AND (tu.ticket_id = ? OR u.conseil_syndical = 1)
      ORDER BY u.nom`
   ).all(ticketId);
 }
 
-// Un compte-rendu par personne concernee : redigeable par soi-meme
-// (resident concerne, membre du CS ou admin), a partir de « travaux planifies ».
+// Un bilan par personne concernee : redigeable par soi-meme (resident concerne
+// ou membre du CS — admin exclu), a partir de « travaux planifiés ».
 function peutRedigerCR(user, ticket) {
   if (!estActif(user) || !ticket) return false;
+  if (user.role === 'admin' && !isCS(user)) return false;
   if (!['intervention_planifiee', 'travaux_acceptes'].includes(ticket.etape)) return false;
-  if (isGestionnaire(user)) return true;
+  if (isCS(user)) return true;
   return estResidentConcerne(user, ticket.id);
 }
 

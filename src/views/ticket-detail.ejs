@@ -25,11 +25,10 @@
 <%# Description : le champ de saisie suffit ; en lecture seule (archivé) on affiche le texte %>
 <% if (peutEditer) { %>
 <section class="bloc">
-  <form method="post" action="/tickets/<%= ticket.id %>/editer" class="formulaire">
-    <label>Description
+  <form method="post" action="/tickets/<%= ticket.id %>/editer" class="formulaire" data-autosave>
+    <label>Description <span class="autosave-etat" aria-live="polite"></span>
       <textarea name="description" rows="4"><%= ticket.description %></textarea>
     </label>
-    <button class="bouton-secondaire" type="submit">Enregistrer la description</button>
   </form>
 </section>
 <% } else if (ticket.description) { %>
@@ -56,17 +55,13 @@
 <section class="bloc">
   <h2>Unités concernées</h2>
   <% if (peutEditerUnites) { %>
-    <form method="post" action="/tickets/<%= ticket.id %>/unites" class="formulaire">
-      <label>Unités concernées
-        <select name="unite_ids" multiple required size="10">
-          <% for (const u of unitesModifiables) { %>
-            <option value="<%= u.id %>" <%= unitesIds.includes(u.id) ? 'selected' : '' %>><%= u.label %><% if (mesUnites.has(u.id)) { %> (votre unité)<% } %></option>
-          <% } %>
-        </select>
-      </label>
-      <p class="aide">Maintenez Ctrl (ou Cmd sur Mac) pour sélectionner plusieurs unités.</p>
-      <button class="bouton-secondaire" type="submit">Modifier les unités</button>
-    </form>
+    <div class="unites-edit" id="unites-edit" data-action="/tickets/<%= ticket.id %>/unites">
+      <% for (const u of unitesModifiables) { %>
+        <button type="button" class="unite-pill <%= unitesIds.includes(u.id) ? 'selectionne' : '' %>" data-id="<%= u.id %>"><%= u.label %><% if (mesUnites.has(u.id)) { %> (votre unité)<% } %></button>
+      <% } %>
+      <span class="autosave-etat" id="unites-etat" aria-live="polite"></span>
+    </div>
+    <p class="aide">Un clic sur une unité la sélectionne et l'enregistre directement.</p>
   <% } else { %>
     <p><%= unites.map(u => u.label).join(', ') %></p>
   <% } %>
@@ -83,55 +78,7 @@
 </section>
 <% } %>
 
-<% if (ticket.etape === 'intervention_planifiee' && peutValiderTravaux) { %>
-<section class="bloc">
-  <h2>Valider les travaux</h2>
-  <p class="aide">Le ticket passera à « Travaux acceptés » quand tous les propriétaires et locataires des unités concernées auront validé les travaux <strong>et</strong> qu'au moins un membre du conseil syndical aura validé la réception (une facture doit alors être jointe).</p>
-  <ul class="liste-simple">
-    <% for (const r of infosValidation.residents) { %>
-      <% const v = validations.find(x => x.user_id === r.id && !x.caduque); %>
-      <li><%= r.prenom %> <%= r.nom %> — <% if (v) { %>✅ a validé<% if (v.commentaire) { %> — « <%= v.commentaire %> »<% } %><% } else { %>⏳ en attente<% } %></li>
-    <% } %>
-    <% const vcs = validations.find(x => !x.caduque && (x.conseil_syndical === 1 || x.role === 'admin')); %>
-    <li>Réception des travaux (conseil syndical) : <% if (vcs) { %>✅ validée par <%= vcs.auteur_nom %><% } else { %>⏳ en attente<% } %></li>
-  </ul>
-  <% if ((photosParContexte['validation'] || []).length > 0) { %>
-    <ul class="liste-docs">
-      <% for (const f of photosParContexte['validation']) { %>
-        <li><a href="/fichiers/<%= f.id %>" target="_blank" rel="noopener">🖼 <%= f.nom_original %></a> <span class="auteur">par <%= f.auteur_nom || 'Compte supprimé' %></span></li>
-      <% } %>
-    </ul>
-  <% } %>
-  <% const estConcerneResident = infosValidation.residents.some(r => r.id === user.id); %>
-  <% if (estConcerneResident) { %>
-    <form method="post" action="/tickets/<%= ticket.id %>/valider-travaux" class="formulaire" enctype="multipart/form-data">
-      <input type="hidden" name="action" value="travaux">
-      <label>Commentaire (facultatif)
-        <input type="text" name="commentaire" placeholder="Un mot sur les travaux…">
-      </label>
-      <div class="bloc-photos">
-        <label class="zone-photos">
-          <input type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple class="champ-fichiers-caches">
-          <span class="zone-photos-plus" aria-hidden="true">+</span>
-          <span class="zone-photos-icone" aria-hidden="true">📷</span>
-          <span class="zone-photos-texte">Ajouter des photos (facultatif)<br><small>compressées automatiquement avant l'envoi</small></span>
-        </label>
-        <div class="apercu"></div>
-      </div>
-      <button class="bouton" type="submit">Je valide les travaux</button>
-    </form>
-  <% } %>
-  <% if (gestionnaire) { %>
-    <form method="post" action="/tickets/<%= ticket.id %>/valider-travaux" class="formulaire-ligne" data-confirm="Valider la réception des travaux ? (une facture doit être jointe)" data-confirm-titre="Valider la réception">
-      <input type="hidden" name="action" value="reception">
-      <label>Commentaire (facultatif)
-        <input type="text" name="commentaire" placeholder="Réception constatée…">
-      </label>
-      <button class="bouton" type="submit" <%= nbFactures > 0 ? '' : 'disabled' %> title="<%= nbFactures > 0 ? 'Valider la réception des travaux' : 'Une facture doit d\'abord être jointe (section Factures)' %>">Valider la réception des travaux</button>
-    </form>
-  <% } %>
-</section>
-<% } %>
+<%# Le bloc d'acceptation de l'intervention vit dans la section « Bilans » (spec 26) %>
 
 <% if (ticket.etape === 'travaux_acceptes') { %>
 <section class="bloc">
@@ -315,31 +262,77 @@
 <%# ---- Comptes-rendus : visibles à partir de « Travaux planifiés », un par personne concernée %>
 <% if (crVisibles) { %>
 <section class="bloc" id="cr">
-  <h2>Comptes-rendus d'intervention</h2>
-  <p class="aide">Un compte-rendu par personne concernée (résidents des unités, membres du CS, admin).</p>
-  <% for (const p of personnesCR) { const cr = comptesRendus.find(x => x.user_id === p.id); %>
-    <h3><%= p.prenom %> <%= p.nom %><% if (p.conseil_syndical === 1 || p.role === 'admin') { %> <span class="tag-cs">CS</span><% } %></h3>
-    <% if (cr) { %><p><%= cr.contenu %></p><p class="aide">rédigé le <%= cr.updated_at %></p><% } %>
-    <% if (peutRedigerCR && p.id === user.id) { %>
-      <form method="post" action="/tickets/<%= ticket.id %>/cr" class="formulaire" enctype="multipart/form-data">
-        <label>Votre compte-rendu
-          <textarea name="contenu" rows="3" placeholder="Votre compte-rendu d'intervention…"><%= cr ? cr.contenu : '' %></textarea>
+  <h2>Bilans de l’intervention</h2>
+  <% if (ticket.etape === 'intervention_planifiee' && peutValiderTravaux) { %>
+    <h3>Acceptation de l'intervention</h3>
+    <p class="aide">Le ticket passera à « Travaux acceptés » quand <strong>au moins un représentant par unité concernée</strong> aura accepté l'intervention <strong>et</strong> qu'au moins un membre du conseil syndical aura validé la réception (une facture doit alors être jointe).</p>
+    <ul class="liste-simple">
+      <% for (const u of infosValidation.parUnite) { %>
+        <% const v = u.residents.map(r => validations.find(x => x.user_id === r.id && !x.caduque)).find(Boolean); %>
+        <li><strong><%= u.label %></strong> — <% if (v) { %>✅ accepté par <%= v.auteur_nom %><% if (v.commentaire) { %> — « <%= v.commentaire %> »<% } %><% } else { %>⏳ en attente d'un représentant<% } %></li>
+      <% } %>
+      <% const vcs = validations.find(x => !x.caduque && x.conseil_syndical === 1 && x.role !== 'admin'); %>
+      <li>Réception des travaux (membre du conseil syndical) : <% if (vcs) { %>✅ validée par <%= vcs.auteur_nom %><% } else { %>⏳ en attente<% } %></li>
+    </ul>
+    <% if ((photosParContexte['validation'] || []).length > 0) { %>
+      <ul class="liste-docs">
+        <% for (const f of photosParContexte['validation']) { %>
+          <li><a href="/fichiers/<%= f.id %>" target="_blank" rel="noopener">🖼 <%= f.nom_original %></a> <span class="auteur">par <%= f.auteur_nom || 'Compte supprimé' %></span></li>
+        <% } %>
+      </ul>
+    <% } %>
+    <% const estConcerneResident = infosValidation.residents.some(r => r.id === user.id); %>
+    <% if (estConcerneResident) { %>
+      <form method="post" action="/tickets/<%= ticket.id %>/valider-travaux" class="formulaire" enctype="multipart/form-data">
+        <input type="hidden" name="action" value="travaux">
+        <label>Commentaire (facultatif)
+          <input type="text" name="commentaire" placeholder="Un mot sur l'intervention…">
         </label>
         <div class="bloc-photos">
           <label class="zone-photos">
             <input type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple class="champ-fichiers-caches">
             <span class="zone-photos-plus" aria-hidden="true">+</span>
             <span class="zone-photos-icone" aria-hidden="true">📷</span>
-            <span class="zone-photos-texte">Ajouter des photos avec le compte-rendu<br><small>compressées automatiquement avant l'envoi</small></span>
+            <span class="zone-photos-texte">Ajouter des photos (facultatif)<br><small>compressées automatiquement avant l'envoi</small></span>
           </label>
           <div class="apercu"></div>
         </div>
-        <button class="bouton-secondaire" type="submit">Enregistrer</button>
+        <button class="bouton" type="submit">J'accepte l'intervention</button>
+      </form>
+    <% } %>
+    <% if (user.conseil_syndical === 1) { %>
+      <form method="post" action="/tickets/<%= ticket.id %>/valider-travaux" class="formulaire-ligne" data-confirm="Valider la réception des travaux ? (une facture doit être jointe)" data-confirm-titre="Valider la réception">
+        <input type="hidden" name="action" value="reception">
+        <label>Commentaire (facultatif)
+          <input type="text" name="commentaire" placeholder="Réception constatée…">
+        </label>
+        <button class="bouton" type="submit" <%= nbFactures > 0 ? '' : 'disabled' %> title="<%= nbFactures > 0 ? 'Valider la rÃ©ception des travaux' : 'Une facture doit d’abord Ãªtre jointe (section Factures)' %>">Valider la rÃ©ception des travaux</button>
+      </form>
+    <% } %>
+  <% } %>
+  <p class="aide">Un bilan par personne concernée (résidents des unités, membres du CS — l’admin n’en a pas).</p>
+  <% for (const p of personnesCR) { const cr = comptesRendus.find(x => x.user_id === p.id); %>
+    <h3><%= p.prenom %> <%= p.nom %><% if (p.conseil_syndical === 1 || p.role === 'admin') { %> <span class="tag-cs">CS</span><% } %></h3>
+    <% if (cr) { %><p><%= cr.contenu %></p><p class="aide">rédigé le <%= cr.updated_at %></p><% } %>
+    <% if (peutRedigerCR && p.id === user.id) { %>
+      <form method="post" action="/tickets/<%= ticket.id %>/cr" class="formulaire" enctype="multipart/form-data" data-autosave>
+        <label>Votre bilan <span class="autosave-etat" aria-live="polite"></span>
+          <textarea name="contenu" rows="3" placeholder="Votre bilan de l’intervention…"><%= cr ? cr.contenu : '' %></textarea>
+        </label>
+        <div class="bloc-photos">
+          <label class="zone-photos">
+            <input type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple class="champ-fichiers-caches">
+            <span class="zone-photos-plus" aria-hidden="true">+</span>
+            <span class="zone-photos-icone" aria-hidden="true">📷</span>
+            <span class="zone-photos-texte">Ajouter des photos avec le bilan<br><small>compressées automatiquement avant l'envoi</small></span>
+          </label>
+          <div class="apercu"></div>
+        </div>
       </form>
     <% } %>
   <% } %>
   <% if ((photosParContexte['compte_rendu'] || []).length > 0) { %>
-    <h3>Photos des comptes-rendus</h3>
+    <h3>Photos des bilans</h3>
     <ul class="liste-docs">
       <% for (const f of photosParContexte['compte_rendu']) { %>
         <li>

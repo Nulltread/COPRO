@@ -255,7 +255,7 @@ test('cycle v2 : créé → consultation (CS/admin seul), archivage avec facture
   assert.strictEqual(resEdit.status, 403);
 });
 
-test('travaux planifiés → acceptés : tous les propriétaires/locataires concernés doivent valider', async () => {
+test('travaux planifiés → acceptés : au moins UN représentant par unité + réception par un membre du CS (admin exclu)', async () => {
   const cs = await client(); await login(cs, 'cs@test.local', 'motdepasse1');
   const r1 = await client(); await login(r1, 'r1@test.local', 'motdepasse1');
   const r2 = await client(); await login(r2, 'r2@test.local', 'motdepasse1');
@@ -268,12 +268,15 @@ test('travaux planifiés → acceptés : tous les propriétaires/locataires conc
   // un résident non concerné ne peut pas valider
   const resKo = await r1.req('POST', `/tickets/${tid}/valider-travaux`, { commentaire: 'ok' });
   assert.strictEqual(resKo.status, 403);
-  // r2 (seul résident concerné) valide les travaux → toujours planifié (réception CS manquante)
+  // r2 (seul résident de villa 2) valide les travaux → toujours planifié (réception CS manquante)
   const resOk = await r2.req('POST', `/tickets/${tid}/valider-travaux`, { action: 'travaux', commentaire: 'Vu, OK pour moi' });
   assert.strictEqual(resOk.status, 302);
   assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'intervention_planifiee');
   // le CS ne peut pas valider la réception sans facture → 400
   assert.strictEqual((await cs.req('POST', `/tickets/${tid}/valider-travaux`, { action: 'reception' })).status, 400);
+  // l'ADMIN ne peut pas valider la réception (jamais dans le quorum, spec 25) → 403
+  const admin = await client(); await login(admin, 'admin@test.local', 'motdepasse1');
+  assert.strictEqual((await admin.req('POST', `/tickets/${tid}/valider-travaux`, { action: 'reception' })).status, 403);
   // avec une facture, le CS valide la réception → travaux acceptés
   ajouterFacture(tid, ids.cs, 500);
   assert.strictEqual((await cs.req('POST', `/tickets/${tid}/valider-travaux`, { action: 'reception', commentaire: 'Réception OK' })).status, 302);
@@ -281,17 +284,17 @@ test('travaux planifiés → acceptés : tous les propriétaires/locataires conc
   assert.strictEqual(t.etape, 'travaux_acceptes');
   assert.ok(t.acceptes_at);
 
-  // ticket multi-résidents (villa 1 : r1 + nouveau, villa 2 : r2) : il faut TOUS valider + la réception
-  const { tid: tid2 } = await creerTicket(r2, [ids.villa1, ids.villa2], 'Validation tous requis');
+  // ticket multi-unités (villa 1 : r1 + nouveau, villa 2 : r2) : UN seul représentant
+  // par unité suffit (r1 pour villa 1, r2 pour villa 2 — "nouveau" ne valide pas)
+  const { tid: tid2 } = await creerTicket(r2, [ids.villa1, ids.villa2], 'Validation un représentant par unité');
   await cs.req('POST', `/tickets/${tid2}/passer-consultation`);
   const cid2 = ajouterConsultationComplete(tid2, ids.cs);
   await cs.req('POST', `/tickets/${tid2}/consultations/${cid2}/valider`);
   await r1.req('POST', `/tickets/${tid2}/valider-travaux`, { action: 'travaux', commentaire: 'ok pour moi' });
+  // villa 2 pas encore représentée → toujours planifié
   assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid2).etape, 'intervention_planifiee');
-  const cNv = await client(); await login(cNv, 'nouveau@test.local', 'motdepasse1');
-  await cNv.req('POST', `/tickets/${tid2}/valider-travaux`, { action: 'travaux', commentaire: 'ok aussi' });
   await r2.req('POST', `/tickets/${tid2}/valider-travaux`, { action: 'travaux', commentaire: 'ok pour moi aussi' });
-  // tous les résidents ont validé mais pas de réception → toujours planifié
+  // chaque unité a un représentant, mais pas de réception → toujours planifié
   assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid2).etape, 'intervention_planifiee');
   ajouterFacture(tid2, ids.cs, 200);
   await cs.req('POST', `/tickets/${tid2}/valider-travaux`, { action: 'reception' });
@@ -411,10 +414,19 @@ test('compte-rendu : UNE instance par personne concernée, à partir de « Trava
   assert.strictEqual(crs.length, 2);
   // r2 (non concerné) ne peut pas rédiger
   assert.strictEqual((await r2.req('POST', `/tickets/${tid}/cr`, { contenu: 'x' })).status, 403);
-  // la page affiche la section CR en « planifié »
+  // la page affiche la section « Bilans » en « planifié », avec le bouton d'acceptation
+  // et la sauvegarde à la volée (pas de bouton Enregistrer)
   const page = await (await r1.req('GET', '/tickets/' + tid)).text();
-  assert.ok(page.includes('Comptes-rendus d\'intervention'));
+  assert.ok(page.includes('Bilans de l\u2019intervention'));
+  assert.ok(page.includes("J'accepte l'intervention"));
+  assert.ok(page.includes('data-autosave'));
+  assert.ok(!page.includes('>Enregistrer</button>'));
   assert.ok(page.includes('CR de r1 modifié'));
+  // l'admin n'a pas de bilan à rédiger (jamais dans le quorum) et ne peut pas en rédiger
+  const admin = await client(); await login(admin, 'admin@test.local', 'motdepasse1');
+  assert.strictEqual((await admin.req('POST', `/tickets/${tid}/cr`, { contenu: 'bilan admin' })).status, 403);
+  const pageAdmin = await (await admin.req('GET', '/tickets/' + tid)).text();
+  assert.ok(!pageAdmin.includes('Votre bilan'));
 });
 
 test('notifications : uniquement sur les transitions ; destinataires = résidents concernés + CS + admin (hors auteur)', async () => {
@@ -724,6 +736,8 @@ test('UI : recherche comptes/tickets présentes, boutons archiver/supprimer sous
   assert.ok(appjs.includes("getElementById('recherche-tickets')"));
   assert.ok(appjs.includes('#liste-tickets li'));
   assert.ok(appjs.includes('dropdown-bouton'));
+  assert.ok(appjs.includes('data-autosave'));
+  assert.ok(appjs.includes("getElementById('unites-edit')"));
   // fiche ticket en « créé » : boutons sous le titre, pas de section coût / "Modifier le ticket" / commentaire / consultations / CR
   const { tid } = await creerTicket(r1, [ids.villa1], 'Ticket UI');
   const page = await (await r1.req('GET', '/tickets/' + tid)).text();
@@ -733,6 +747,11 @@ test('UI : recherche comptes/tickets présentes, boutons archiver/supprimer sous
   assert.ok(!page.includes('Coût du ticket'));
   assert.ok(!page.includes('Modifier le ticket'));
   assert.ok(!page.includes('Écrire un commentaire'));
+  // sauvegarde à la volée (spec 26) + unités par clic (spec 27)
+  assert.ok(page.includes('data-autosave'));
+  assert.ok(!page.includes('Enregistrer la description'));
+  assert.ok(page.includes('id="unites-edit"'));
+  assert.ok(!page.includes('Modifier les unités'));
   assert.ok(!page.includes('id="consultations"'));
   assert.ok(!page.includes('Comptes-rendus d\'intervention'));
   // service worker : réseau d'abord (sinon l'ancien app.js reste servi en cache)
