@@ -231,6 +231,54 @@
     });
   }
 
+  // --- Sauvegarde à la volée (autosave) des formulaires data-autosave (spec 26) ---
+  document.querySelectorAll('form[data-autosave]').forEach(function (form) {
+    var etat = form.querySelector('.autosave-etat');
+    var timer = null;
+    function sauver() {
+      if (etat) etat.textContent = 'enregistrement…';
+      var options = { method: 'POST' };
+      if (form.querySelector('input[type=file]')) {
+        options.body = new FormData(form); // multipart (photos éventuelles)
+      } else {
+        options.headers = { 'content-type': 'application/x-www-form-urlencoded' };
+        options.body = new URLSearchParams(new FormData(form)).toString();
+      }
+      fetch(form.action, options)
+        .then(function (r) { if (etat) etat.textContent = r.ok ? '✓ enregistré' : '⚠ non enregistré'; })
+        .catch(function () { if (etat) etat.textContent = '⚠ non enregistré'; });
+    }
+    form.querySelectorAll('textarea, input[type=text]').forEach(function (champ) {
+      champ.addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(sauver, 600); });
+    });
+    var fichiers = form.querySelector('input[type=file]');
+    if (fichiers) fichiers.addEventListener('change', function () { clearTimeout(timer); sauver(); });
+  });
+
+  // --- Unités du ticket : un clic = sélection + persistance immédiate (spec 27) ---
+  var unitesEdit = document.getElementById('unites-edit');
+  if (unitesEdit) {
+    var etatU = document.getElementById('unites-etat');
+    var puces = Array.prototype.slice.call(unitesEdit.querySelectorAll('.unite-pill'));
+    puces.forEach(function (p) {
+      p.addEventListener('click', function () {
+        p.classList.toggle('selectionne');
+        var ids = puces.filter(function (x) { return x.classList.contains('selectionne'); }).map(function (x) { return x.dataset.id; });
+        var params = new URLSearchParams();
+        ids.forEach(function (id) { params.append('unite_ids', id); });
+        if (etatU) etatU.textContent = 'enregistrement…';
+        fetch(unitesEdit.dataset.action, {
+          method: 'POST',
+          headers: { 'content-type': 'application/x-www-form-urlencoded' },
+          body: params.toString()
+        }).then(function (r) {
+          if (r.ok) { if (etatU) etatU.textContent = '✓ enregistré'; }
+          else location.reload(); // refus : resynchroniser l'affichage
+        }).catch(function () { location.reload(); });
+      });
+    });
+  }
+
   // --- Devis des consultations : un champ montant par fichier, même ordre ---
   document.querySelectorAll('input[type=file][data-montants]').forEach(function (champ) {
     var conteneur = document.getElementById(champ.dataset.montants);
