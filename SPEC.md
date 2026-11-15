@@ -25,7 +25,7 @@ Ce fichier regroupe les décisions prises avec le demandeur sur les types d'util
 
 - **Lecture ouverte à tous** : tout utilisateur connecté voit tous les tickets, même ceux des unités dont il n'est pas résident. Les filtres d'affichage sont par défaut positionnés sur les unités du résident, mais sans aucune restriction.
 - **Devis et factures** : lisibles par tous, mais **ajout et modification réservés au conseil syndical**.
-- **Compte-rendu d'intervention** : champ du ticket (voir cycle de vie), lisible par tous.
+- **Bilan de l'intervention** : champ du ticket (voir cycle de vie), lisible par tous.
 
 ## Cycle de vie d'un ticket
 
@@ -41,7 +41,7 @@ Ce fichier regroupe les décisions prises avec le demandeur sur les types d'util
 ## Documents et notifications
 
 - **Devis et factures** : fichiers stockés sur le ticket (devis / avenant / facture, avec montant), **gérés uniquement par le conseil syndical**, lisibles par tous.
-- **Compte-rendu d'intervention** : pas un document, c'est un **champ du ticket rédigé dans l'app** : une instance par unité concernée, plus une instance pour le conseil syndical. Rempli par tout résident concerné.
+- **Bilan de l'intervention** : pas un document, c'est un **champ du ticket rédigé dans l'app** : une instance par unité concernée, plus une instance pour le conseil syndical. Rempli par tout résident concerné.
 - **Notifications** : à chaque événement (création, changement d'état, nouveau devis, décision, acceptation de la résolution, réclamation de rattachement), notifier dans l'app le **conseil syndical** et les **résidents concernés**. **Canal unique pour l'instant : notification in-app** (pas de SMTP, aucun canal externe).
 
 ## Deltas par rapport à PROMPT.md (à cibler pour le dev)
