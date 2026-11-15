@@ -10,21 +10,34 @@
 <input type="search" id="recherche-tickets" class="recherche recherche-pleine" placeholder="Rechercher un ticket (titre, description)…" value="<%= filtres.q || '' %>" autocomplete="off">
 <form method="get" action="/tickets" id="filtres-tickets">
   <div class="filtres">
-  <select name="etape">
-    <option value="">Tous les états (hors archivés)</option>
-    <% for (const e of etapes) { %>
-      <option value="<%= e %>" <%= filtres.etape === e ? 'selected' : '' %>><%= etiquettes[e] %></option>
-    <% } %>
-  </select>
-  <select name="unite">
-    <% if (mesUnites.length > 0) { %>
-      <option value="" <%= !filtres.unite ? 'selected' : '' %>>Mes unités (défaut)</option>
-    <% } %>
-    <option value="toutes" <%= filtres.unite === 'toutes' ? 'selected' : '' %>>Toutes les unités</option>
-    <% for (const u of unitesFiltre) { %>
-      <option value="<%= u.id %>" <%= String(filtres.unite) === String(u.id) ? 'selected' : '' %>><%= u.label %></option>
-    <% } %>
-  </select>
+  <% const uniteSel = unitesFiltre.find(u => String(u.id) === String(filtres.unite)); %>
+  <div class="dropdown" data-filtre="etape">
+    <button type="button" class="dropdown-bouton" aria-expanded="false">
+      <span class="dropdown-valeur"><%= filtres.etape ? etiquettes[filtres.etape] : 'Tous les états (hors archivés)' %></span> ▾
+    </button>
+    <ul class="dropdown-liste" hidden>
+      <li><button type="button" class="dropdown-option <%= !filtres.etape ? 'selectionne' : '' %>" data-value="">Tous les états (hors archivés)</button></li>
+      <% for (const e of etapes) { %>
+        <li><button type="button" class="dropdown-option <%= filtres.etape === e ? 'selectionne' : '' %>" data-value="<%= e %>"><%= etiquettes[e] %></button></li>
+      <% } %>
+    </ul>
+    <input type="hidden" name="etape" value="<%= filtres.etape || '' %>">
+  </div>
+  <div class="dropdown" data-filtre="unite">
+    <button type="button" class="dropdown-bouton" aria-expanded="false">
+      <span class="dropdown-valeur"><%= filtres.unite === 'toutes' ? 'Toutes les unités' : (uniteSel ? uniteSel.label : (mesUnites.length > 0 ? 'Mes unités (défaut)' : 'Toutes les unités')) %></span> ▾
+    </button>
+    <ul class="dropdown-liste" hidden>
+      <% if (mesUnites.length > 0) { %>
+        <li><button type="button" class="dropdown-option <%= !filtres.unite ? 'selectionne' : '' %>" data-value="">Mes unités (défaut)</button></li>
+      <% } %>
+      <li><button type="button" class="dropdown-option <%= filtres.unite === 'toutes' ? 'selectionne' : '' %>" data-value="toutes">Toutes les unités</button></li>
+      <% for (const u of unitesFiltre) { %>
+        <li><button type="button" class="dropdown-option <%= String(filtres.unite) === String(u.id) ? 'selectionne' : '' %>" data-value="<%= u.id %>"><%= u.label %></button></li>
+      <% } %>
+    </ul>
+    <input type="hidden" name="unite" value="<%= filtres.unite || '' %>">
+  </div>
   <label class="case"><input type="checkbox" name="urgent" value="1" <%= filtres.urgent === '1' ? 'checked' : '' %>> Urgents</label>
   </div>
 </form>

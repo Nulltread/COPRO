@@ -715,9 +715,15 @@ test('UI : recherche comptes/tickets présentes, boutons archiver/supprimer sous
   assert.ok(liste.includes('id="filtres-tickets"'));
   assert.ok(liste.indexOf('id="recherche-tickets"') < liste.indexOf('id="filtres-tickets"'));
   assert.ok(liste.includes('data-recherche='));
+  // filtres en dropdowns custom (ouverture instantanée, pas de picker natif)
+  assert.ok(liste.includes('class="dropdown"'));
+  assert.ok(liste.includes('name="etape"'));
+  assert.ok(liste.includes('name="unite"'));
+  assert.ok(!liste.includes('<select name="etape"'));
   const appjs = await (await r1.req('GET', '/app.js')).text();
   assert.ok(appjs.includes("getElementById('recherche-tickets')"));
   assert.ok(appjs.includes('#liste-tickets li'));
+  assert.ok(appjs.includes('dropdown-bouton'));
   // fiche ticket en « créé » : boutons sous le titre, pas de section coût / "Modifier le ticket" / commentaire / consultations / CR
   const { tid } = await creerTicket(r1, [ids.villa1], 'Ticket UI');
   const page = await (await r1.req('GET', '/tickets/' + tid)).text();

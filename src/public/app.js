@@ -178,12 +178,39 @@
     });
   }
 
-  // --- Filtres des tickets appliqués dès la sélection (plus de bouton, spec 22) ---
+  // --- Filtres des tickets : dropdowns custom (ouverture instantanée, 0 latence)
+  //     + case « Urgents » qui soumet dès le clic. Au choix d'une option : submit. ---
   var filtres = document.getElementById('filtres-tickets');
+  function fermerDropdowns() {
+    document.querySelectorAll('.dropdown-liste').forEach(function (l) { l.hidden = true; });
+    document.querySelectorAll('.dropdown-bouton').forEach(function (b) { b.setAttribute('aria-expanded', 'false'); });
+  }
   if (filtres) {
-    filtres.querySelectorAll('select, input[type=checkbox]').forEach(function (el) {
-      el.addEventListener('change', function () { filtres.submit(); });
+    var urgent = filtres.querySelector('input[type=checkbox]');
+    if (urgent) urgent.addEventListener('change', function () { filtres.submit(); });
+    filtres.querySelectorAll('.dropdown').forEach(function (dd) {
+      var bouton = dd.querySelector('.dropdown-bouton');
+      var liste = dd.querySelector('.dropdown-liste');
+      var input = dd.querySelector('input[type=hidden]');
+      var valeur = dd.querySelector('.dropdown-valeur');
+      bouton.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var etaitOuvert = !liste.hidden;
+        fermerDropdowns();
+        if (!etaitOuvert) { liste.hidden = false; bouton.setAttribute('aria-expanded', 'true'); }
+      });
+      dd.querySelectorAll('.dropdown-option').forEach(function (opt) {
+        opt.addEventListener('click', function (e) {
+          e.stopPropagation();
+          input.value = opt.dataset.value;
+          valeur.textContent = opt.textContent;
+          dd.querySelectorAll('.dropdown-option').forEach(function (o) { o.classList.toggle('selectionne', o === opt); });
+          fermerDropdowns();
+          filtres.submit();
+        });
+      });
     });
+    document.addEventListener('click', fermerDropdowns);
   }
 
   // --- Recherche plaintext des tickets : filtrage à la volée côté client ---
