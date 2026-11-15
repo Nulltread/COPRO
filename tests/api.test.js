@@ -727,6 +727,10 @@ test('UI : recherche comptes/tickets présentes, boutons archiver/supprimer sous
   const sw = await (await r1.req('GET', '/sw.js')).text();
   assert.ok(sw.includes('copro-v3'));
   assert.ok(!sw.includes("cache d'abord"));
+  // la modale est bien masquée par défaut (sinon overlay vide qui bloque la page)
+  assert.ok(page.includes('id="modale" class="modale-fond" hidden'));
+  const css = await (await r1.req('GET', '/style.css')).text();
+  assert.ok(css.includes('.modale-fond[hidden]'));
 });
 
 test('PWA : manifest, service worker, icônes servis ; page profil propose le raccourci écran d\'accueil', async () => {
