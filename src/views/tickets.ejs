@@ -6,8 +6,9 @@
 <% if (mesUnites.length === 0) { %>
   <p class="aide">Votre rattachement à une villa ou un garage n'est pas encore accepté : vous ne pouvez voir aucun ticket ni en déclarer pour le moment. <a href="/rattachements">Voir mes rattachements</a></p>
 <% } %>
-<form method="get" action="/tickets" class="filtres" id="filtres-tickets">
-  <input type="search" name="q" class="recherche" placeholder="Rechercher (titre, description)…" value="<%= filtres.q || '' %>" autocomplete="off">
+<form method="get" action="/tickets" id="filtres-tickets">
+  <input type="search" name="q" id="recherche-tickets" class="recherche recherche-pleine" placeholder="Rechercher un ticket (titre, description)…" value="<%= filtres.q || '' %>" autocomplete="off">
+  <div class="filtres">
   <select name="etape">
     <option value="">Tous les états (hors archivés)</option>
     <% for (const e of etapes) { %>
@@ -24,6 +25,7 @@
     <% } %>
   </select>
   <label class="case"><input type="checkbox" name="urgent" value="1" <%= filtres.urgent === '1' ? 'checked' : '' %>> Urgents</label>
+  </div>
 </form>
 <% if (tickets.length === 0) { %>
   <p class="aide">Aucun ticket pour le moment.</p>

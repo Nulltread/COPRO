@@ -102,9 +102,11 @@ function infosValidation(ticketId) {
 
 function peutValiderTravaux(user, ticket) {
   if (!estActif(user) || !ticket || ticket.etape !== 'intervention_planifiee') return false;
-  const { residents, besoinCS } = infosValidation(ticket.id);
+  // Résident concerné (unités non communes) : valide les travaux.
+  // Membre du CS / admin : valide la RÉCEPTION des travaux (facture requise, spec 24).
+  const { residents } = infosValidation(ticket.id);
   if (residents.some(r => r.id === user.id)) return true;
-  return besoinCS && isGestionnaire(user);
+  return isGestionnaire(user);
 }
 
 // Reouverture (travaux acceptes -> consultation) : tout proprietaire/locataire
@@ -130,13 +132,49 @@ function dateArchivageAuto(ticket) {
   return new Date(new Date(ticket.acceptes_at.replace(' ', 'T') + 'Z').getTime() + jours * 86400000);
 }
 
-// Edition du ticket (description, unites) : createur, residents concernes,
+// Edition du ticket (description) : createur, residents concernes,
 // CS et admin — tant que le ticket n'est PAS archive (archive = fige).
 function peutEditerTicket(user, ticket) {
   if (!estActif(user) || !ticket || ticket.etape === 'archive') return false;
   if (isGestionnaire(user)) return true;
   if (ticket.auteur_id === user.id) return true;
   return estResidentConcerne(user, ticket.id);
+}
+
+// Modification des unites du ticket : tant que le ticket est « cree », les
+// memes regles que l'edition (createur, residents concernes, gestionnaire) ;
+// une fois passe en consultation, UNIQUEMENT les membres du CS et l'admin.
+function peutEditerUnites(user, ticket) {
+  if (!estActif(user) || !ticket || ticket.etape === 'archive') return false;
+  if (ticket.etape === 'cree') return peutEditerTicket(user, ticket);
+  return isGestionnaire(user);
+}
+
+// Personnes concernees pour les comptes-rendus d'intervention :
+// residents des unites du ticket + membres du CS + admin (actifs).
+function personnesConcerneesCR(ticketId) {
+  const db = getDb();
+  return db.prepare(
+    `SELECT DISTINCT u.id, u.nom, u.prenom, u.role, u.conseil_syndical FROM users u
+     LEFT JOIN unit_residents ur ON ur.user_id = u.id
+     LEFT JOIN ticket_units tu ON tu.unit_id = ur.unit_id
+     WHERE u.statut = 'actif' AND (tu.ticket_id = ? OR u.conseil_syndical = 1 OR u.role = 'admin')
+     ORDER BY u.nom`
+  ).all(ticketId);
+}
+
+// Un compte-rendu par personne concernee : redigeable par soi-meme
+// (resident concerne, membre du CS ou admin), a partir de « travaux planifies ».
+function peutRedigerCR(user, ticket) {
+  if (!estActif(user) || !ticket) return false;
+  if (!['intervention_planifiee', 'travaux_acceptes'].includes(ticket.etape)) return false;
+  if (isGestionnaire(user)) return true;
+  return estResidentConcerne(user, ticket.id);
+}
+
+// Section comptes-rendus visible a partir de « travaux planifies » (et archive).
+function crVisibles(ticket) {
+  return !!ticket && ['intervention_planifiee', 'travaux_acceptes', 'archive'].includes(ticket.etape);
 }
 
 // Suppression : UNIQUEMENT si le ticket n'a jamais ete passe en consultation
@@ -147,16 +185,15 @@ function peutSupprimerTicket(user, ticket) {
   return ticket.auteur_id === user.id || isGestionnaire(user);
 }
 
-// Archivage : a tout moment par un membre du CS ou l'admin, mais impossible
-// tant qu'aucune facture n'est jointe au ticket.
 function nbFactures(ticketId) {
   return getDb().prepare("SELECT COUNT(*) AS n FROM fichiers WHERE ticket_id = ? AND categorie = 'facture'").get(ticketId).n;
 }
 
+// Archivage : a tout moment par un membre du CS ou l'admin (hors archivé),
+// sans condition de facture (spec 24).
 function peutArchiver(user, ticket) {
   if (!estActif(user) || !ticket) return false;
-  if (!isGestionnaire(user) || ticket.etape === 'archive') return false;
-  return nbFactures(ticket.id) > 0;
+  return isGestionnaire(user) && ticket.etape !== 'archive';
 }
 
 // Une fiche entreprise est "strictement complete" si tous les champs sont remplis.
@@ -200,7 +237,8 @@ module.exports = {
   isCS, isGestionnaire, isAdmin, estActif,
   unitsDeUser, qualiteDeUnit, estUniteCommune, unitesDuTicket,
   peutVoirTicket, peutChoisirUnites, estResidentConcerne,
-  peutEditerTicket, peutSupprimerTicket,
+  peutEditerTicket, peutEditerUnites, peutSupprimerTicket,
+  personnesConcerneesCR, peutRedigerCR, crVisibles,
   infosValidation, peutValiderTravaux, peutReouvrir, dansDelaiArchivage, dateArchivageAuto,
   nbFactures, peutArchiver, entrepriseComplete, consultationComplete,
   ETAPES, ETIQUETTES_ETAPES,

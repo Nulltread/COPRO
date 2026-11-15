@@ -1,7 +1,15 @@
 <%- include('partials/header', { titre: ticket.titre }) %>
 <div class="entete-page">
   <h1><%= ticket.titre %></h1>
-  <% if (ticket.urgent) { %><span class="tag-urgent">URGENT</span><% } %>
+  <div class="actions-titre">
+    <% if (ticket.urgent) { %><span class="tag-urgent">URGENT</span><% } %>
+    <form method="post" action="/tickets/<%= ticket.id %>/archiver" data-confirm="Archiver définitivement ce ticket ? Il ne sera plus jamais éditable (consultable uniquement)." data-confirm-titre="Archiver le ticket">
+      <button class="bouton-secondaire" type="submit" <%= peutArchiver ? '' : 'disabled' %> title="<%= peutArchiver ? 'Archiver le ticket' : 'Déjà archivé' %>">Archiver</button>
+    </form>
+    <form method="post" action="/tickets/<%= ticket.id %>/supprimer" data-confirm="Supprimer définitivement ce ticket ?" data-confirm-titre="Supprimer le ticket">
+      <button class="bouton-secondaire danger" type="submit" <%= peutSupprimer ? '' : 'disabled' %> title="<%= peutSupprimer ? 'Supprimer le ticket' : 'Suppression réservée au créateur / CS / admin, uniquement à l\'étape « Créé »' %>">Supprimer</button>
+    </form>
+  </div>
 </div>
 <p class="aide"><%= unites.map(u => u.label).join(', ') %> · déclaré le <%= ticket.created_at %></p>
 
@@ -14,11 +22,9 @@
   <% }) %>
 </ol>
 
-<% if (ticket.description) { %><p><%= ticket.description %></p><% } %>
-
+<%# Description : le champ de saisie suffit ; en lecture seule (archivé) on affiche le texte %>
 <% if (peutEditer) { %>
 <section class="bloc">
-  <h2>Modifier le ticket</h2>
   <form method="post" action="/tickets/<%= ticket.id %>/editer" class="formulaire">
     <label>Description
       <textarea name="description" rows="4"><%= ticket.description %></textarea>
@@ -26,28 +32,44 @@
     <button class="bouton-secondaire" type="submit">Enregistrer la description</button>
   </form>
 </section>
+<% } else if (ticket.description) { %>
+<p><%= ticket.description %></p>
 <% } %>
 
-<% if (peutEditer) { %>
+<%# Photos de la création : affichées sous la description %>
+<% if ((photosParContexte['creation'] || []).length > 0) { %>
+<ul class="liste-docs">
+  <% for (const f of photosParContexte['creation']) { %>
+    <li>
+      <a href="/fichiers/<%= f.id %>" target="_blank" rel="noopener">🖼 <%= f.nom_original %></a>
+      <span class="auteur">par <%= f.auteur_nom || 'Compte supprimé' %></span>
+      <% if (f.auteur_id === user.id || gestionnaire) { %>
+        <form method="post" action="/fichiers/<%= f.id %>/supprimer" class="formulaire-ligne" data-confirm="Supprimer cette photo ?" data-confirm-titre="Supprimer la photo">
+          <button class="bouton-secondaire" type="submit">Supprimer</button>
+        </form>
+      <% } %>
+    </li>
+  <% } %>
+</ul>
+<% } %>
+
 <section class="bloc">
   <h2>Unités concernées</h2>
-  <form method="post" action="/tickets/<%= ticket.id %>/unites" class="formulaire">
-    <label>Unités concernées
-      <select name="unite_ids" multiple required size="10">
-        <% for (const u of unitesModifiables) { %>
-          <option value="<%= u.id %>" <%= unitesIds.includes(u.id) ? 'selected' : '' %>><%= u.label %><% if (mesUnites.has(u.id)) { %> (votre unité)<% } %></option>
-        <% } %>
-      </select>
-    </label>
-    <p class="aide">Maintenez Ctrl (ou Cmd sur Mac) pour sélectionner plusieurs unités.</p>
-    <button class="bouton-secondaire" type="submit">Modifier les unités</button>
-  </form>
-</section>
-<% } %>
-
-<section class="bloc">
-  <h2>Coût du ticket</h2>
-  <p>Devis retenus : <strong><%= coutRetenu.toFixed(2) %> €</strong> · Facturé : <strong><%= totalFacture.toFixed(2) %> €</strong> · Écart : <strong><%= (totalFacture - coutRetenu).toFixed(2) %> €</strong></p>
+  <% if (peutEditerUnites) { %>
+    <form method="post" action="/tickets/<%= ticket.id %>/unites" class="formulaire">
+      <label>Unités concernées
+        <select name="unite_ids" multiple required size="10">
+          <% for (const u of unitesModifiables) { %>
+            <option value="<%= u.id %>" <%= unitesIds.includes(u.id) ? 'selected' : '' %>><%= u.label %><% if (mesUnites.has(u.id)) { %> (votre unité)<% } %></option>
+          <% } %>
+        </select>
+      </label>
+      <p class="aide">Maintenez Ctrl (ou Cmd sur Mac) pour sélectionner plusieurs unités.</p>
+      <button class="bouton-secondaire" type="submit">Modifier les unités</button>
+    </form>
+  <% } else { %>
+    <p><%= unites.map(u => u.label).join(', ') %></p>
+  <% } %>
 </section>
 
 <%# ---- Une seule section de transition à la fois, selon l'état et les droits (spec 20) %>
@@ -64,32 +86,50 @@
 <% if (ticket.etape === 'intervention_planifiee' && peutValiderTravaux) { %>
 <section class="bloc">
   <h2>Valider les travaux</h2>
-  <p class="aide">Le ticket passera à « Travaux acceptés » quand tous les propriétaires et locataires des unités concernées auront validé<% if (infosValidation.besoinCS) { %> (et au moins un membre du conseil syndical pour les parties communes)<% } %>.</p>
+  <p class="aide">Le ticket passera à « Travaux acceptés » quand tous les propriétaires et locataires des unités concernées auront validé les travaux <strong>et</strong> qu'au moins un membre du conseil syndical aura validé la réception (une facture doit alors être jointe).</p>
   <ul class="liste-simple">
     <% for (const r of infosValidation.residents) { %>
       <% const v = validations.find(x => x.user_id === r.id && !x.caduque); %>
       <li><%= r.prenom %> <%= r.nom %> — <% if (v) { %>✅ a validé<% if (v.commentaire) { %> — « <%= v.commentaire %> »<% } %><% } else { %>⏳ en attente<% } %></li>
     <% } %>
-    <% if (infosValidation.besoinCS) { %>
-      <% const vcs = validations.find(x => !x.caduque && (x.conseil_syndical === 1 || x.role === 'admin')); %>
-      <li>Parties communes — conseil syndical : <% if (vcs) { %>✅ validé par <%= vcs.auteur_nom %><% } else { %>⏳ en attente<% } %></li>
-    <% } %>
+    <% const vcs = validations.find(x => !x.caduque && (x.conseil_syndical === 1 || x.role === 'admin')); %>
+    <li>Réception des travaux (conseil syndical) : <% if (vcs) { %>✅ validée par <%= vcs.auteur_nom %><% } else { %>⏳ en attente<% } %></li>
   </ul>
-  <form method="post" action="/tickets/<%= ticket.id %>/valider-travaux" class="formulaire" enctype="multipart/form-data">
-    <label>Commentaire (facultatif)
-      <input type="text" name="commentaire" placeholder="Un mot sur les travaux…">
-    </label>
-    <div class="bloc-photos">
-      <label class="zone-photos">
-        <input type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple class="champ-fichiers-caches">
-        <span class="zone-photos-plus" aria-hidden="true">+</span>
-        <span class="zone-photos-icone" aria-hidden="true">📷</span>
-        <span class="zone-photos-texte">Ajouter des photos (facultatif)<br><small>compressées automatiquement avant l'envoi</small></span>
+  <% if ((photosParContexte['validation'] || []).length > 0) { %>
+    <ul class="liste-docs">
+      <% for (const f of photosParContexte['validation']) { %>
+        <li><a href="/fichiers/<%= f.id %>" target="_blank" rel="noopener">🖼 <%= f.nom_original %></a> <span class="auteur">par <%= f.auteur_nom || 'Compte supprimé' %></span></li>
+      <% } %>
+    </ul>
+  <% } %>
+  <% const estConcerneResident = infosValidation.residents.some(r => r.id === user.id); %>
+  <% if (estConcerneResident) { %>
+    <form method="post" action="/tickets/<%= ticket.id %>/valider-travaux" class="formulaire" enctype="multipart/form-data">
+      <input type="hidden" name="action" value="travaux">
+      <label>Commentaire (facultatif)
+        <input type="text" name="commentaire" placeholder="Un mot sur les travaux…">
       </label>
-      <div class="apercu"></div>
-    </div>
-    <button class="bouton" type="submit">Je valide les travaux</button>
-  </form>
+      <div class="bloc-photos">
+        <label class="zone-photos">
+          <input type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple class="champ-fichiers-caches">
+          <span class="zone-photos-plus" aria-hidden="true">+</span>
+          <span class="zone-photos-icone" aria-hidden="true">📷</span>
+          <span class="zone-photos-texte">Ajouter des photos (facultatif)<br><small>compressées automatiquement avant l'envoi</small></span>
+        </label>
+        <div class="apercu"></div>
+      </div>
+      <button class="bouton" type="submit">Je valide les travaux</button>
+    </form>
+  <% } %>
+  <% if (gestionnaire) { %>
+    <form method="post" action="/tickets/<%= ticket.id %>/valider-travaux" class="formulaire-ligne" data-confirm="Valider la réception des travaux ? (une facture doit être jointe)" data-confirm-titre="Valider la réception">
+      <input type="hidden" name="action" value="reception">
+      <label>Commentaire (facultatif)
+        <input type="text" name="commentaire" placeholder="Réception constatée…">
+      </label>
+      <button class="bouton" type="submit" <%= nbFactures > 0 ? '' : 'disabled' %> title="<%= nbFactures > 0 ? 'Valider la réception des travaux' : 'Une facture doit d\'abord être jointe (section Factures)' %>">Valider la réception des travaux</button>
+    </form>
+  <% } %>
 </section>
 <% } %>
 
@@ -101,8 +141,15 @@
       <li class="<%= v.caduque ? 'lue' : '' %>"><%= v.auteur_nom || 'Compte supprimé' %> — <% if (v.caduque) { %>🗄 caduque (conservée)<% } else { %>✅ a validé<% } %><% if (v.commentaire) { %> — « <%= v.commentaire %> »<% } %></li>
     <% } %>
   </ul>
+  <% if ((photosParContexte['validation'] || []).length > 0) { %>
+    <ul class="liste-docs">
+      <% for (const f of photosParContexte['validation']) { %>
+        <li><a href="/fichiers/<%= f.id %>" target="_blank" rel="noopener">🖼 <%= f.nom_original %></a> <span class="auteur">par <%= f.auteur_nom || 'Compte supprimé' %></span></li>
+      <% } %>
+    </ul>
+  <% } %>
   <% if (dateArchivageAuto) { %>
-    <p class="aide">Archivage automatique prévu le <strong><%= dateArchivageAuto.toISOString().slice(0, 10) %></strong> (après <%= delaiArchivageJours %> jours en « Travaux acceptés »)<% if (nbFactures === 0) { %> — <strong>aucune facture jointe : l'archivage ne pourra pas avoir lieu</strong><% } %>.</p>
+    <p class="aide">Archivage automatique prévu le <strong><%= dateArchivageAuto.toISOString().slice(0, 10) %></strong> (après <%= delaiArchivageJours %> jours en « Travaux acceptés »).</p>
   <% } %>
   <% if (peutReouvrir) { %>
     <h3>Réouvrir le ticket</h3>
@@ -123,24 +170,19 @@
       <button class="bouton" type="submit">Réouvrir le ticket</button>
     </form>
   <% } %>
-</section>
-<% } %>
-
-<%# ---- Archivage (CS/admin, à tout moment, mais impossible sans facture) %>
-<% if (gestionnaire && ticket.etape !== 'archive') { %>
-<section class="bloc">
-  <h2>Archiver le ticket</h2>
-  <% if (nbFactures > 0) { %>
-    <form method="post" action="/tickets/<%= ticket.id %>/archiver" data-confirm="Archiver définitivement ce ticket ? Il ne sera plus jamais éditable (consultable uniquement)." data-confirm-titre="Archiver le ticket">
-      <button class="bouton-secondaire" type="submit">Archiver le ticket</button>
-    </form>
-  <% } else { %>
-    <p class="aide">Aucun archivage possible sans au moins une facture jointe au ticket (voir la section Factures ci-dessous).</p>
+  <% if ((photosParContexte['reouverture'] || []).length > 0) { %>
+    <h3>Photos de réouverture</h3>
+    <ul class="liste-docs">
+      <% for (const f of photosParContexte['reouverture']) { %>
+        <li><a href="/fichiers/<%= f.id %>" target="_blank" rel="noopener">🖼 <%= f.nom_original %></a> <span class="auteur">par <%= f.auteur_nom || 'Compte supprimé' %></span></li>
+      <% } %>
+    </ul>
   <% } %>
 </section>
 <% } %>
 
-<%# ---- Consultations (étape « En consultation » ; CRUD réservé au CS/admin) %>
+<%# ---- Consultations : visibles dès que le ticket a atteint « En consultation » %>
+<% if (ticket.etape !== 'cree') { %>
 <section class="bloc" id="consultations">
   <h2>Consultations</h2>
   <% if (consultations.length === 0) { %>
@@ -240,7 +282,7 @@
   <% } %>
 </section>
 
-<%# ---- Factures (CS/admin, jusqu'à l'archivage) %>
+<%# ---- Factures : visibles dès « En consultation » (ajout CS/admin tant que non archivé) %>
 <section class="bloc" id="factures">
   <h2>Factures</h2>
   <% if (factures.length === 0) { %>
@@ -256,10 +298,10 @@
       <% } %>
     </ul>
   <% } %>
-  <% if (gestionnaire && ticket.etape !== 'archive') { %>
+  <% if (gestionnaire && ticket.etape !== 'archive' && ticket.etape !== 'cree') { %>
     <form method="post" action="/tickets/<%= ticket.id %>/factures" class="formulaire" enctype="multipart/form-data">
       <label>Facture (PDF)
-        <input type="file" name="fichier" accept="application/pdf" required class="champ-fichiers-caches" style="position:static;width:auto;opacity:1">
+        <input type="file" name="fichier" accept="application/pdf" required class="champ-fichiers-visible">
       </label>
       <label>Coût (€)
         <input type="number" name="montant" min="0.01" step="0.01" required>
@@ -268,15 +310,38 @@
     </form>
   <% } %>
 </section>
+<% } %>
 
-<%# ---- Photos (ajoutables uniquement à la création, à la validation des travaux et à la réouverture) %>
-<section class="bloc">
-  <h2>Photos</h2>
-  <% if (photos.length === 0) { %>
-    <p class="aide">Aucune photo pour le moment.</p>
-  <% } else { %>
+<%# ---- Comptes-rendus : visibles à partir de « Travaux planifiés », un par personne concernée %>
+<% if (crVisibles) { %>
+<section class="bloc" id="cr">
+  <h2>Comptes-rendus d'intervention</h2>
+  <p class="aide">Un compte-rendu par personne concernée (résidents des unités, membres du CS, admin).</p>
+  <% for (const p of personnesCR) { const cr = comptesRendus.find(x => x.user_id === p.id); %>
+    <h3><%= p.prenom %> <%= p.nom %><% if (p.conseil_syndical === 1 || p.role === 'admin') { %> <span class="tag-cs">CS</span><% } %></h3>
+    <% if (cr) { %><p><%= cr.contenu %></p><p class="aide">rédigé le <%= cr.updated_at %></p><% } %>
+    <% if (peutRedigerCR && p.id === user.id) { %>
+      <form method="post" action="/tickets/<%= ticket.id %>/cr" class="formulaire" enctype="multipart/form-data">
+        <label>Votre compte-rendu
+          <textarea name="contenu" rows="3" placeholder="Votre compte-rendu d'intervention…"><%= cr ? cr.contenu : '' %></textarea>
+        </label>
+        <div class="bloc-photos">
+          <label class="zone-photos">
+            <input type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple class="champ-fichiers-caches">
+            <span class="zone-photos-plus" aria-hidden="true">+</span>
+            <span class="zone-photos-icone" aria-hidden="true">📷</span>
+            <span class="zone-photos-texte">Ajouter des photos avec le compte-rendu<br><small>compressées automatiquement avant l'envoi</small></span>
+          </label>
+          <div class="apercu"></div>
+        </div>
+        <button class="bouton-secondaire" type="submit">Enregistrer</button>
+      </form>
+    <% } %>
+  <% } %>
+  <% if ((photosParContexte['compte_rendu'] || []).length > 0) { %>
+    <h3>Photos des comptes-rendus</h3>
     <ul class="liste-docs">
-      <% for (const f of photos) { %>
+      <% for (const f of photosParContexte['compte_rendu']) { %>
         <li>
           <a href="/fichiers/<%= f.id %>" target="_blank" rel="noopener">🖼 <%= f.nom_original %></a>
           <span class="auteur">par <%= f.auteur_nom || 'Compte supprimé' %></span>
@@ -290,32 +355,7 @@
     </ul>
   <% } %>
 </section>
-
-<section class="bloc" id="cr">
-  <h2>Comptes-rendus d'intervention</h2>
-  <% const crParUnite = {}; comptesRendus.forEach(cr => { crParUnite[cr.unit_id === null ? 'cs' : cr.unit_id] = cr; }); %>
-  <% for (const u of unites) { const cr = crParUnite[u.id]; %>
-    <h3><%= u.label %></h3>
-    <% if (cr) { %><p><%= cr.contenu %></p><p class="aide">rédigé par <%= cr.auteur_nom || 'Compte supprimé' %> le <%= cr.updated_at %></p><% } %>
-    <% if (estConcerne && ticket.etape !== 'archive') { %>
-      <form method="post" action="/tickets/<%= ticket.id %>/cr" class="formulaire-ligne">
-        <input type="hidden" name="unit_id" value="<%= u.id %>">
-        <input type="text" name="contenu" placeholder="Compte-rendu pour <%= u.label %>…" value="<%= cr ? cr.contenu : '' %>" required>
-        <button class="bouton-secondaire" type="submit">Enregistrer</button>
-      </form>
-    <% } %>
-  <% } %>
-  <h3>Conseil syndical</h3>
-  <% const crCS = crParUnite['cs']; %>
-  <% if (crCS) { %><p><%= crCS.contenu %></p><p class="aide">rédigé par <%= crCS.auteur_nom || 'Compte supprimé' %> le <%= crCS.updated_at %></p><% } %>
-  <% if (estConcerne && ticket.etape !== 'archive') { %>
-    <form method="post" action="/tickets/<%= ticket.id %>/cr" class="formulaire-ligne">
-      <input type="hidden" name="unit_id" value="cs">
-      <input type="text" name="contenu" placeholder="Compte-rendu pour le conseil syndical…" value="<%= crCS ? crCS.contenu : '' %>" required>
-      <button class="bouton-secondaire" type="submit">Enregistrer</button>
-    </form>
-  <% } %>
-</section>
+<% } %>
 
 <section class="bloc" id="fil">
   <h2>Fil de suivi</h2>
@@ -324,19 +364,5 @@
       <li><span class="date"><%= e.created_at %></span> <strong><%= e.auteur_nom || 'Système' %></strong> — <%= e.contenu %></li>
     <% } %>
   </ul>
-  <% if (ticket.etape !== 'archive') { %>
-  <form method="post" action="/tickets/<%= ticket.id %>/commentaire" class="formulaire-ligne">
-    <input type="text" name="contenu" placeholder="Écrire un commentaire…" required>
-    <button class="bouton" type="submit">Envoyer</button>
-  </form>
-  <% } %>
 </section>
-
-<% if (peutSupprimer) { %>
-<section class="bloc">
-  <form method="post" action="/tickets/<%= ticket.id %>/supprimer" data-confirm="Supprimer définitivement ce ticket ?" data-confirm-titre="Supprimer le ticket">
-    <button class="bouton-secondaire">🗑 Supprimer le ticket</button>
-  </form>
-</section>
-<% } %>
 <%- include('partials/footer') %>
