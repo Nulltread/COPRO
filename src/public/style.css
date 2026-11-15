@@ -98,6 +98,13 @@ fieldset { border: 1px solid #c5c9d1; border-radius: 10px; }
 .tag-retenu { background: var(--vert); color: #fff; border-radius: 6px; padding: 2px 6px; font-size: 0.75rem; font-weight: 700; }
 .filtres { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0 16px; }
 .filtres select { padding: 8px; border-radius: 8px; border: 1px solid #c5c9d1; font-size: 0.95rem; }
+.dropdown { position: relative; }
+.dropdown-bouton { padding: 9px 12px; border: 1px solid #c5c9d1; border-radius: 8px; background: #fff; font-size: 0.95rem; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.dropdown-liste { position: absolute; top: calc(100% + 4px); left: 0; z-index: 50; background: #fff; border: 1px solid #c5c9d1; border-radius: 10px; list-style: none; margin: 0; padding: 6px; max-height: 320px; overflow-y: auto; min-width: 230px; box-shadow: 0 8px 20px rgba(0,0,0,.15); }
+.dropdown-liste[hidden] { display: none; }
+.dropdown-option { display: block; width: 100%; text-align: left; background: none; border: none; padding: 10px 12px; border-radius: 8px; font-size: 0.95rem; cursor: pointer; }
+.dropdown-option:hover { background: var(--gris); }
+.dropdown-option.selectionne { font-weight: 700; color: var(--bleu); }
 .liste-tickets { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
 .carte-ticket { border: 1px solid #dfe3e8; border-radius: 12px; overflow: hidden; }
 .carte-ticket.urgent { border-color: var(--rouge); }
