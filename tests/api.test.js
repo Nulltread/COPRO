@@ -707,11 +707,17 @@ test('UI : recherche comptes/tickets présentes, boutons archiver/supprimer sous
   const comptes = await (await cs.req('GET', '/admin/comptes')).text();
   assert.ok(comptes.includes('id="recherche-comptes"'));
   assert.ok(comptes.includes('data-recherche='));
-  // liste des tickets : champ de recherche pleine largeur + filtres auto-submit
+  // liste des tickets : champ de recherche pleine largeur, HORS du formulaire
+  // (filtrage à la volée côté client, sans rechargement donc sans perte de focus)
   const liste = await (await r1.req('GET', '/tickets')).text();
   assert.ok(liste.includes('id="recherche-tickets"'));
   assert.ok(liste.includes('recherche-pleine'));
   assert.ok(liste.includes('id="filtres-tickets"'));
+  assert.ok(liste.indexOf('id="recherche-tickets"') < liste.indexOf('id="filtres-tickets"'));
+  assert.ok(liste.includes('data-recherche='));
+  const appjs = await (await r1.req('GET', '/app.js')).text();
+  assert.ok(appjs.includes("getElementById('recherche-tickets')"));
+  assert.ok(appjs.includes('#liste-tickets li'));
   // fiche ticket en « créé » : boutons sous le titre, pas de section coût / "Modifier le ticket" / commentaire / consultations / CR
   const { tid } = await creerTicket(r1, [ids.villa1], 'Ticket UI');
   const page = await (await r1.req('GET', '/tickets/' + tid)).text();

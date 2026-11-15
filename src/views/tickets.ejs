@@ -6,8 +6,9 @@
 <% if (mesUnites.length === 0) { %>
   <p class="aide">Votre rattachement à une villa ou un garage n'est pas encore accepté : vous ne pouvez voir aucun ticket ni en déclarer pour le moment. <a href="/rattachements">Voir mes rattachements</a></p>
 <% } %>
+<%# Recherche plaintext à la volée, côté client, sans rechargement (garde le focus) : hors du formulaire %>
+<input type="search" id="recherche-tickets" class="recherche recherche-pleine" placeholder="Rechercher un ticket (titre, description)…" value="<%= filtres.q || '' %>" autocomplete="off">
 <form method="get" action="/tickets" id="filtres-tickets">
-  <input type="search" name="q" id="recherche-tickets" class="recherche recherche-pleine" placeholder="Rechercher un ticket (titre, description)…" value="<%= filtres.q || '' %>" autocomplete="off">
   <div class="filtres">
   <select name="etape">
     <option value="">Tous les états (hors archivés)</option>
@@ -30,9 +31,10 @@
 <% if (tickets.length === 0) { %>
   <p class="aide">Aucun ticket pour le moment.</p>
 <% } %>
-<ul class="liste-tickets">
+<p class="aide" id="recherche-aucun-tickets" hidden>Aucun ticket ne correspond à cette recherche.</p>
+<ul class="liste-tickets" id="liste-tickets">
   <% for (const t of tickets) { %>
-    <li class="carte-ticket <%= t.urgent ? 'urgent' : '' %>">
+    <li class="carte-ticket <%= t.urgent ? 'urgent' : '' %>" data-recherche="<%= (t.titre + ' ' + (t.description || '')).toLowerCase() %>">
       <a href="/tickets/<%= t.id %>">
         <div class="ligne1">
           <strong><%= t.titre %></strong>
