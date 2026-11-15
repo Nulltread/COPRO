@@ -133,17 +133,17 @@ CREATE TABLE IF NOT EXISTS consultations (
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- Comptes-rendus d'intervention : une instance par unite du ticket (unit_id)
--- plus une instance pour le conseil syndical (unit_id NULL).
+-- Comptes-rendus d'intervention : UNE instance par personne concernee
+-- (resident des unites du ticket, membre du CS ou admin) -> cle (ticket_id, user_id).
 CREATE TABLE IF NOT EXISTS comptes_rendus (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   ticket_id INTEGER NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
-  unit_id INTEGER REFERENCES units(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   contenu TEXT NOT NULL DEFAULT '',
   auteur_id INTEGER NOT NULL REFERENCES users(id),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (ticket_id, user_id)
 );
-CREATE UNIQUE INDEX IF NOT EXISTS idx_cr_ticket_unite ON comptes_rendus(ticket_id, COALESCE(unit_id, 0));
 
 CREATE TABLE IF NOT EXISTS fichiers (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -158,6 +158,7 @@ CREATE TABLE IF NOT EXISTS fichiers (
   delai TEXT,
   retenu INTEGER NOT NULL DEFAULT 0,
   consultation_id INTEGER REFERENCES consultations(id) ON DELETE CASCADE,
+  contexte TEXT NOT NULL DEFAULT 'creation',
   auteur_id INTEGER NOT NULL REFERENCES users(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

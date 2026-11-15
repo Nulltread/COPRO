@@ -184,7 +184,7 @@
     filtres.querySelectorAll('select, input[type=checkbox]').forEach(function (el) {
       el.addEventListener('change', function () { filtres.submit(); });
     });
-    var champQ = filtres.querySelector('input[name=q]');
+    var champQ = filtres.querySelector('input[name=q], #recherche-tickets');
     var timerQ = null;
     if (champQ) {
       champQ.addEventListener('input', function () {

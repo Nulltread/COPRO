@@ -189,13 +189,24 @@ test('création : au moins une unité perso, les autres libres ; parties commune
   assert.strictEqual(okC.res.status, 302);
 });
 
-test('unités modifiables après création', async () => {
+test('unités modifiables après création, puis réservées au CS/admin une fois en consultation', async () => {
+  const cs = await client(); await login(cs, 'cs@test.local', 'motdepasse1');
   const r1 = await client(); await login(r1, 'r1@test.local', 'motdepasse1');
   const { tid } = await creerTicket(r1, [ids.villa1], 'Unités modifiables');
+  // tant que « créé » : le créateur peut modifier
   const res = await r1.req('POST', `/tickets/${tid}/unites`, { unite_ids: [String(ids.villa1), String(ids.garage1)] });
   assert.strictEqual(res.status, 302);
   const n = db().prepare('SELECT COUNT(*) AS n FROM ticket_units WHERE ticket_id = ?').get(tid).n;
   assert.strictEqual(n, 2);
+  // passé en consultation : le créateur (occupant) ne peut PLUS modifier
+  await cs.req('POST', `/tickets/${tid}/passer-consultation`);
+  const resKo = await r1.req('POST', `/tickets/${tid}/unites`, { unite_ids: [String(ids.villa1)] });
+  assert.strictEqual(resKo.status, 403);
+  // mais le CS oui
+  const resOk = await cs.req('POST', `/tickets/${tid}/unites`, { unite_ids: [String(ids.villa1), String(ids.villa2)] });
+  assert.strictEqual(resOk.status, 302);
+  const n2 = db().prepare('SELECT COUNT(*) AS n FROM ticket_units WHERE ticket_id = ?').get(tid).n;
+  assert.strictEqual(n2, 2);
 });
 
 test('visibilité : lecture ouverte à tous, filtre par défaut sur ses unités', async () => {
@@ -375,17 +386,34 @@ test('section documents supprimée ; factures (PDF + coût) réservées au CS, l
   assert.strictEqual(resSansMontant.status, 400);
 });
 
-test('compte-rendu d\'intervention : une instance par unité + une pour le CS', async () => {
+test('compte-rendu : UNE instance par personne concernée, à partir de « Travaux planifiés » uniquement', async () => {
+  const cs = await client(); await login(cs, 'cs@test.local', 'motdepasse1');
   const r1 = await client(); await login(r1, 'r1@test.local', 'motdepasse1');
-  const { tid } = await creerTicket(r1, [ids.villa1, ids.garage1], 'Ticket CR');
-  let res = await r1.req('POST', `/tickets/${tid}/cr`, { unit_id: String(ids.villa1), contenu: 'CR villa 1' });
-  assert.strictEqual(res.status, 302);
-  res = await r1.req('POST', `/tickets/${tid}/cr`, { unit_id: 'cs', contenu: 'CR conseil syndical' });
-  assert.strictEqual(res.status, 302);
-  const crs = db().prepare('SELECT unit_id, contenu FROM comptes_rendus WHERE ticket_id=? ORDER BY id').all(tid);
+  const r2 = await client(); await login(r2, 'r2@test.local', 'motdepasse1');
+  const { tid } = await creerTicket(r1, [ids.villa1], 'Ticket CR');
+  // pas rédigeable en « créé » ni en « consultation »
+  assert.strictEqual((await r1.req('POST', `/tickets/${tid}/cr`, { contenu: 'trop tôt' })).status, 403);
+  await cs.req('POST', `/tickets/${tid}/passer-consultation`);
+  assert.strictEqual((await r1.req('POST', `/tickets/${tid}/cr`, { contenu: 'trop tôt' })).status, 403);
+  const cid = ajouterConsultationComplete(tid, ids.cs);
+  await cs.req('POST', `/tickets/${tid}/consultations/${cid}/valider`);
+  // r1 rédige SON compte-rendu, puis le modifie : toujours UNE seule ligne
+  assert.strictEqual((await r1.req('POST', `/tickets/${tid}/cr`, { contenu: 'CR de r1' })).status, 302);
+  assert.strictEqual((await r1.req('POST', `/tickets/${tid}/cr`, { contenu: 'CR de r1 modifié' })).status, 302);
+  let crs = db().prepare('SELECT * FROM comptes_rendus WHERE ticket_id=?').all(tid);
+  assert.strictEqual(crs.length, 1);
+  assert.strictEqual(crs[0].user_id, ids.r1);
+  assert.strictEqual(crs[0].contenu, 'CR de r1 modifié');
+  // le CS rédige le sien -> 2 lignes (une par personne concernée)
+  assert.strictEqual((await cs.req('POST', `/tickets/${tid}/cr`, { contenu: 'CR du CS' })).status, 302);
+  crs = db().prepare('SELECT * FROM comptes_rendus WHERE ticket_id=? ORDER BY user_id').all(tid);
   assert.strictEqual(crs.length, 2);
-  assert.deepStrictEqual(crs.map(c => c.unit_id).sort((a, b) => String(a).localeCompare(String(b))), [ids.villa1, null].sort((a, b) => String(a).localeCompare(String(b))));
-  assert.ok(crs.some(c => c.unit_id === null && c.contenu === 'CR conseil syndical'));
+  // r2 (non concerné) ne peut pas rédiger
+  assert.strictEqual((await r2.req('POST', `/tickets/${tid}/cr`, { contenu: 'x' })).status, 403);
+  // la page affiche la section CR en « planifié »
+  const page = await (await r1.req('GET', '/tickets/' + tid)).text();
+  assert.ok(page.includes('Comptes-rendus d\'intervention'));
+  assert.ok(page.includes('CR de r1 modifié'));
 });
 
 test('notifications : uniquement sur les transitions ; destinataires = résidents concernés + CS + admin (hors auteur)', async () => {
@@ -667,6 +695,35 @@ test('archivage automatique des « travaux acceptés » après le délai (unique
   const nR1 = db().prepare('SELECT COUNT(*) AS n FROM notifications WHERE user_id=? AND ticket_id=? AND type=?').get(ids.r1, tid, 'changement_etape').n;
   const nAdmin = db().prepare('SELECT COUNT(*) AS n FROM notifications WHERE user_id=? AND ticket_id=? AND type=?').get(ids.admin, tid, 'changement_etape').n;
   assert.ok(nCs >= 1 && nR1 >= 1 && nAdmin >= 1);
+});
+
+test('UI : recherche comptes/tickets présentes, boutons archiver/supprimer sous le titre, sections filtrées selon l\'état, sw en réseau d\'abord', async () => {
+  const cs = await client(); await login(cs, 'cs@test.local', 'motdepasse1');
+  const r1 = await client(); await login(r1, 'r1@test.local', 'motdepasse1');
+  // page des comptes : champ de recherche à la volée avec data-recherche
+  const comptes = await (await cs.req('GET', '/admin/comptes')).text();
+  assert.ok(comptes.includes('id="recherche-comptes"'));
+  assert.ok(comptes.includes('data-recherche='));
+  // liste des tickets : champ de recherche pleine largeur + filtres auto-submit
+  const liste = await (await r1.req('GET', '/tickets')).text();
+  assert.ok(liste.includes('id="recherche-tickets"'));
+  assert.ok(liste.includes('recherche-pleine'));
+  assert.ok(liste.includes('id="filtres-tickets"'));
+  // fiche ticket en « créé » : boutons sous le titre, pas de section coût / "Modifier le ticket" / commentaire / consultations / CR
+  const { tid } = await creerTicket(r1, [ids.villa1], 'Ticket UI');
+  const page = await (await r1.req('GET', '/tickets/' + tid)).text();
+  assert.ok(page.includes('actions-titre'));
+  assert.ok(page.includes('/archiver'));
+  assert.ok(page.includes('/supprimer'));
+  assert.ok(!page.includes('Coût du ticket'));
+  assert.ok(!page.includes('Modifier le ticket'));
+  assert.ok(!page.includes('Écrire un commentaire'));
+  assert.ok(!page.includes('id="consultations"'));
+  assert.ok(!page.includes('Comptes-rendus d\'intervention'));
+  // service worker : réseau d'abord (sinon l'ancien app.js reste servi en cache)
+  const sw = await (await r1.req('GET', '/sw.js')).text();
+  assert.ok(sw.includes('copro-v3'));
+  assert.ok(!sw.includes("cache d'abord"));
 });
 
 test('PWA : manifest, service worker, icônes servis ; page profil propose le raccourci écran d\'accueil', async () => {

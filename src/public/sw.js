@@ -1,4 +1,4 @@
-const CACHE = 'copro-v2';
+const CACHE = 'copro-v3';
 const STATIQUES = ['/style.css', '/app.js', '/icon.svg', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', function (e) {
@@ -13,26 +13,18 @@ self.addEventListener('activate', function (e) {
 
 self.addEventListener('fetch', function (e) {
   if (e.request.method !== 'GET') return;
-  // Pages (navigations) : réseau d'abord, cache en secours uniquement hors-ligne.
-  if (e.request.mode === 'navigate') {
-    e.respondWith(
-      fetch(e.request).catch(function () {
-        return caches.match(e.request).then(function (cache) {
-          return cache || caches.match('/connexion');
-        });
-      })
-    );
-    return;
-  }
-  // Assets statiques : cache d'abord.
+  // Navigations ET assets statiques : reseau d'abord (pour toujours servir la
+  // derniere version de app.js/style.css), cache en secours hors-ligne.
   e.respondWith(
-    caches.match(e.request).then(function (cache) {
-      return cache || fetch(e.request).then(function (reponse) {
-        if (reponse.ok && new URL(e.request.url).origin === location.origin) {
-          var copie = reponse.clone();
-          caches.open(CACHE).then(function (c) { c.put(e.request, copie); });
-        }
-        return reponse;
+    fetch(e.request).then(function (reponse) {
+      if (reponse.ok && new URL(e.request.url).origin === location.origin && e.request.mode !== 'navigate') {
+        var copie = reponse.clone();
+        caches.open(CACHE).then(function (c) { c.put(e.request, copie); });
+      }
+      return reponse;
+    }).catch(function () {
+      return caches.match(e.request).then(function (cache) {
+        return cache || (e.request.mode === 'navigate' ? caches.match('/connexion') : Response.error());
       });
     })
   );

@@ -35,9 +35,56 @@ function migrate() {
     migrationV2(db);
     db.pragma('user_version = 2');
     console.log('Migration v2 : parametres, entreprises, consultations, peremption, archivage auto.');
+  }
+  // v3 (corrections) : photos attachees a un contexte (creation/validation/
+  // reouverture/compte_rendu) ; comptes-rendus : une instance par personne
+  // concernee (user_id) au lieu d'une par unite + une pour le CS.
+  if (db.pragma('user_version', { simple: true }) < 3) {
+    migrationV3(db);
+    db.pragma('user_version = 3');
+    console.log('Migration v3 : fichiers.contexte, comptes_rendus par personne.');
     return true;
   }
   return sansCat;
+}
+
+function migrationV3(db) {
+  const cols = db.prepare('PRAGMA table_info(fichiers)').all().map(c => c.name);
+  if (!cols.includes('contexte')) {
+    db.prepare("ALTER TABLE fichiers ADD COLUMN contexte TEXT NOT NULL DEFAULT 'creation'").run();
+  }
+  const crCols = db.prepare('PRAGMA table_info(comptes_rendus)').all().map(c => c.name);
+  if (crCols.includes('unit_id') && !crCols.includes('user_id')) {
+    db.pragma('foreign_keys = OFF');
+    db.exec('BEGIN');
+    try {
+      db.exec(`
+        CREATE TABLE comptes_rendus_v3 (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          ticket_id INTEGER NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          contenu TEXT NOT NULL DEFAULT '',
+          auteur_id INTEGER NOT NULL REFERENCES users(id),
+          updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+          UNIQUE (ticket_id, user_id)
+        );
+      `);
+      // Anciennes lignes (par unite / CS) -> une ligne par auteur (redacteur).
+      db.exec(`
+        INSERT OR IGNORE INTO comptes_rendus_v3 (ticket_id, user_id, contenu, auteur_id, updated_at)
+        SELECT ticket_id, auteur_id, contenu, auteur_id, updated_at FROM comptes_rendus
+        WHERE auteur_id IS NOT NULL;
+      `);
+      db.exec('DROP TABLE comptes_rendus');
+      db.exec('ALTER TABLE comptes_rendus_v3 RENAME TO comptes_rendus');
+      db.exec('COMMIT');
+    } catch (e) {
+      db.exec('ROLLBACK');
+      db.pragma('foreign_keys = ON');
+      throw e;
+    }
+    db.pragma('foreign_keys = ON');
+  }
 }
 
 function migrationV2(db) {
@@ -206,8 +253,13 @@ function migrationAncienne(db) {
     CREATE INDEX IF NOT EXISTS idx_rattachements_user ON rattachements(user_id, statut);
     CREATE INDEX IF NOT EXISTS idx_rattachements_unit ON rattachements(unit_id, statut);
     CREATE INDEX IF NOT EXISTS idx_resolutions_ticket ON resolutions(ticket_id);
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_cr_ticket_unite ON comptes_rendus(ticket_id, COALESCE(unit_id, 0));
   `);
+  // Index des comptes-rendus uniquement si l'ancienne structure (unit_id) existe ;
+  // la v3 remplace la table par une cle (ticket_id, user_id).
+  const crCols = db.prepare('PRAGMA table_info(comptes_rendus)').all().map(c => c.name);
+  if (crCols.includes('unit_id')) {
+    db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_cr_ticket_unite ON comptes_rendus(ticket_id, COALESCE(unit_id, 0));');
+  }
   console.log('Migration : ancienne base mise à jour vers le nouveau schéma (rôles CS, unités, cycle de vie).');
 }
 
