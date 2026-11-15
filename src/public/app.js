@@ -184,14 +184,24 @@
     filtres.querySelectorAll('select, input[type=checkbox]').forEach(function (el) {
       el.addEventListener('change', function () { filtres.submit(); });
     });
-    var champQ = filtres.querySelector('input[name=q], #recherche-tickets');
-    var timerQ = null;
-    if (champQ) {
-      champQ.addEventListener('input', function () {
-        clearTimeout(timerQ);
-        timerQ = setTimeout(function () { filtres.submit(); }, 400);
+  }
+
+  // --- Recherche plaintext des tickets : filtrage à la volée côté client ---
+  // (pas de rechargement : le focus reste dans le champ pendant la saisie)
+  var rechercheTickets = document.getElementById('recherche-tickets');
+  if (rechercheTickets) {
+    var cartes = Array.prototype.slice.call(document.querySelectorAll('#liste-tickets li'));
+    var aucunTickets = document.getElementById('recherche-aucun-tickets');
+    rechercheTickets.addEventListener('input', function () {
+      var q = rechercheTickets.value.trim().toLowerCase();
+      var visibles = 0;
+      cartes.forEach(function (li) {
+        var ok = !q || (li.dataset.recherche || '').indexOf(q) !== -1;
+        li.style.display = ok ? '' : 'none';
+        if (ok) visibles++;
       });
-    }
+      if (aucunTickets) aucunTickets.hidden = visibles > 0 || cartes.length === 0;
+    });
   }
 
   // --- Devis des consultations : un champ montant par fichier, même ordre ---
