@@ -4,7 +4,7 @@
   <div class="actions-titre">
     <% if (ticket.urgent) { %><span class="tag-urgent">URGENT</span><% } %>
     <form method="post" action="/tickets/<%= ticket.id %>/archiver" data-confirm="Archiver définitivement ce ticket ? Il ne sera plus jamais éditable (consultable uniquement)." data-confirm-titre="Archiver le ticket">
-      <button class="bouton-secondaire" type="submit" <%= peutArchiver ? '' : 'disabled' %> title="<%= peutArchiver ? 'Archiver le ticket' : (ticket.etape === 'archive' ? 'Déjà archivé' : 'Archivage impossible sans au moins une facture') %>">Archiver</button>
+      <button class="bouton-secondaire" type="submit" <%= peutArchiver ? '' : 'disabled' %> title="<%= peutArchiver ? 'Archiver le ticket' : 'Déjà archivé' %>">Archiver</button>
     </form>
     <form method="post" action="/tickets/<%= ticket.id %>/supprimer" data-confirm="Supprimer définitivement ce ticket ?" data-confirm-titre="Supprimer le ticket">
       <button class="bouton-secondaire danger" type="submit" <%= peutSupprimer ? '' : 'disabled' %> title="<%= peutSupprimer ? 'Supprimer le ticket' : 'Suppression réservée au créateur / CS / admin, uniquement à l\'étape « Créé »' %>">Supprimer</button>
@@ -86,16 +86,14 @@
 <% if (ticket.etape === 'intervention_planifiee' && peutValiderTravaux) { %>
 <section class="bloc">
   <h2>Valider les travaux</h2>
-  <p class="aide">Le ticket passera à « Travaux acceptés » quand tous les propriétaires et locataires des unités concernées auront validé<% if (infosValidation.besoinCS) { %> (et au moins un membre du conseil syndical pour les parties communes)<% } %>.</p>
+  <p class="aide">Le ticket passera à « Travaux acceptés » quand tous les propriétaires et locataires des unités concernées auront validé les travaux <strong>et</strong> qu'au moins un membre du conseil syndical aura validé la réception (une facture doit alors être jointe).</p>
   <ul class="liste-simple">
     <% for (const r of infosValidation.residents) { %>
       <% const v = validations.find(x => x.user_id === r.id && !x.caduque); %>
       <li><%= r.prenom %> <%= r.nom %> — <% if (v) { %>✅ a validé<% if (v.commentaire) { %> — « <%= v.commentaire %> »<% } %><% } else { %>⏳ en attente<% } %></li>
     <% } %>
-    <% if (infosValidation.besoinCS) { %>
-      <% const vcs = validations.find(x => !x.caduque && (x.conseil_syndical === 1 || x.role === 'admin')); %>
-      <li>Parties communes — conseil syndical : <% if (vcs) { %>✅ validé par <%= vcs.auteur_nom %><% } else { %>⏳ en attente<% } %></li>
-    <% } %>
+    <% const vcs = validations.find(x => !x.caduque && (x.conseil_syndical === 1 || x.role === 'admin')); %>
+    <li>Réception des travaux (conseil syndical) : <% if (vcs) { %>✅ validée par <%= vcs.auteur_nom %><% } else { %>⏳ en attente<% } %></li>
   </ul>
   <% if ((photosParContexte['validation'] || []).length > 0) { %>
     <ul class="liste-docs">
@@ -104,21 +102,34 @@
       <% } %>
     </ul>
   <% } %>
-  <form method="post" action="/tickets/<%= ticket.id %>/valider-travaux" class="formulaire" enctype="multipart/form-data">
-    <label>Commentaire (facultatif)
-      <input type="text" name="commentaire" placeholder="Un mot sur les travaux…">
-    </label>
-    <div class="bloc-photos">
-      <label class="zone-photos">
-        <input type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple class="champ-fichiers-caches">
-        <span class="zone-photos-plus" aria-hidden="true">+</span>
-        <span class="zone-photos-icone" aria-hidden="true">📷</span>
-        <span class="zone-photos-texte">Ajouter des photos (facultatif)<br><small>compressées automatiquement avant l'envoi</small></span>
+  <% const estConcerneResident = infosValidation.residents.some(r => r.id === user.id); %>
+  <% if (estConcerneResident) { %>
+    <form method="post" action="/tickets/<%= ticket.id %>/valider-travaux" class="formulaire" enctype="multipart/form-data">
+      <input type="hidden" name="action" value="travaux">
+      <label>Commentaire (facultatif)
+        <input type="text" name="commentaire" placeholder="Un mot sur les travaux…">
       </label>
-      <div class="apercu"></div>
-    </div>
-    <button class="bouton" type="submit">Je valide les travaux</button>
-  </form>
+      <div class="bloc-photos">
+        <label class="zone-photos">
+          <input type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple class="champ-fichiers-caches">
+          <span class="zone-photos-plus" aria-hidden="true">+</span>
+          <span class="zone-photos-icone" aria-hidden="true">📷</span>
+          <span class="zone-photos-texte">Ajouter des photos (facultatif)<br><small>compressées automatiquement avant l'envoi</small></span>
+        </label>
+        <div class="apercu"></div>
+      </div>
+      <button class="bouton" type="submit">Je valide les travaux</button>
+    </form>
+  <% } %>
+  <% if (gestionnaire) { %>
+    <form method="post" action="/tickets/<%= ticket.id %>/valider-travaux" class="formulaire-ligne" data-confirm="Valider la réception des travaux ? (une facture doit être jointe)" data-confirm-titre="Valider la réception">
+      <input type="hidden" name="action" value="reception">
+      <label>Commentaire (facultatif)
+        <input type="text" name="commentaire" placeholder="Réception constatée…">
+      </label>
+      <button class="bouton" type="submit" <%= nbFactures > 0 ? '' : 'disabled' %> title="<%= nbFactures > 0 ? 'Valider la réception des travaux' : 'Une facture doit d\'abord être jointe (section Factures)' %>">Valider la réception des travaux</button>
+    </form>
+  <% } %>
 </section>
 <% } %>
 
@@ -138,7 +149,7 @@
     </ul>
   <% } %>
   <% if (dateArchivageAuto) { %>
-    <p class="aide">Archivage automatique prévu le <strong><%= dateArchivageAuto.toISOString().slice(0, 10) %></strong> (après <%= delaiArchivageJours %> jours en « Travaux acceptés »)<% if (nbFactures === 0) { %> — <strong>aucune facture jointe : l'archivage ne pourra pas avoir lieu</strong><% } %>.</p>
+    <p class="aide">Archivage automatique prévu le <strong><%= dateArchivageAuto.toISOString().slice(0, 10) %></strong> (après <%= delaiArchivageJours %> jours en « Travaux acceptés »).</p>
   <% } %>
   <% if (peutReouvrir) { %>
     <h3>Réouvrir le ticket</h3>

@@ -472,16 +472,23 @@ router.post('/:id/factures', (req, res) => {
   });
 });
 
-// Validation des travaux (planifie -> acceptes) : chaque proprietaire/locataire
-// concerne valide (commentaire et/ou photos facultatifs) ; parties communes :
-// au moins un membre du CS. Le passage a "travaux acceptes" n'a lieu que quand
-// tous les concernes ont validé.
+// Validation des travaux (planifie -> acceptes), spec 24 :
+// - chaque proprietaire/locataire concerne valide les travaux (commentaire
+//   et/ou photos facultatifs) ;
+// - au moins un membre du CS / admin valide la RECEPTION des travaux, ce qui
+//   exige qu'au moins une facture soit jointe au ticket.
+// Le passage a "travaux acceptes" n'a lieu que quand tous les residents
+// concernes ont validé ET qu'un membre du CS a validé la réception.
 router.post('/:id/valider-travaux', (req, res) => {
   const db = getDb();
   const ticket = trouverTicket(req, res);
   if (!ticket) return;
   if (!peutValiderTravaux(req.user, ticket)) {
-    return res.status(403).render('erreur', { user: req.user, message: 'Seuls les propriétaires/locataires des unités concernées (ou un membre du CS pour les parties communes) peuvent valider les travaux.' });
+    return res.status(403).render('erreur', { user: req.user, message: 'Seuls les propriétaires/locataires des unités concernées et les membres du conseil syndical peuvent valider (travaux / réception).' });
+  }
+  const estReception = isGestionnaire(req.user) && req.body.action === 'reception';
+  if (estReception && nbFactures(ticket.id) === 0) {
+    return res.status(400).render('erreur', { user: req.user, message: 'La réception des travaux nécessite au moins une facture jointe au ticket (section Factures).' });
   }
   upload.array('photos', 10)(req, res, (err) => {
     if (err) return res.status(400).render('erreur', { user: req.user, message: err.message });
@@ -495,26 +502,26 @@ router.post('/:id/valider-travaux', (req, res) => {
       enregistrerFichiers(db, ticket.id, 'photo', req.files, {}, req.user.id, 'validation');
     }
     db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'resolution', ?, ?)")
-      .run(ticket.id, req.user.id, `${req.user.nom} a validé les travaux${commentaire ? ` — « ${commentaire.slice(0, 120)} »` : ''}${(req.files || []).length ? ` (${req.files.length} photo(s))` : ''}`);
-    // Le passage a "travaux acceptes" n'est possible que si TOUS les concernes
-    // ont validé (parties communes : au moins un membre du CS).
-    const { residents, besoinCS } = infosValidation(ticket.id);
+      .run(ticket.id, req.user.id, estReception
+        ? `${req.user.nom} a validé la réception des travaux${commentaire ? ` — « ${commentaire.slice(0, 120)} »` : ''}`
+        : `${req.user.nom} a validé les travaux${commentaire ? ` — « ${commentaire.slice(0, 120)} »` : ''}${(req.files || []).length ? ` (${req.files.length} photo(s))` : ''}`);
+    // Passage a "travaux acceptes" : tous les residents concernes ont validé
+    // ET au moins un membre du CS a validé la réception (facture requise).
+    const { residents } = infosValidation(ticket.id);
     const validees = new Set(
       db.prepare('SELECT user_id FROM resolutions WHERE ticket_id = ? AND caduque = 0').all(ticket.id).map(r => r.user_id)
     );
     const tousResidents = residents.every(r => validees.has(r.id));
-    const csValide = !besoinCS || db.prepare(
+    const receptionOK = db.prepare(
       `SELECT COUNT(*) AS n FROM resolutions r JOIN users u ON u.id = r.user_id
        WHERE r.ticket_id = ? AND r.caduque = 0 AND (u.conseil_syndical = 1 OR u.role = 'admin') AND u.statut = 'actif'`
     ).get(ticket.id).n > 0;
-    if (residents.length > 0 || besoinCS) {
-      if (tousResidents && csValide) {
-        db.prepare("UPDATE tickets SET etape = 'travaux_acceptes', acceptes_at = datetime('now'), notif_archive_j3 = 0, notif_archive_j1 = 0, updated_at = datetime('now') WHERE id = ?").run(ticket.id);
-        db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'changement_etape', ?, ?)")
-          .run(ticket.id, req.user.id, 'Tous les concernés ont validé — passage à « Travaux acceptés »');
-        const t = db.prepare('SELECT * FROM tickets WHERE id = ?').get(ticket.id);
-        notifierTicket(t, 'changement_etape', `Le ticket « ${t.titre} » passe à l'étape « Travaux acceptés » (tous les concernés ont validé)`, req.user.id, !!t.urgent);
-      }
+    if (tousResidents && receptionOK) {
+      db.prepare("UPDATE tickets SET etape = 'travaux_acceptes', acceptes_at = datetime('now'), notif_archive_j3 = 0, notif_archive_j1 = 0, updated_at = datetime('now') WHERE id = ?").run(ticket.id);
+      db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'changement_etape', ?, ?)")
+        .run(ticket.id, req.user.id, 'Tous les concernés ont validé et la réception est validée — passage à « Travaux acceptés »');
+      const t = db.prepare('SELECT * FROM tickets WHERE id = ?').get(ticket.id);
+      notifierTicket(t, 'changement_etape', `Le ticket « ${t.titre} » passe à l'étape « Travaux acceptés » (travaux validés + réception validée)`, req.user.id, !!t.urgent);
     }
     res.redirect('/tickets/' + ticket.id);
   });
@@ -563,9 +570,6 @@ router.post('/:id/archiver', (req, res) => {
     return res.status(403).render('erreur', { user: req.user, message: 'Seul le conseil syndical peut archiver un ticket.' });
   }
   if (ticket.etape === 'archive') return res.redirect('/tickets/' + ticket.id);
-  if (nbFactures(ticket.id) === 0) {
-    return res.status(400).render('erreur', { user: req.user, message: 'Aucun archivage possible sans au moins une facture jointe au ticket.' });
-  }
   faireTransition(db, ticket, 'archive', req.user.id, 'Ticket archivé manuellement');
   res.redirect('/tickets/' + ticket.id);
 });

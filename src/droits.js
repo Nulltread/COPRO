@@ -102,9 +102,11 @@ function infosValidation(ticketId) {
 
 function peutValiderTravaux(user, ticket) {
   if (!estActif(user) || !ticket || ticket.etape !== 'intervention_planifiee') return false;
-  const { residents, besoinCS } = infosValidation(ticket.id);
+  // Résident concerné (unités non communes) : valide les travaux.
+  // Membre du CS / admin : valide la RÉCEPTION des travaux (facture requise, spec 24).
+  const { residents } = infosValidation(ticket.id);
   if (residents.some(r => r.id === user.id)) return true;
-  return besoinCS && isGestionnaire(user);
+  return isGestionnaire(user);
 }
 
 // Reouverture (travaux acceptes -> consultation) : tout proprietaire/locataire
@@ -183,16 +185,15 @@ function peutSupprimerTicket(user, ticket) {
   return ticket.auteur_id === user.id || isGestionnaire(user);
 }
 
-// Archivage : a tout moment par un membre du CS ou l'admin, mais impossible
-// tant qu'aucune facture n'est jointe au ticket.
 function nbFactures(ticketId) {
   return getDb().prepare("SELECT COUNT(*) AS n FROM fichiers WHERE ticket_id = ? AND categorie = 'facture'").get(ticketId).n;
 }
 
+// Archivage : a tout moment par un membre du CS ou l'admin (hors archivé),
+// sans condition de facture (spec 24).
 function peutArchiver(user, ticket) {
   if (!estActif(user) || !ticket) return false;
-  if (!isGestionnaire(user) || ticket.etape === 'archive') return false;
-  return nbFactures(ticket.id) > 0;
+  return isGestionnaire(user) && ticket.etape !== 'archive';
 }
 
 // Une fiche entreprise est "strictement complete" si tous les champs sont remplis.
