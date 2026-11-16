@@ -133,7 +133,7 @@
     });
   });
 
-  // --- Modale de confirmation générique (form[data-confirm]) ---
+  // --- Modale de confirmation générique (form[data-confirm] ou bouton submitter[data-confirm]) ---
   var modale = document.getElementById('modale');
   if (modale) {
     var modaleTitre = document.getElementById('modale-titre');
@@ -141,21 +141,43 @@
     var modaleConfirmer = document.getElementById('modale-confirmer');
     var modaleAnnuler = document.getElementById('modale-annuler');
     var formEnAttente = null;
-    var fermerModale = function () { modale.hidden = true; formEnAttente = null; };
+    var submitterEnAttente = null;
+    var fermerModale = function () { modale.hidden = true; formEnAttente = null; submitterEnAttente = null; };
     modaleAnnuler.addEventListener('click', fermerModale);
     modale.addEventListener('click', function (e) { if (e.target === modale) fermerModale(); });
     modaleConfirmer.addEventListener('click', function () {
       var f = formEnAttente;
+      var s = submitterEnAttente;
       fermerModale();
-      if (f) { f.dataset.confirme = '1'; f.submit(); }
+      if (f) {
+        f.dataset.confirme = '1';
+        // spec 31 : conserver le bouton cliqué (formaction Accepter/Refuser)
+        if (s && f.requestSubmit) f.requestSubmit(s); else f.submit();
+      }
     });
-    document.querySelectorAll('form[data-confirm]').forEach(function (form) {
+    document.querySelectorAll('form').forEach(function (form) {
       form.addEventListener('submit', function (e) {
         if (form.dataset.confirme === '1') return;
+        var submitter = e.submitter;
+        var texte = (submitter && submitter.dataset.confirm) || form.dataset.confirm;
+        var titre = (submitter && submitter.dataset.confirmTitre) || form.dataset.confirmTitre;
+        if (!texte) return;
+        // spec 31 : refus = au moins un commentaire (contenu du bilan) ou une photo
+        var action = (submitter && submitter.getAttribute('formaction')) || form.getAttribute('action') || '';
+        if (/\/refuser$/.test(action)) {
+          var contenu = (form.querySelector('[name=contenu]') || { value: '' }).value.trim();
+          var photos = form.querySelector('input[type=file][name=photos]');
+          if (!contenu && (!photos || photos.files.length === 0)) {
+            e.preventDefault();
+            alert('Un commentaire ou au moins une photo est obligatoire pour refuser les travaux.');
+            return;
+          }
+        }
         e.preventDefault();
-        modaleTitre.textContent = form.dataset.confirmTitre || 'Confirmer ?';
-        modaleTexte.textContent = form.dataset.confirm || '';
+        modaleTitre.textContent = titre || 'Confirmer ?';
+        modaleTexte.textContent = texte;
         formEnAttente = form;
+        submitterEnAttente = submitter || null;
         modale.hidden = false;
       });
     });

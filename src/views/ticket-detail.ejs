@@ -3,6 +3,11 @@
   <h1><%= ticket.titre %></h1>
   <div class="actions-titre">
     <% if (ticket.urgent) { %><span class="tag-urgent">URGENT</span><% } %>
+    <% if (peutToggleUrgent) { %>
+    <form method="post" action="/tickets/<%= ticket.id %>/urgent" class="formulaire-ligne" title="Modifiable uniquement à l’étape « Créé » par les acteurs du ticket">
+      <label class="case"><input type="checkbox" name="urgent" value="1" <%= ticket.urgent ? 'checked' : '' %> onchange="this.form.submit()"> 🚨 Urgent</label>
+    </form>
+    <% } %>
     <form method="post" action="/tickets/<%= ticket.id %>/archiver" data-confirm="Archiver définitivement ce ticket ? Il ne sera plus jamais éditable (consultable uniquement)." data-confirm-titre="Archiver le ticket">
       <button class="bouton-secondaire" type="submit" <%= peutArchiver ? '' : 'disabled' %> title="<%= peutArchiver ? 'Archiver le ticket' : 'Déjà archivé' %>">Archiver</button>
     </form>
@@ -27,15 +32,13 @@
   <h2>Description</h2>
   <% if (peutEditer) { %>
     <form method="post" action="/tickets/<%= ticket.id %>/editer" class="formulaire" data-autosave>
-      <label>Description <span class="autosave-etat" aria-live="polite"></span>
-        <textarea name="description" rows="4"><%= ticket.description %></textarea>
-      </label>
+      <span class="autosave-etat" aria-live="polite"></span>
+      <textarea name="description" rows="4" aria-label="Description"><%= ticket.description %></textarea>
     </form>
   <% } else if (ticket.description) { %>
     <p><%= ticket.description %></p>
   <% } %>
 
-  <h3>Unités concernées</h3>
   <% if (peutEditerUnites) { %>
     <%# Multiselect « search » (spec 29/30) : mêmes puces + champ texte que le filtre de la liste ; persistance immédiate au changement (spec 27) %>
     <% const unitesOptionsEdit = unitesModifiables.map(u => ({ value: String(u.id), label: u.label + (mesUnites.has(u.id) ? ' (votre unité)' : '') })); %>
@@ -55,15 +58,30 @@
     <p><%= unites.map(u => u.label).join(', ') %></p>
   <% } %>
 
-  <%# Photos de la création : attachées à la section Description (spec 23/29) %>
-  <% if ((photosParContexte['creation'] || []).length > 0) { %>
+  <%# Photos de la section Description (spec 23/29/31) : ajout/suppression tant que le ticket est « Créé », par toute personne concernée %>
+  <% if ((photosParContexte['creation'] || []).length > 0 || peutGererPhotos) { %>
     <h3>Photos</h3>
+    <% if (peutGererPhotos) { %>
+      <form method="post" action="/tickets/<%= ticket.id %>/photos" class="formulaire" enctype="multipart/form-data">
+        <div class="bloc-photos">
+          <label class="zone-photos">
+            <input type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple required class="champ-fichiers-caches">
+            <span class="zone-photos-plus" aria-hidden="true">+</span>
+            <span class="zone-photos-icone" aria-hidden="true">📷</span>
+            <span class="zone-photos-texte">Ajouter des photos à la description<br><small>compressées automatiquement avant l'envoi</small></span>
+          </label>
+          <div class="apercu"></div>
+        </div>
+        <button class="bouton-secondaire" type="submit">Ajouter les photos</button>
+      </form>
+    <% } %>
+    <% if ((photosParContexte['creation'] || []).length > 0) { %>
     <ul class="liste-docs">
       <% for (const f of photosParContexte['creation']) { %>
         <li>
           <a href="/fichiers/<%= f.id %>" target="_blank" rel="noopener">🖼 <%= f.nom_original %></a>
           <span class="auteur">par <%= f.auteur_nom || 'Compte supprimé' %></span>
-          <% if (f.auteur_id === user.id || gestionnaire) { %>
+          <% if (peutGererPhotos) { %>
             <form method="post" action="/fichiers/<%= f.id %>/supprimer" class="formulaire-ligne" data-confirm="Supprimer cette photo ?" data-confirm-titre="Supprimer la photo">
               <button class="bouton-secondaire" type="submit">Supprimer</button>
             </form>
@@ -71,6 +89,7 @@
         </li>
       <% } %>
     </ul>
+    <% } %>
   <% } %>
 </section>
 
@@ -275,44 +294,6 @@
     <% } %>
   <% } %>
 
-  <%# Boutons Accepter (bleu) / Refuser (rouge) : visibles UNIQUEMENT en « Travaux planifiés » et pour la personne concernée courante (spec 28), chacun avec modale de confirmation %>
-  <% if (ticket.etape === 'intervention_planifiee' && peutAccepterRefuser) { %>
-    <h3>Acceptation ou refus de l’intervention</h3>
-    <p class="aide">Dès qu’<strong>une seule</strong> personne concernée (occupant d’une unité du ticket — propriétaire ou locataire — ou membre du CS) a accepté, le ticket passe en « Travaux acceptés ». Un refus repasse le ticket en « En consultation » (commentaire et au moins une photo obligatoires).</p>
-    <div class="actions-acceptation">
-      <form method="post" action="/tickets/<%= ticket.id %>/accepter" class="formulaire" enctype="multipart/form-data" data-confirm="Accepter les travaux ? Dès l’acceptation, le ticket passe à « Travaux acceptés » et cette section passe en lecture seule." data-confirm-titre="Accepter les travaux">
-        <label>Commentaire (facultatif)
-          <input type="text" name="commentaire" placeholder="Un mot sur l’intervention…">
-        </label>
-        <div class="bloc-photos">
-          <label class="zone-photos">
-            <input type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple class="champ-fichiers-caches">
-            <span class="zone-photos-plus" aria-hidden="true">+</span>
-            <span class="zone-photos-icone" aria-hidden="true">📷</span>
-            <span class="zone-photos-texte">Ajouter des photos (facultatif)<br><small>compressées automatiquement avant l’envoi</small></span>
-          </label>
-          <div class="apercu"></div>
-        </div>
-        <button class="bouton" type="submit">Accepter</button>
-      </form>
-      <form method="post" action="/tickets/<%= ticket.id %>/refuser" class="formulaire" enctype="multipart/form-data" data-confirm="Refuser les travaux ? Le ticket repassera en « En consultation » : les consultations et acceptations précédentes seront caduques et les bilans figés en lecture seule." data-confirm-titre="Refuser les travaux">
-        <label>Commentaire (obligatoire)
-          <input type="text" name="commentaire" required placeholder="Pourquoi refuser ces travaux ?">
-        </label>
-        <div class="bloc-photos">
-          <label class="zone-photos">
-            <input type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple required class="champ-fichiers-caches">
-            <span class="zone-photos-plus" aria-hidden="true">+</span>
-            <span class="zone-photos-icone" aria-hidden="true">📷</span>
-            <span class="zone-photos-texte">Au moins une photo (obligatoire)<br><small>compressées automatiquement avant l’envoi</small></span>
-          </label>
-          <div class="apercu"></div>
-        </div>
-        <button class="bouton danger" type="submit">Refuser</button>
-      </form>
-    </div>
-  <% } %>
-
   <%# Bilans du cycle en cours : zone d'édition pour soi (uniquement en « Travaux planifiés »), lecture seule pour les autres personnes concernées (spec 28) %>
   <% const cycleCourant = ticket.cycle || 1; %>
   <% const crsCycle = comptesRendus.filter(cr => (cr.cycle || 1) === cycleCourant); %>
@@ -350,6 +331,14 @@
           </label>
           <div class="apercu"></div>
         </div>
+        <%# Spec 31 : UNE seule zone commentaire + photos ; Accepter / Refuser côte à côte soumettent cette même zone %>
+        <% if (ticket.etape === 'intervention_planifiee' && peutAccepterRefuser) { %>
+          <p class="aide">Dès qu’<strong>une seule</strong> personne concernée (occupant d’une unité du ticket ou membre du CS) a accepté, le ticket passe en « Travaux acceptés ». Un refus repasse le ticket en « En consultation » (un commentaire ou au moins une photo est alors obligatoire) ; les consultations et acceptations précédentes seront caduques et les bilans figés en lecture seule.</p>
+          <div class="actions-acceptation">
+            <button type="submit" class="bouton" formaction="/tickets/<%= ticket.id %>/accepter" data-confirm="Accepter les travaux ? Dès l’acceptation, le ticket passe à « Travaux acceptés » et cette section passe en lecture seule." data-confirm-titre="Accepter les travaux">Accepter</button>
+            <button type="submit" class="bouton danger" formaction="/tickets/<%= ticket.id %>/refuser" data-confirm="Refuser les travaux ? Le ticket repassera en « En consultation » : les consultations et acceptations précédentes seront caduques et les bilans figés en lecture seule." data-confirm-titre="Refuser les travaux">Refuser</button>
+          </div>
+        <% } %>
       </form>
     <% } %>
   <% } %>

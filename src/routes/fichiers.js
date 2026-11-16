@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const { getDb } = require('../db');
 const { requireAuth } = require('../auth');
-const { peutVoirTicket, isGestionnaire } = require('../droits');
+const { peutVoirTicket, isGestionnaire, estResidentConcerne } = require('../droits');
 const { UPLOAD_DIR } = require('../upload');
 
 const router = express.Router();
@@ -14,13 +14,18 @@ router.use(requireAuth);
 // qu'aux 3 moments cadres. Il ne reste ici que la lecture et la suppression
 // des photos.
 
-// Suppression d'une photo : son auteur ou le conseil syndical.
+// Suppression d'une photo : le conseil syndical, ou — pour les photos de la
+// section Description tant que le ticket est « Créé » (spec 31) — toute
+// personne concernée (l'auteur ou un occupant des unités du ticket).
 router.post('/fichiers/:id/supprimer', (req, res) => {
   const db = getDb();
   const f = db.prepare('SELECT * FROM fichiers WHERE id = ?').get(Number(req.params.id));
   if (!f) return res.status(404).render('erreur', { user: req.user, message: 'Fichier introuvable.' });
-  if (f.categorie !== 'photo' || (f.auteur_id !== req.user.id && !isGestionnaire(req.user))) {
-    return res.status(403).render('erreur', { user: req.user, message: 'Seul l\'auteur d\'une photo (ou le conseil syndical) peut la supprimer.' });
+  const ticket = db.prepare('SELECT * FROM tickets WHERE id = ?').get(f.ticket_id);
+  const peutSupprimer = isGestionnaire(req.user)
+    || (ticket && ticket.etape === 'cree' && (f.auteur_id === req.user.id || estResidentConcerne(req.user, f.ticket_id)));
+  if (f.categorie !== 'photo' || !peutSupprimer) {
+    return res.status(403).render('erreur', { user: req.user, message: 'Seules les photos de la description peuvent être supprimées, et seulement à l\'étape « Créé » par une personne concernée (ou par le conseil syndical).' });
   }
   const chemin = path.join(UPLOAD_DIR, f.nom_stockage);
   db.prepare('DELETE FROM fichiers WHERE id = ?').run(f.id);
