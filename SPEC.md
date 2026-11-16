@@ -1,6 +1,8 @@
 # Spec — Conclusions validées (rôles, comptes, tickets)
 
-Ce fichier regroupe les décisions prises avec le demandeur sur les types d'utilisateur, la gestion des comptes et le cycle de vie des tickets. Il complète `PROMPT.md` ; en cas de contradiction, ce fichier fait foi pour les points listés. La dernière section récapitule les deltas par rapport à `PROMPT.md` pour cibler le dev.
+> **Document historique** (branche `vibe/prompt-roles-cycle-2e0696`). Son contenu a été intégré — et pour plusieurs points révisé depuis (vérification d'email, cycle de vie des tickets, canal email, bilans) — dans les fichiers thématiques du dossier [`spécifications/`](spécifications/), qui font **seuls foi**. Ne plus se référer à ce fichier pour les spécifications courantes.
+
+Ce fichier regroupe les décisions prises avec le demandeur sur les types d'utilisateur, la gestion des comptes et le cycle de vie des tickets. Il complétait `PROMPT.md` à l'origine ; la dernière section récapitule les deltas par rapport à `PROMPT.md` tels qu'ils étaient à l'origine.
 
 ## Rôles et comptes
 
