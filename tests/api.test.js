@@ -837,6 +837,8 @@ test('UI : recherche comptes/tickets présentes, boutons archiver/supprimer sous
   assert.ok(page.includes('data-autosave'));
   assert.ok(!page.includes('Enregistrer la description'));
   assert.ok(page.includes('id="unites-edit"'));
+  assert.ok(page.includes('multiselect unites-edit'));
+  assert.ok(!page.includes('unite-pill'));
   assert.ok(!page.includes('Un clic sur une unité'));
   assert.ok(!page.includes('Modifier les unités'));
   assert.ok(!page.includes('id="consultations"'));
@@ -929,6 +931,10 @@ test('spec 29 : fiche ticket réorganisée (sections par état, règle archive),
   await r1.req('POST', `/tickets/${t1}/accepter`, { commentaire: 'ok' });
   page = await (await r1.req('GET', '/tickets/' + t1)).text();
   assert.ok(page.includes('id="factures"'));
+  // spec 30 : plus de section « Acceptations des travaux », acceptation en pastille dans le bilan + réouverture dans le bilan
+  assert.ok(!page.includes('Acceptations des travaux'));
+  assert.ok(page.includes('rattachement-pill') && page.includes('a accepté'));
+  assert.ok(page.includes(`/tickets/${t1}/reouvrir`));
   assert.ok(page.indexOf('id="description"') < page.indexOf('id="consultations"')
     && page.indexOf('id="consultations"') < page.indexOf('id="cr"')
     && page.indexOf('id="cr"') < page.indexOf('id="factures"'));
