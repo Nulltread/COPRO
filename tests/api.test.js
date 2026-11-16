@@ -796,7 +796,12 @@ test('UI : recherche comptes/tickets présentes, boutons archiver/supprimer sous
   assert.ok(comptes.includes('data-recherche='));
   // liste des tickets : champ de recherche pleine largeur, HORS du formulaire
   // (filtrage à la volée côté client, sans rechargement donc sans perte de focus)
-  const liste = await (await r1.req('GET', '/tickets')).text();
+  const listeRes = await r1.req('GET', '/tickets');
+  const liste = await listeRes.text();
+  // anti-cache (spec 29) : HTML et statiques toujours revalidés côté serveur
+  assert.ok((listeRes.headers.get('cache-control') || '').includes('no-cache'));
+  const appRes = await r1.req('GET', '/app.js');
+  assert.ok((appRes.headers.get('cache-control') || '').includes('no-cache'));
   assert.ok(liste.includes('id="recherche-tickets"'));
   assert.ok(liste.includes('recherche-pleine'));
   assert.ok(liste.includes('id="filtres-tickets"'));
@@ -839,7 +844,7 @@ test('UI : recherche comptes/tickets présentes, boutons archiver/supprimer sous
   assert.ok(!page.includes('Comptes-rendus d\'intervention'));
   // service worker : réseau d'abord (sinon l'ancien app.js reste servi en cache)
   const sw = await (await r1.req('GET', '/sw.js')).text();
-  assert.ok(sw.includes('copro-v3'));
+  assert.ok(sw.includes('copro-v4'));
   assert.ok(!sw.includes("cache d'abord"));
   // la modale est bien masquée par défaut (sinon overlay vide qui bloque la page)
   assert.ok(page.includes('id="modale" class="modale-fond" hidden'));
