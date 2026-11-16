@@ -255,29 +255,8 @@
     if (fichiers) fichiers.addEventListener('change', function () { clearTimeout(timer); sauver(); });
   });
 
-  // --- Unités du ticket : un clic = sélection + persistance immédiate (spec 27) ---
+  // --- Unités du ticket : multiselect + persistance immédiate (spec 27/30), initialisé via initMultiselect ci-dessous ---
   var unitesEdit = document.getElementById('unites-edit');
-  if (unitesEdit) {
-    var etatU = document.getElementById('unites-etat');
-    var puces = Array.prototype.slice.call(unitesEdit.querySelectorAll('.unite-pill'));
-    puces.forEach(function (p) {
-      p.addEventListener('click', function () {
-        p.classList.toggle('selectionne');
-        var ids = puces.filter(function (x) { return x.classList.contains('selectionne'); }).map(function (x) { return x.dataset.id; });
-        var params = new URLSearchParams();
-        ids.forEach(function (id) { params.append('unite_ids', id); });
-        if (etatU) etatU.textContent = 'enregistrement…';
-        fetch(unitesEdit.dataset.action, {
-          method: 'POST',
-          headers: { 'content-type': 'application/x-www-form-urlencoded' },
-          body: params.toString()
-        }).then(function (r) {
-          if (r.ok) { if (etatU) etatU.textContent = '✓ enregistré'; }
-          else location.reload(); // refus : resynchroniser l'affichage
-        }).catch(function () { location.reload(); });
-      });
-    });
-  }
 
   // --- Devis des consultations : un champ montant par fichier, même ordre ---
   document.querySelectorAll('input[type=file][data-montants]').forEach(function (champ) {
@@ -301,26 +280,23 @@
     });
   });
 
-  // --- Filtre des unités : multiselect « search » (spec 29) ---
-  // Champ texte + dropdown des 5 premiers résultats, affinée à la saisie ;
-  // un clic sur une valeur ajoute une puce à gauche du texte.
-  var filtreUnites = document.getElementById('filtre-unites');
-  if (filtreUnites) {
-    var msOptions = JSON.parse(filtreUnites.dataset.options || '[]');
-    var msChips = document.getElementById('unites-chips');
-    var msHidden = document.getElementById('unites-hidden');
-    var msInput = document.getElementById('recherche-unite');
-    var msListe = document.getElementById('unites-liste');
-    function msSelection() {
-      return Array.prototype.map.call(msHidden.querySelectorAll('input[name=unite]'), function (i) { return i.value; });
+  // --- Multiselect « search » (spec 29/30) : champ texte + dropdown des 5 premiers
+  //     résultats affinée à la saisie ; un clic ajoute une puce à gauche du texte. ---
+  function initMultiselect(root, onChange) {
+    var options = JSON.parse(root.dataset.options || '[]');
+    var chips = root.querySelector('.multiselect-chips');
+    var input = root.querySelector('input[type=search]');
+    var liste = root.querySelector('.multiselect-liste');
+    function selectionnes() {
+      return Array.prototype.map.call(chips.querySelectorAll('.chip'), function (c) { return c.dataset.value; });
     }
-    function msFermer() { msListe.hidden = true; }
-    function msOuvrir() {
-      var q = msInput.value.trim().toLowerCase();
-      var dispo = msOptions.filter(function (o) {
-        return msSelection().indexOf(o.value) === -1 && (!q || o.label.toLowerCase().indexOf(q) !== -1);
+    function fermer() { liste.hidden = true; }
+    function ouvrir() {
+      var q = input.value.trim().toLowerCase();
+      var dispo = options.filter(function (o) {
+        return selectionnes().indexOf(o.value) === -1 && (!q || o.label.toLowerCase().indexOf(q) !== -1);
       }).slice(0, 5);
-      msListe.innerHTML = '';
+      liste.innerHTML = '';
       if (dispo.length === 0) {
         var liVide = document.createElement('li');
         var bVide = document.createElement('button');
@@ -329,7 +305,7 @@
         bVide.disabled = true;
         bVide.textContent = 'Aucun résultat';
         liVide.appendChild(bVide);
-        msListe.appendChild(liVide);
+        liste.appendChild(liVide);
       }
       dispo.forEach(function (o) {
         var li = document.createElement('li');
@@ -337,13 +313,13 @@
         b.type = 'button';
         b.className = 'dropdown-option';
         b.textContent = o.label;
-        b.addEventListener('click', function (e) { e.stopPropagation(); msAjouter(o); });
+        b.addEventListener('click', function (e) { e.stopPropagation(); ajouter(o); });
         li.appendChild(b);
-        msListe.appendChild(li);
+        liste.appendChild(li);
       });
-      msListe.hidden = false;
+      liste.hidden = false;
     }
-    function msAjouter(o) {
+    function ajouter(o) {
       var chip = document.createElement('span');
       chip.className = 'chip';
       chip.dataset.value = o.value;
@@ -355,33 +331,61 @@
       x.textContent = '×';
       x.setAttribute('aria-label', 'Retirer ' + o.label);
       chip.appendChild(x);
-      msChips.appendChild(chip);
-      var h = document.createElement('input');
-      h.type = 'hidden';
-      h.name = 'unite';
-      h.value = o.value;
-      msHidden.appendChild(h);
-      msInput.value = '';
-      msFermer();
-      filtres.submit();
+      chips.appendChild(chip);
+      input.value = '';
+      fermer();
+      onChange(selectionnes());
     }
-    function msRetirer(v) {
-      var chip = msChips.querySelector('.chip[data-value="' + v + '"]');
+    function retirer(v) {
+      var chip = chips.querySelector('.chip[data-value="' + v + '"]');
       if (chip) chip.remove();
-      var h = msHidden.querySelector('input[name=unite][value="' + v + '"]');
-      if (h) h.remove();
-      msInput.value = '';
-      msFermer();
-      filtres.submit();
+      input.value = '';
+      fermer();
+      onChange(selectionnes());
     }
-    msChips.addEventListener('click', function (e) {
+    chips.addEventListener('click', function (e) {
       var x = e.target.closest('.chip-x');
-      if (x) { e.stopPropagation(); msRetirer(x.dataset.value); }
+      if (x) { e.stopPropagation(); retirer(x.dataset.value); }
     });
-    msInput.addEventListener('input', msOuvrir);
-    msInput.addEventListener('focus', msOuvrir);
-    msInput.addEventListener('click', function (e) { e.stopPropagation(); msOuvrir(); });
-    document.addEventListener('click', msFermer);
+    input.addEventListener('input', ouvrir);
+    input.addEventListener('focus', ouvrir);
+    input.addEventListener('click', function (e) { e.stopPropagation(); ouvrir(); });
+    document.addEventListener('click', fermer);
+  }
+
+  // Filtre des unités de la liste des tickets (spec 29) : soumission du formulaire au changement.
+  var filtreUnites = document.getElementById('filtre-unites');
+  if (filtreUnites) {
+    var msHidden = document.getElementById('unites-hidden');
+    initMultiselect(filtreUnites, function (vals) {
+      msHidden.innerHTML = '';
+      vals.forEach(function (v) {
+        var h = document.createElement('input');
+        h.type = 'hidden';
+        h.name = 'unite';
+        h.value = v;
+        msHidden.appendChild(h);
+      });
+      filtres.submit();
+    });
+  }
+
+  // Unités de la fiche ticket (spec 27/30) : multiselect + persistance immédiate au changement.
+  if (unitesEdit) {
+    var etatU = document.getElementById('unites-etat');
+    initMultiselect(unitesEdit, function (ids) {
+      var params = new URLSearchParams();
+      ids.forEach(function (id) { params.append('unite_ids', id); });
+      if (etatU) etatU.textContent = 'enregistrement…';
+      fetch(unitesEdit.dataset.action, {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        body: params.toString()
+      }).then(function (r) {
+        if (r.ok) { if (etatU) etatU.textContent = '✓ enregistré'; }
+        else location.reload(); // refus : resynchroniser l'affichage
+      }).catch(function () { location.reload(); });
+    });
   }
 
   // --- Section consultations (spec 29) : bouton « ajouter » + modale « nouvelle entreprise » ---

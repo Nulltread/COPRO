@@ -37,10 +37,18 @@
 
   <h3>Unités concernées</h3>
   <% if (peutEditerUnites) { %>
-    <div class="unites-edit" id="unites-edit" data-action="/tickets/<%= ticket.id %>/unites">
-      <% for (const u of unitesModifiables) { %>
-        <button type="button" class="unite-pill <%= unitesIds.includes(u.id) ? 'selectionne' : '' %>" data-id="<%= u.id %>"><%= u.label %><% if (mesUnites.has(u.id)) { %> (votre unité)<% } %></button>
-      <% } %>
+    <%# Multiselect « search » (spec 29/30) : mêmes puces + champ texte que le filtre de la liste ; persistance immédiate au changement (spec 27) %>
+    <% const unitesOptionsEdit = unitesModifiables.map(u => ({ value: String(u.id), label: u.label + (mesUnites.has(u.id) ? ' (votre unité)' : '') })); %>
+    <div class="multiselect unites-edit" id="unites-edit" data-action="/tickets/<%= ticket.id %>/unites" data-options="<%= JSON.stringify(unitesOptionsEdit) %>">
+      <div class="multiselect-zone">
+        <span class="multiselect-chips" data-chips>
+          <% for (const u of unites) { %>
+            <span class="chip" data-value="<%= u.id %>"><%= u.label %><button type="button" class="chip-x" data-value="<%= u.id %>" aria-label="Retirer <%= u.label %>">×</button></span>
+          <% } %>
+        </span>
+        <input type="search" placeholder="Ajouter une villa / un garage…" autocomplete="off">
+      </div>
+      <ul class="multiselect-liste dropdown-liste" hidden></ul>
       <span class="autosave-etat" id="unites-etat" aria-live="polite"></span>
     </div>
   <% } else { %>
@@ -74,56 +82,6 @@
   <form method="post" action="/tickets/<%= ticket.id %>/passer-consultation" class="formulaire-ligne">
     <button class="bouton" type="submit">Passer en « En consultation »</button>
   </form>
-</section>
-<% } %>
-
-<%# Le bloc d'acceptation de l'intervention vit dans la section « Bilans » (spec 26) %>
-
-<% if (ticket.etape === 'travaux_acceptes') { %>
-<section class="bloc">
-  <h2>Acceptations des travaux</h2>
-  <ul class="liste-simple">
-    <% for (const v of validations) { %>
-      <li class="<%= v.caduque ? 'lue' : '' %>"><%= v.auteur_nom || 'Compte supprimé' %> — <% if (v.caduque) { %>🗄 caduque (conservée)<% } else { %>✅ a validé<% } %><% if (v.commentaire) { %> — « <%= v.commentaire %> »<% } %></li>
-    <% } %>
-  </ul>
-  <% if ((photosParContexte['validation'] || []).length > 0) { %>
-    <ul class="liste-docs">
-      <% for (const f of photosParContexte['validation']) { %>
-        <li><a href="/fichiers/<%= f.id %>" target="_blank" rel="noopener">🖼 <%= f.nom_original %></a> <span class="auteur">par <%= f.auteur_nom || 'Compte supprimé' %></span></li>
-      <% } %>
-    </ul>
-  <% } %>
-  <% if (dateArchivageAuto) { %>
-    <p class="aide">Archivage automatique prévu le <strong><%= dateArchivageAuto.toISOString().slice(0, 10) %></strong> (après <%= delaiArchivageJours %> jours en « Travaux acceptés »).</p>
-  <% } %>
-  <% if (peutReouvrir) { %>
-    <h3>Réouvrir le ticket</h3>
-    <p class="aide">Possible pendant <%= delaiArchivageJours %> jours après le passage en « Travaux acceptés ». Un commentaire et au moins une photo sont obligatoires. Le ticket repasse en consultation ; les consultations et validations précédentes deviennent caduques (conservées en lecture seule).</p>
-    <form method="post" action="/tickets/<%= ticket.id %>/reouvrir" class="formulaire" enctype="multipart/form-data">
-      <label>Commentaire (obligatoire)
-        <input type="text" name="commentaire" required placeholder="Pourquoi rouvrir ce ticket ?">
-      </label>
-      <div class="bloc-photos">
-        <label class="zone-photos">
-          <input type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple required class="champ-fichiers-caches">
-          <span class="zone-photos-plus" aria-hidden="true">+</span>
-          <span class="zone-photos-icone" aria-hidden="true">📷</span>
-          <span class="zone-photos-texte">Au moins une photo (obligatoire)<br><small>compressées automatiquement avant l'envoi</small></span>
-        </label>
-        <div class="apercu"></div>
-      </div>
-      <button class="bouton" type="submit">Réouvrir le ticket</button>
-    </form>
-  <% } %>
-  <% if ((photosParContexte['reouverture'] || []).length > 0) { %>
-    <h3>Photos de réouverture</h3>
-    <ul class="liste-docs">
-      <% for (const f of photosParContexte['reouverture']) { %>
-        <li><a href="/fichiers/<%= f.id %>" target="_blank" rel="noopener">🖼 <%= f.nom_original %></a> <span class="auteur">par <%= f.auteur_nom || 'Compte supprimé' %></span></li>
-      <% } %>
-    </ul>
-  <% } %>
 </section>
 <% } %>
 
@@ -262,25 +220,65 @@
 <section class="bloc" id="cr">
   <h2>Bilans de l’intervention</h2>
 
-  <%# Boutons Accepter (bleu) / Refuser (rouge) : visibles UNIQUEMENT en « Travaux planifiés » et pour la personne concernée courante (spec 28), chacun avec modale de confirmation %>
-  <% if (ticket.etape === 'intervention_planifiee' && peutAccepterRefuser) { %>
-    <h3>Acceptation ou refus de l’intervention</h3>
-    <p class="aide">Dès qu’<strong>une seule</strong> personne concernée (occupant d’une unité du ticket — propriétaire ou locataire — ou membre du CS) a accepté, le ticket passe en « Travaux acceptés ». Un refus repasse le ticket en « En consultation » (commentaire et au moins une photo obligatoires).</p>
-    <ul class="liste-simple">
-      <% for (const v of validations.filter(v => !v.caduque)) { %>
-        <li>✅ <%= v.auteur_nom || 'Compte supprimé' %> a accepté<% if (v.commentaire) { %> — « <%= v.commentaire %> »<% } %></li>
-      <% } %>
-      <% for (const v of validations.filter(v => v.caduque)) { %>
-        <li class="lue">📄 <%= v.auteur_nom || 'Compte supprimé' %> — acceptation caduque (cycle précédent, conservée en lecture seule)</li>
+  <%# Acceptations matérialisées en pastilles dans le bilan (spec 30), comme les demandes de rattachement dans la page de compte %>
+  <% if (validations.length > 0) { %>
+    <ul class="liste-rattachements">
+      <% for (const v of validations) { %>
+        <li class="rattachement-pill statut-<%= v.caduque ? 'refuse' : 'accepte' %>">
+          <span class="unite-num"><%= v.auteur_nom || 'Compte supprimé' %></span>
+          <% if (v.caduque) { %><span class="unite-statut refuse">📄 caduque (lecture seule)</span>
+          <% } else { %><span class="unite-statut valide">✅ a accepté</span><% } %>
+          <% if (v.commentaire) { %><span class="unite-qualite">« <%= v.commentaire %> »</span><% } %>
+        </li>
       <% } %>
     </ul>
-    <% if ((photosParContexte['validation'] || []).length > 0) { %>
+  <% } %>
+  <% if ((photosParContexte['validation'] || []).length > 0) { %>
+    <ul class="liste-docs">
+      <% for (const f of photosParContexte['validation']) { %>
+        <li><a href="/fichiers/<%= f.id %>" target="_blank" rel="noopener">🖼 <%= f.nom_original %></a> <span class="auteur">par <%= f.auteur_nom || 'Compte supprimé' %></span></li>
+      <% } %>
+    </ul>
+  <% } %>
+
+  <%# En « Travaux acceptés » : date d'archivage automatique + réouverture (spec 20), désormais dans la section Bilans (spec 30) %>
+  <% if (ticket.etape === 'travaux_acceptes') { %>
+    <% if (dateArchivageAuto) { %>
+      <p class="aide">Archivage automatique prévu le <strong><%= dateArchivageAuto.toISOString().slice(0, 10) %></strong> (après <%= delaiArchivageJours %> jours en « Travaux acceptés »).</p>
+    <% } %>
+    <% if (peutReouvrir) { %>
+      <h3>Réouvrir le ticket</h3>
+      <p class="aide">Possible pendant <%= delaiArchivageJours %> jours après le passage en « Travaux acceptés ». Un commentaire et au moins une photo sont obligatoires. Le ticket repasse en consultation ; les consultations et validations précédentes deviennent caduques (conservées en lecture seule).</p>
+      <form method="post" action="/tickets/<%= ticket.id %>/reouvrir" class="formulaire" enctype="multipart/form-data">
+        <label>Commentaire (obligatoire)
+          <input type="text" name="commentaire" required placeholder="Pourquoi rouvrir ce ticket ?">
+        </label>
+        <div class="bloc-photos">
+          <label class="zone-photos">
+            <input type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple required class="champ-fichiers-caches">
+            <span class="zone-photos-plus" aria-hidden="true">+</span>
+            <span class="zone-photos-icone" aria-hidden="true">📷</span>
+            <span class="zone-photos-texte">Au moins une photo (obligatoire)<br><small>compressées automatiquement avant l'envoi</small></span>
+          </label>
+          <div class="apercu"></div>
+        </div>
+        <button class="bouton" type="submit">Réouvrir le ticket</button>
+      </form>
+    <% } %>
+    <% if ((photosParContexte['reouverture'] || []).length > 0) { %>
+      <h3>Photos de réouverture</h3>
       <ul class="liste-docs">
-        <% for (const f of photosParContexte['validation']) { %>
+        <% for (const f of photosParContexte['reouverture']) { %>
           <li><a href="/fichiers/<%= f.id %>" target="_blank" rel="noopener">🖼 <%= f.nom_original %></a> <span class="auteur">par <%= f.auteur_nom || 'Compte supprimé' %></span></li>
         <% } %>
       </ul>
     <% } %>
+  <% } %>
+
+  <%# Boutons Accepter (bleu) / Refuser (rouge) : visibles UNIQUEMENT en « Travaux planifiés » et pour la personne concernée courante (spec 28), chacun avec modale de confirmation %>
+  <% if (ticket.etape === 'intervention_planifiee' && peutAccepterRefuser) { %>
+    <h3>Acceptation ou refus de l’intervention</h3>
+    <p class="aide">Dès qu’<strong>une seule</strong> personne concernée (occupant d’une unité du ticket — propriétaire ou locataire — ou membre du CS) a accepté, le ticket passe en « Travaux acceptés ». Un refus repasse le ticket en « En consultation » (commentaire et au moins une photo obligatoires).</p>
     <div class="actions-acceptation">
       <form method="post" action="/tickets/<%= ticket.id %>/accepter" class="formulaire" enctype="multipart/form-data" data-confirm="Accepter les travaux ? Dès l’acceptation, le ticket passe à « Travaux acceptés » et cette section passe en lecture seule." data-confirm-titre="Accepter les travaux">
         <label>Commentaire (facultatif)
