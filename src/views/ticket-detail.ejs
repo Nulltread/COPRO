@@ -62,7 +62,7 @@
   <% if ((photosParContexte['creation'] || []).length > 0 || peutGererPhotos) { %>
     <h3>Photos</h3>
     <% if (peutGererPhotos) { %>
-      <form method="post" action="/tickets/<%= ticket.id %>/photos" class="formulaire" enctype="multipart/form-data">
+      <form method="post" action="/tickets/<%= ticket.id %>/photos" class="formulaire" enctype="multipart/form-data" data-autosubmit-photos>
         <div class="bloc-photos">
           <label class="zone-photos">
             <input type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple required class="champ-fichiers-caches">
@@ -72,23 +72,10 @@
           </label>
           <div class="apercu"></div>
         </div>
-        <button class="bouton-secondaire" type="submit">Ajouter les photos</button>
       </form>
     <% } %>
     <% if ((photosParContexte['creation'] || []).length > 0) { %>
-    <ul class="liste-docs">
-      <% for (const f of photosParContexte['creation']) { %>
-        <li>
-          <a href="/fichiers/<%= f.id %>" target="_blank" rel="noopener">🖼 <%= f.nom_original %></a>
-          <span class="auteur">par <%= f.auteur_nom || 'Compte supprimé' %></span>
-          <% if (peutGererPhotos) { %>
-            <form method="post" action="/fichiers/<%= f.id %>/supprimer" class="formulaire-ligne" data-confirm="Supprimer cette photo ?" data-confirm-titre="Supprimer la photo">
-              <button class="bouton-secondaire" type="submit">Supprimer</button>
-            </form>
-          <% } %>
-        </li>
-      <% } %>
-    </ul>
+    <%- include('partials/mosaic', { photos: photosParContexte['creation'] || [], peutSupprimer: peutGererPhotos }) %>
     <% } %>
   <% } %>
 </section>
@@ -252,13 +239,7 @@
       <% } %>
     </ul>
   <% } %>
-  <% if ((photosParContexte['validation'] || []).length > 0) { %>
-    <ul class="liste-docs">
-      <% for (const f of photosParContexte['validation']) { %>
-        <li><a href="/fichiers/<%= f.id %>" target="_blank" rel="noopener">🖼 <%= f.nom_original %></a> <span class="auteur">par <%= f.auteur_nom || 'Compte supprimé' %></span></li>
-      <% } %>
-    </ul>
-  <% } %>
+  <%- include('partials/mosaic', { photos: photosParContexte['validation'] || [], peutSupprimer: false }) %>
 
   <%# En « Travaux acceptés » : date d'archivage automatique + réouverture (spec 20), désormais dans la section Bilans (spec 30) %>
   <% if (ticket.etape === 'travaux_acceptes') { %>
@@ -286,11 +267,7 @@
     <% } %>
     <% if ((photosParContexte['reouverture'] || []).length > 0) { %>
       <h3>Photos de réouverture</h3>
-      <ul class="liste-docs">
-        <% for (const f of photosParContexte['reouverture']) { %>
-          <li><a href="/fichiers/<%= f.id %>" target="_blank" rel="noopener">🖼 <%= f.nom_original %></a> <span class="auteur">par <%= f.auteur_nom || 'Compte supprimé' %></span></li>
-        <% } %>
-      </ul>
+      <%- include('partials/mosaic', { photos: photosParContexte['reouverture'] || [], peutSupprimer: false }) %>
     <% } %>
   <% } %>
 
@@ -298,25 +275,12 @@
   <% const cycleCourant = ticket.cycle || 1; %>
   <% const crsCycle = comptesRendus.filter(cr => (cr.cycle || 1) === cycleCourant); %>
   <% const anciensCycles = [...new Set(comptesRendus.map(cr => cr.cycle || 1))].filter(c => c < cycleCourant).sort((a, b) => b - a); %>
-  <% if (ticket.etape === 'intervention_planifiee') { %><h3>Bilan du cycle <%= cycleCourant %></h3><% } %>
   <% for (const p of personnesCR) { const cr = crsCycle.find(x => x.user_id === p.id); %>
+  <div class="bilan-pers">
     <h3><%= p.prenom %> <%= p.nom %><% if (p.conseil_syndical === 1) { %> <span class="tag-cs">CS</span><% } %></h3>
     <% if (cr && cr.contenu) { %><p><%= cr.contenu %></p><p class="aide">rédigé le <%= cr.updated_at %></p><% } %>
     <% const photosP = (photosCRParCycle[cycleCourant] || []).filter(f => f.auteur_id === p.id); %>
-    <% if (photosP.length > 0) { %>
-      <ul class="liste-docs">
-        <% for (const f of photosP) { %>
-          <li>
-            <a href="/fichiers/<%= f.id %>" target="_blank" rel="noopener">🖼 <%= f.nom_original %></a>
-            <% if (peutRedigerCR && p.id === user.id) { %>
-              <form method="post" action="/fichiers/<%= f.id %>/supprimer" class="formulaire-ligne" data-confirm="Supprimer cette photo ?" data-confirm-titre="Supprimer la photo">
-                <button class="bouton-secondaire" type="submit">Supprimer</button>
-              </form>
-            <% } %>
-          </li>
-        <% } %>
-      </ul>
-    <% } %>
+    <%- include('partials/mosaic', { photos: photosP, peutSupprimer: peutRedigerCR && p.id === user.id }) %>
     <% if (peutRedigerCR && p.id === user.id) { %>
       <form method="post" action="/tickets/<%= ticket.id %>/cr" class="formulaire" enctype="multipart/form-data" data-autosave>
         <label>Votre bilan <span class="autosave-etat" aria-live="polite"></span>
@@ -333,7 +297,6 @@
         </div>
         <%# Spec 31 : UNE seule zone commentaire + photos ; Accepter / Refuser côte à côte soumettent cette même zone %>
         <% if (ticket.etape === 'intervention_planifiee' && peutAccepterRefuser) { %>
-          <p class="aide">Dès qu’<strong>une seule</strong> personne concernée (occupant d’une unité du ticket ou membre du CS) a accepté, le ticket passe en « Travaux acceptés ». Un refus repasse le ticket en « En consultation » (un commentaire ou au moins une photo est alors obligatoire) ; les consultations et acceptations précédentes seront caduques et les bilans figés en lecture seule.</p>
           <div class="actions-acceptation">
             <button type="submit" class="bouton" formaction="/tickets/<%= ticket.id %>/accepter" data-confirm="Accepter les travaux ? Dès l’acceptation, le ticket passe à « Travaux acceptés » et cette section passe en lecture seule." data-confirm-titre="Accepter les travaux">Accepter</button>
             <button type="submit" class="bouton danger" formaction="/tickets/<%= ticket.id %>/refuser" data-confirm="Refuser les travaux ? Le ticket repassera en « En consultation » : les consultations et acceptations précédentes seront caduques et les bilans figés en lecture seule." data-confirm-titre="Refuser les travaux">Refuser</button>
@@ -341,25 +304,29 @@
         <% } %>
       </form>
     <% } %>
+  </div>
   <% } %>
 
-  <%# Bilans des cycles précédents : figés définitivement en lecture seule (spec 28) %>
-  <% for (const c of anciensCycles) { %>
-    <h3>Bilan du cycle <%= c %> <span class="auteur">📄 figé — lecture seule</span></h3>
-    <% for (const p of personnesCR) { const cr = comptesRendus.find(x => x.user_id === p.id && (x.cycle || 1) === c); %>
-      <% if (cr) { %>
-        <h4><%= p.prenom %> <%= p.nom %></h4>
-        <% if (cr.contenu) { %><p><%= cr.contenu %></p><p class="aide">rédigé le <%= cr.updated_at %></p><% } %>
+  <%# Bilans des cycles précédents : repliés par défaut, titre = date du changement d'état (spec 32) %>
+  <% const retours = evenements.filter(e => e.type === 'changement_etape' && (e.donnees || '').includes('"etape":"consultation"')); %>
+  <% const dateFinCycle = {}; anciensCycles.forEach(c => { dateFinCycle[c] = (retours[c - 1] && retours[c - 1].created_at) || ''; }); %>
+  <% if (anciensCycles.length > 0) { %>
+  <details class="bilans-anciens">
+    <summary>Bilans des cycles précédents<% if (retours.length > 0) { %> — changement d’état le <%= retours[retours.length - 1].created_at %><% } %></summary>
+    <% for (const c of anciensCycles) { %>
+    <div class="bilan-pers">
+      <h4>Cycle <%= c %> — figé<% if (dateFinCycle[c]) { %> le <%= dateFinCycle[c] %><% } %> (lecture seule)</h4>
+      <% for (const p of personnesCR) { const cr = comptesRendus.find(x => x.user_id === p.id && (x.cycle || 1) === c); %>
+        <% if (cr) { %>
+          <h4><%= p.prenom %> <%= p.nom %></h4>
+          <% if (cr.contenu) { %><p><%= cr.contenu %></p><p class="aide">rédigé le <%= cr.updated_at %></p><% } %>
+        <% } %>
+        <% const photosC = (photosCRParCycle[c] || []).filter(f => f.auteur_id === p.id); %>
+        <%- include('partials/mosaic', { photos: photosC, peutSupprimer: false }) %>
       <% } %>
-      <% const photosC = (photosCRParCycle[c] || []).filter(f => f.auteur_id === p.id); %>
-      <% if (photosC.length > 0) { %>
-        <ul class="liste-docs">
-          <% for (const f of photosC) { %>
-            <li><a href="/fichiers/<%= f.id %>" target="_blank" rel="noopener">🖼 <%= f.nom_original %></a></li>
-          <% } %>
-        </ul>
-      <% } %>
+    </div>
     <% } %>
+  </details>
   <% } %>
 </section>
 <% } %>

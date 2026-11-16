@@ -1027,3 +1027,41 @@ test('spec 31 : toggle urgent (Créé seulement, acteurs), libellés description
   assert.strictEqual(db().prepare('SELECT commentaire FROM resolutions WHERE ticket_id=? AND user_id=?').get(tid, ids.r1).commentaire, 'Bilan ok');
   assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'travaux_acceptes');
 });
+
+test('spec 32 : mosaïque photos + auto-submit + overlay chargement, bilan sans texte explicatif, cycles précédents repliables (details + date)', async () => {
+  const cs = await client(); await login(cs, 'cs@test.local', 'motdepasse1');
+  const r1 = await client(); await login(r1, 'r1@test.local', 'motdepasse1');
+  const { tid } = await creerTicket(r1, [ids.villa1], 'Spec32 test');
+
+  // photo ajoutée à la description à l'état « Créé » -> mosaïque + poubelle overlay + auto-submit sans bouton
+  const fp = new FormData();
+  fp.append('photos', new Blob(['x'], { type: 'image/png' }), 'p.png');
+  await r1.req('POST', `/tickets/${tid}/photos`, undefined, fp);
+  let page = await (await r1.req('GET', '/tickets/' + tid)).text();
+  assert.ok(page.includes('class="mosaic"') && page.includes('class="tuile"') && page.includes('poubelle-overlay'));
+  assert.ok(page.includes('data-autosubmit-photos'));
+  assert.ok(!page.includes('Ajouter les photos</button>'));
+  assert.ok(page.includes('id="overlay-chargement"') && page.includes('class="serpent"'));
+
+  // passage en « Travaux planifiés » : plus de paragraphe explicatif, boutons en formaction, une seule zone (1 input fichier)
+  await cs.req('POST', `/tickets/${tid}/passer-consultation`);
+  const cid = ajouterConsultationComplete(tid, ids.cs);
+  await cs.req('POST', `/tickets/${tid}/consultations/${cid}/valider`);
+  await r1.req('POST', `/tickets/${tid}/cr`, { contenu: 'Bilan cycle 1' });
+  page = await (await r1.req('GET', '/tickets/' + tid)).text();
+  assert.ok(!page.includes('bilans figés en lecture seule.</p>'));
+  assert.ok(page.includes(`formaction="/tickets/${tid}/accepter"`) && page.includes(`formaction="/tickets/${tid}/refuser"`));
+  assert.strictEqual((page.match(/type="file"/g) || []).length, 1);
+  assert.ok(!page.includes('<h3>Bilan du cycle'));
+  assert.ok(page.includes('bilan-pers'));
+
+  // refus -> cycle 2 : bilans du cycle 1 dans un <details> replié, titré par la date du changement d'état
+  const fref = new FormData();
+  fref.append('contenu', 'pas d’accord');
+  assert.strictEqual((await r1.req('POST', `/tickets/${tid}/refuser`, undefined, fref)).status, 302);
+  page = await (await r1.req('GET', '/tickets/' + tid)).text();
+  assert.ok(page.includes('<details class="bilans-anciens">'));
+  assert.ok(page.includes('changement d’état le'));
+  assert.ok(page.includes('Cycle 1 — figé le'));
+  assert.ok(page.includes('Bilan cycle 1'));
+});

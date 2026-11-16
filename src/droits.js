@@ -200,19 +200,19 @@ function aConnuEtape(ticketId, etape) {
   return n > 0;
 }
 
-// Visibilite des sections par etat, avec la regle « archive » de la spec 29 :
-// en archive, une section n'apparait que si le ticket a deja connu l'etat
-// correspondant (affichage en lecture seule).
+// Visibilite des sections par etat (spec 29 + precision 32) : une section est
+// visible si l'etat correspondant est en cours OU a deja ete atteint (historique
+// ticket_events) — y compris en « archive », ou la section reste affichée en
+// lecture seule. Un ticket archive directement depuis « cree » n'affiche aucune
+// de ces sections.
 function sectionsVisibles(ticket) {
   const e = ticket.etape;
-  const archive = e === 'archive';
   return {
     consultation: ['consultation', 'intervention_planifiee', 'travaux_acceptes'].includes(e)
-      || (archive && aConnuEtape(ticket.id, 'consultation')),
+      || aConnuEtape(ticket.id, 'consultation'),
     bilans: ['intervention_planifiee', 'travaux_acceptes'].includes(e)
-      || (archive && aConnuEtape(ticket.id, 'intervention_planifiee')),
-    factures: e === 'travaux_acceptes'
-      || (archive && aConnuEtape(ticket.id, 'travaux_acceptes'))
+      || aConnuEtape(ticket.id, 'intervention_planifiee'),
+    factures: e === 'travaux_acceptes' || aConnuEtape(ticket.id, 'travaux_acceptes')
   };
 }
 
