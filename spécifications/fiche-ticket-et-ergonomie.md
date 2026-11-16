@@ -24,7 +24,7 @@ Autres blocs de la fiche : boutons **« Archiver »** et **« Supprimer »** dir
 
 - Les photos sont **attachées à la section où elles sont saisies** et affichées dans cette section : création du ticket (section Description), acceptation des travaux, refus/réouverture, bilan de l'intervention. Il n'y a **plus de section « Photos » globale**.
 - **Moments cadrés d'ajout** (nulle part ailleurs) :
-  1. état **« créé »** : toute **personne concernée** (occupant d'une unité du ticket, membre du CS, admin) peut **ajouter et supprimer** les photos de la section Description ; au passage en consultation, ces photos sont **figées** ;
+  1. états **« créé » et « en consultation »** — jusqu'au début des travaux, c'est-à-dire jusqu'au passage en « travaux planifiés » : toute **personne concernée** (occupant d'une unité du ticket, membre du CS, admin) peut **ajouter et supprimer** les photos de la section Description ; à partir de « travaux planifiés », ces photos sont **figées** ;
   2. **acceptation des travaux** (planifiés → acceptés) : photos facultatives ;
   3. **refus** (planifiés → consultation) : commentaire ou au moins une photo obligatoire ;
   4. **réouverture** (acceptés → consultation) : commentaire obligatoire et au moins une photo obligatoire ;
