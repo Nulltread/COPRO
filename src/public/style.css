@@ -169,6 +169,9 @@ fieldset { border: 1px solid #c5c9d1; border-radius: 10px; }
 .actions-titre form { margin: 0; }
 .bouton-secondaire:disabled, .bouton:disabled { opacity: 0.45; cursor: not-allowed; }
 .bouton-secondaire.danger { color: var(--rouge); border-color: var(--rouge); }
+.bouton.danger { background: var(--rouge); }
+.bouton.danger:active { background: #8f1420; }
+.actions-acceptation { display: flex; flex-direction: column; gap: 6px; }
 .champ-fichiers-visible { font-size: 0.95rem; padding: 10px; border: 1px solid #c5c9d1; border-radius: 10px; background: #fff; width: 100%; }
 .modale-fond { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
 .modale-fond[hidden] { display: none; }

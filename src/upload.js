@@ -25,14 +25,14 @@ const upload = multer({
   }
 });
 
-function enregistrerFichiers(db, ticketId, categorie, files, meta, auteurId, contexte = 'creation') {
+function enregistrerFichiers(db, ticketId, categorie, files, meta, auteurId, contexte = 'creation', cycle = null) {
   const ins = db.prepare(
-    `INSERT INTO fichiers (ticket_id, categorie, nom_original, nom_stockage, mime, taille, montant, entreprise, delai, contexte, auteur_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO fichiers (ticket_id, categorie, nom_original, nom_stockage, mime, taille, montant, entreprise, delai, contexte, cycle, auteur_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
   for (const f of files || []) {
     ins.run(ticketId, categorie, f.originalname, f.filename, f.mimetype, f.size,
-      meta.montant ?? null, meta.entreprise || null, meta.delai || null, contexte, auteurId);
+      meta.montant ?? null, meta.entreprise || null, meta.delai || null, contexte, cycle, auteurId);
   }
 }
 

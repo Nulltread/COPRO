@@ -43,9 +43,54 @@ function migrate() {
     migrationV3(db);
     db.pragma('user_version = 3');
     console.log('Migration v3 : fichiers.contexte, comptes_rendus par personne.');
-    return true;
+  }
+  // v4 (spec 28) : cycle de consultation (tickets.cycle), photos de bilan
+  // rattachees a un cycle (fichiers.cycle), bilans par cycle
+  // (comptes_rendus.cycle, cle ticket+user+cycle).
+  if (db.pragma('user_version', { simple: true }) < 4) {
+    migrationV4(db);
+    db.pragma('user_version = 4');
+    console.log('Migration v4 : tickets.cycle, fichiers.cycle, comptes_rendus par cycle (spec 28).');
   }
   return sansCat;
+}
+
+function migrationV4(db) {
+  const tcols = db.prepare('PRAGMA table_info(tickets)').all().map(c => c.name);
+  if (!tcols.includes('cycle')) db.prepare('ALTER TABLE tickets ADD COLUMN cycle INTEGER NOT NULL DEFAULT 1').run();
+  const fcols = db.prepare('PRAGMA table_info(fichiers)').all().map(c => c.name);
+  if (!fcols.includes('cycle')) db.prepare('ALTER TABLE fichiers ADD COLUMN cycle INTEGER').run();
+  const crCols = db.prepare('PRAGMA table_info(comptes_rendus)').all().map(c => c.name);
+  if (!crCols.includes('cycle')) {
+    db.pragma('foreign_keys = OFF');
+    db.exec('BEGIN');
+    try {
+      db.exec(`
+        CREATE TABLE comptes_rendus_v4 (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          ticket_id INTEGER NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          cycle INTEGER NOT NULL DEFAULT 1,
+          contenu TEXT NOT NULL DEFAULT '',
+          auteur_id INTEGER NOT NULL REFERENCES users(id),
+          updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+          UNIQUE (ticket_id, user_id, cycle)
+        );
+      `);
+      db.exec(`
+        INSERT INTO comptes_rendus_v4 (id, ticket_id, user_id, cycle, contenu, auteur_id, updated_at)
+        SELECT id, ticket_id, user_id, 1, contenu, auteur_id, updated_at FROM comptes_rendus;
+      `);
+      db.exec('DROP TABLE comptes_rendus');
+      db.exec('ALTER TABLE comptes_rendus_v4 RENAME TO comptes_rendus');
+      db.exec('COMMIT');
+    } catch (e) {
+      db.exec('ROLLBACK');
+      db.pragma('foreign_keys = ON');
+      throw e;
+    }
+    db.pragma('foreign_keys = ON');
+  }
 }
 
 function migrationV3(db) {

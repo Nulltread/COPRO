@@ -56,6 +56,8 @@ async function main() {
   checks.push(['login résident', r.status === 302]);
   const listeDefaut = await (await req('GET', '/tickets')).text();
   checks.push(['filtre défaut = ses unités (voit Fuite)', listeDefaut.includes('Fuite')]);
+  const t3res = await (await req('GET', '/tickets/3')).text();
+  checks.push(['ticket planifié : section Bilans masquée aux non-concernés', !t3res.includes('Bilans de l’intervention')]);
   checks.push(['filtre défaut masque villa 20/21', !listeDefaut.includes('Infiltration plafond')]);
   const listeToutes = await (await req('GET', '/tickets?unite=toutes')).text();
   checks.push(['lecture ouverte : voit le ticket villa 20/21', listeToutes.includes('Infiltration plafond')]);
@@ -70,6 +72,11 @@ async function main() {
   const tr = await req('POST', '/connexion', { email: 'conseil1@copro.local', motdepasse: 'demo1234' });
   const pass = await req('POST', '/tickets/2/passer-consultation');
   checks.push(['transition créé -> consultation (CS)', pass.status === 302]);
+  const t3 = await (await req('GET', '/tickets/3')).text();
+  checks.push(['ticket planifié : boutons Accepter/Refuser visibles au CS', t3.includes('/accepter') && t3.includes('/refuser')]);
+  checks.push(['ticket planifié : section Bilans de l’intervention', t3.includes('Bilans de l’intervention')]);
+  const t4 = await (await req('GET', '/tickets/4')).text();
+  checks.push(['ticket acceptés : plus de boutons Accepter/Refuser (lecture seule)', !t4.includes('/accepter') && !t4.includes('/refuser')]);
 
   // compte en attente de rattachement : peut se connecter mais pas créer de ticket
   const att = await req('POST', '/connexion', { email: 'attente@copro.local', motdepasse: 'demo1234' });

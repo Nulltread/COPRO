@@ -25,7 +25,7 @@ Ce fichier regroupe les décisions prises avec le demandeur sur les types d'util
 
 - **Lecture ouverte à tous** : tout utilisateur connecté voit tous les tickets, même ceux des unités dont il n'est pas résident. Les filtres d'affichage sont par défaut positionnés sur les unités du résident, mais sans aucune restriction.
 - **Devis et factures** : lisibles par tous, mais **ajout et modification réservés au conseil syndical**.
-- **Bilan de l'intervention** : champ du ticket (voir cycle de vie), lisible par tous.
+- **Bilan de l'intervention** : champ du ticket (voir cycle de vie), **une instance par personne concernée et par cycle**, visible uniquement aux personnes concernées (spec 28).
 
 ## Cycle de vie d'un ticket
 
@@ -33,7 +33,7 @@ Ce fichier regroupe les décisions prises avec le demandeur sur les types d'util
 
 - **Création** : le résident choisit librement les unités concernées — au moins une de ses propres villas/garages, mais il peut en ajouter d'autres. La liste des unités reste **modifiable après création** (ex. sinistre qui se propage). Les tickets sur les **parties communes sont créables uniquement par le conseil syndical**. Un résident sans unité validée ne peut pas créer de ticket.
 - En v1, le **conseil syndical peut passer le ticket à n'importe quel statut, à tout moment**.
-- **Résolution (travaux acceptés)** : acceptée par **tous les résidents concernés** (résidents des unités du ticket) ; **un membre du conseil syndical peut accepter seul**. L'acceptation de la résolution fait passer le ticket à **archivé** (archivage sans limite de durée, tickets archivés consultables).
+- **Acceptation/refus des travaux (planifié → acceptés)** (spec 28) : **un seul acceptant suffit** (occupant d'une unité concernée ou membre du CS) → « Travaux acceptés » ; un refus → retour en « consultation » (commentaire + photo obligatoires). Pas de facture requise en v1 (réception « en sommeil »). Archivage manuel ou automatique après le délai réglé ; archivé = figé, consultable.
 - **Réouverture** : possible pour le conseil syndical ou un résident ; le ticket revient au statut d'avant la consultation.
 - **Édition** : le résident peut modifier la description et ajouter/supprimer des photos **à tout moment, même une fois archivé**. **Toute modification est loguée avec son auteur**, et ce log est visible par tous.
 - **Suppression** : seul le créateur peut supprimer son ticket, et uniquement s'il n'a **jamais évolué** dans son cycle de vie. Le conseil syndical ou l'admin peut supprimer un ticket non évolué créé par un compte qui s'est retiré ou a été supprimé. Le conseil syndical peut **archiver n'importe quel ticket**.
@@ -41,7 +41,7 @@ Ce fichier regroupe les décisions prises avec le demandeur sur les types d'util
 ## Documents et notifications
 
 - **Devis et factures** : fichiers stockés sur le ticket (devis / avenant / facture, avec montant), **gérés uniquement par le conseil syndical**, lisibles par tous.
-- **Bilan de l'intervention** : pas un document, c'est un **champ du ticket rédigé dans l'app** : une instance par unité concernée, plus une instance pour le conseil syndical. Rempli par tout résident concerné.
+- **Bilan de l'intervention** : pas un document, c'est un **champ du ticket rédigé dans l'app** : une instance par personne concernée (résidents des unités + membres du CS, admin exclu) **et par cycle**. Rempli par soi-même ; les bilans des cycles passés sont figés en lecture seule (spec 28).
 - **Notifications** : à chaque événement (création, changement d'état, nouveau devis, décision, acceptation de la résolution, réclamation de rattachement), notifier dans l'app le **conseil syndical** et les **résidents concernés**. **Canal unique pour l'instant : notification in-app** (pas de SMTP, aucun canal externe).
 
 ## Deltas par rapport à PROMPT.md (à cibler pour le dev)
