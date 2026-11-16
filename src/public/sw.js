@@ -1,4 +1,4 @@
-const CACHE = 'copro-v3';
+const CACHE = 'copro-v4';
 const STATIQUES = ['/style.css', '/app.js', '/icon.svg', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', function (e) {

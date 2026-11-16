@@ -21,7 +21,16 @@ function createApp() {
     next();
   });
 
-  app.use(express.static(path.join(__dirname, 'public')));
+  // Statics : toujours revalider aupres du serveur (le service worker gere le
+  // secours hors-ligne) — evite de servir un vieux app.js/style.css/sw.js.
+  app.use(express.static(path.join(__dirname, 'public'), {
+    setHeaders: (res) => res.setHeader('Cache-Control', 'no-cache')
+  }));
+  // Pages HTML : no-cache aussi (les changements de rendu sont cote serveur).
+  app.use((req, res, next) => {
+    if (req.method === 'GET') res.setHeader('Cache-Control', 'no-cache');
+    next();
+  });
 
   // La racine répond en 200 (redirection côté client) : une 302 sur / provoquait
   // des ERR_FAILED intermittents dans certains navigateurs.
