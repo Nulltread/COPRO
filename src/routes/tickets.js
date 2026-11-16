@@ -634,14 +634,15 @@ router.post('/:id/urgent', (req, res) => {
   res.redirect('/tickets/' + ticket.id);
 });
 
-// Ajout de photos a la section Description (spec 31) : uniquement a l'etape
-// « cree », par toute personne concernee (occupant, CS, admin).
+// Ajout de photos a la section Description (spec 31) : aux etapes
+// « cree » et « consultation » (jusqu'au debut des travaux), par toute
+// personne concernee (occupant, CS, admin).
 router.post('/:id/photos', (req, res) => {
   const db = getDb();
   const ticket = trouverTicket(req, res);
   if (!ticket) return;
   if (!peutGererPhotosDescription(req.user, ticket)) {
-    return res.status(403).render('erreur', { user: req.user, message: 'Les photos de la description ne sont ajoutables qu\'à l\'étape « Créé », par une personne concernée.' });
+    return res.status(403).render('erreur', { user: req.user, message: 'Les photos de la description ne sont ajoutables qu\'aux étapes « Créé » et « En consultation » (jusqu\'au début des travaux), par une personne concernée.' });
   }
   upload.array('photos', 10)(req, res, (err) => {
     if (err) return res.status(400).render('erreur', { user: req.user, message: err.message });

@@ -58,7 +58,7 @@
     <p><%= unites.map(u => u.label).join(', ') %></p>
   <% } %>
 
-  <%# Photos de la section Description (spec 23/29/31) : ajout/suppression tant que le ticket est « Créé », par toute personne concernée %>
+  <%# Photos de la section Description (spec 23/29/31) : ajout/suppression aux etapes « Créé » et « En consultation » (jusqu'au début des travaux), par toute personne concernée %>
   <% if ((photosParContexte['creation'] || []).length > 0 || peutGererPhotos) { %>
     <h3>Photos</h3>
     <% if (peutGererPhotos) { %>

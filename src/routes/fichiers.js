@@ -15,17 +15,20 @@ router.use(requireAuth);
 // des photos.
 
 // Suppression d'une photo : le conseil syndical, ou — pour les photos de la
-// section Description tant que le ticket est « Créé » (spec 31) — toute
-// personne concernée (l'auteur ou un occupant des unités du ticket).
+// section Description aux étapes « Créé » et « En consultation » (jusqu'au
+// début des travaux, spec 31) — toute personne concernée (l'auteur ou un
+// occupant des unités du ticket).
 router.post('/fichiers/:id/supprimer', (req, res) => {
   const db = getDb();
   const f = db.prepare('SELECT * FROM fichiers WHERE id = ?').get(Number(req.params.id));
   if (!f) return res.status(404).render('erreur', { user: req.user, message: 'Fichier introuvable.' });
   const ticket = db.prepare('SELECT * FROM tickets WHERE id = ?').get(f.ticket_id);
+  const estPhotoDescription = (f.contexte || 'creation') === 'creation';
   const peutSupprimer = isGestionnaire(req.user)
-    || (ticket && ticket.etape === 'cree' && (f.auteur_id === req.user.id || estResidentConcerne(req.user, f.ticket_id)));
+    || (ticket && estPhotoDescription && ['cree', 'consultation'].includes(ticket.etape)
+        && (f.auteur_id === req.user.id || estResidentConcerne(req.user, f.ticket_id)));
   if (f.categorie !== 'photo' || !peutSupprimer) {
-    return res.status(403).render('erreur', { user: req.user, message: 'Seules les photos de la description peuvent être supprimées, et seulement à l\'étape « Créé » par une personne concernée (ou par le conseil syndical).' });
+    return res.status(403).render('erreur', { user: req.user, message: 'Seules les photos de la description peuvent être supprimées, et seulement aux étapes « Créé » et « En consultation » (jusqu\'au début des travaux) par une personne concernée (ou par le conseil syndical).' });
   }
   const chemin = path.join(UPLOAD_DIR, f.nom_stockage);
   db.prepare('DELETE FROM fichiers WHERE id = ?').run(f.id);

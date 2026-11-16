@@ -996,7 +996,7 @@ test('spec 31 : toggle urgent (Créé seulement, acteurs), libellés description
   assert.strictEqual((await cs.req('POST', `/tickets/${tid}/urgent`, {})).status, 302); // CS peut retirer
   assert.strictEqual(db().prepare('SELECT urgent FROM tickets WHERE id=?').get(tid).urgent, 0);
 
-  // --- photos de la description : ajout/suppression par toute personne concernée tant que « Créé » ---
+  // --- photos de la description : ajout/suppression par toute personne concernée aux états « Créé » et « En consultation » ---
   const fp = new FormData();
   fp.append('photos', new Blob(['x'], { type: 'image/png' }), 'p.png');
   assert.strictEqual((await r2.req('POST', `/tickets/${tid}/photos`, undefined, fp)).status, 403); // non concerné
@@ -1009,18 +1009,26 @@ test('spec 31 : toggle urgent (Créé seulement, acteurs), libellés description
   assert.strictEqual((await cs.req('POST', `/fichiers/${fid}/supprimer`)).status, 302);
   assert.strictEqual(db().prepare('SELECT COUNT(*) AS n FROM fichiers WHERE id=?').get(fid).n, 0);
 
-  // --- passage en consultation : urgent figé, photos figées ---
+  // --- passage en consultation : urgent figé, mais photos de la description encore modifiables (jusqu'au début des travaux) ---
   await cs.req('POST', `/tickets/${tid}/passer-consultation`);
   assert.strictEqual((await cs.req('POST', `/tickets/${tid}/urgent`, { urgent: '1' })).status, 403);
-  assert.strictEqual((await r1.req('POST', `/tickets/${tid}/photos`, undefined, fp)).status, 403);
+  assert.strictEqual((await r1.req('POST', `/tickets/${tid}/photos`, undefined, fp)).status, 302);
+  assert.strictEqual(db().prepare("SELECT COUNT(*) AS n FROM fichiers WHERE ticket_id=? AND categorie='photo' AND contexte='creation'").get(tid).n, 1);
   page = await (await r1.req('GET', '/tickets/' + tid)).text();
   assert.ok(!page.includes(`action="/tickets/${tid}/urgent"`));
-  assert.ok(!page.includes(`action="/tickets/${tid}/photos"`));
+  assert.ok(page.includes(`action="/tickets/${tid}/photos"`)); // formulaire d'ajout encore présent en consultation
+  // suppression par l'auteur (personne concernée) autorisée en consultation
+  const fid2 = db().prepare("SELECT id FROM fichiers WHERE ticket_id=? AND categorie='photo' AND contexte='creation'").get(tid).id;
+  assert.strictEqual((await r1.req('POST', `/fichiers/${fid2}/supprimer`)).status, 302);
+  assert.strictEqual(db().prepare('SELECT COUNT(*) AS n FROM fichiers WHERE id=?').get(fid2).n, 0);
 
   // --- bilan : une seule zone (texte + photos) + boutons Accepter/Refuser en formaction (spec 31) ---
   const cid = ajouterConsultationComplete(tid, ids.cs);
   await cs.req('POST', `/tickets/${tid}/consultations/${cid}/valider`);
+  // début des travaux (« Travaux planifiés ») : les photos de la description sont figées
+  assert.strictEqual((await r1.req('POST', `/tickets/${tid}/photos`, undefined, fp)).status, 403);
   page = await (await r1.req('GET', '/tickets/' + tid)).text();
+  assert.ok(!page.includes(`action="/tickets/${tid}/photos"`));
   assert.ok(page.includes(`formaction="/tickets/${tid}/accepter"`));
   assert.ok(page.includes(`formaction="/tickets/${tid}/refuser"`));
   assert.ok(page.includes('actions-acceptation'));

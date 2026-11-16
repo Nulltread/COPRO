@@ -239,10 +239,12 @@ function peutToggleUrgent(user, ticket) {
 }
 
 // Photos de la section Description (spec 31) : ajout/suppression autorises
-// uniquement a l'etape « cree », par toute personne concernee (occupant d'une
-// unite du ticket, membre du CS, admin).
+// aux etapes « cree » et « consultation » (jusqu'au debut des travaux, c'est-
+// a-dire jusqu'au passage en « intervention_planifiee »), par toute personne
+// concernee (occupant d'une unite du ticket, membre du CS, admin).
 function peutGererPhotosDescription(user, ticket) {
-  if (!estActif(user) || !ticket || ticket.etape !== 'cree') return false;
+  if (!estActif(user) || !ticket) return false;
+  if (!['cree', 'consultation'].includes(ticket.etape)) return false;
   return isGestionnaire(user) || estResidentConcerne(user, ticket.id);
 }
 
