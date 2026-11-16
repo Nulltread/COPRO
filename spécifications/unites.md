@@ -7,4 +7,4 @@ L'unité d'œuvre est la **villa, le garage ou les parties communes**.
 - Le **référentiel des unités est en dur en v1** (non administrable : pas de création/modification d'unités dans l'application).
 - Un **ticket est rattaché à une ou plusieurs unités** (pavillons imbriqués), **jamais à une personne**.
 - Un résident peut être rattaché à **plusieurs villas/garages** (multi-unités).
-- Une unité peut avoir un **propriétaire et un locataire** rattachés : les deux sont notifiés et peuvent agir (commenter, ajouter des photos).
+- Une unité peut avoir un **propriétaire et un locataire** rattachés : les deux sont notifiés et peuvent agir (voir `rattachements.md`).

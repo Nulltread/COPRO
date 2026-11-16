@@ -1,34 +1,34 @@
 # Organisation des spécifications
 
-Ce dossier est l'emplacement canonique des spécifications du projet. À chaque nouvelle session, relire l'ensemble des fichiers de ce dossier, dans l'ordre de leur préfixe numérique.
+Ce dossier est l'emplacement canonique des spécifications du projet. À chaque nouvelle session, relire ce fichier d'index en premier, puis **l'ensemble des fichiers du dossier**.
 
-## Sources historiques
+## Principes
 
-Les spécifications ont été initialement consignées dans :
+- Les spécifications sont **regroupées par thématique fonctionnelle**, pas par chronologie : chaque fichier est autosuffisant sur son sujet.
+- Les spécifications sont **stateless** : il n'y a plus de règle de priorité entre fichiers (plus de « le préfixe le plus élevé fait foi »). Aucun doublon ni contradiction ne doit subsister entre fichiers. En cas de contradiction résiduelle constatée entre deux fichiers, c'est un défaut à corriger dans le fichier concerné et à signaler — aucun fichier ne prime automatiquement sur un autre.
+- Toute **nouvelle spécification** (décision du demandeur) est consignée dans un **nouveau fichier .md** dédié, ou modifie le fichier thématique concerné si elle porte sur un point déjà spécifié dans ce fichier.
 
-- `PROMPT.md` : brief initial (vision, rôles, cycle de vie, stockage, contraintes techniques).
-- `SPEC.md` (branche `vibe/prompt-roles-cycle-2e0696`) : décisions validées avec le demandeur, qui **complètent et priment sur `PROMPT.md`** en cas de contradiction pour les points listés.
+## Sources historiques (sans valeur normative)
 
-## Règle de priorité
+- `PROMPT.md` : brief initial, réorganisé dans ce dossier.
+- `SPEC.md` (branche `vibe/prompt-roles-cycle-2e0696`) : décisions validées à l'origine. Leur contenu est intégré — et pour plusieurs points révisé depuis — dans les fichiers thématiques ci-dessous, qui font **seuls foi**.
 
-En cas de contradiction entre deux fichiers de ce dossier, le fichier au préfixe le plus élevé fait foi (les décisions les plus récentes écrasent les plus anciennes). Les points de `PROMPT.md` non repris par `SPEC.md` restent valables.
-
-## Découpage
+## Découpage thématique
 
 | Fichier | Contenu |
 |---|---|
-| `01-vision-et-contexte.md` | Contexte, objectifs, livrables |
-| `02-roles-et-comptes.md` | Rôles, comptes, auto-inscription |
-| `03-unites.md` | Villas, garages, parties communes |
-| `04-rattachements.md` | Rattachement d'un compte à une unité |
-| `05-visibilite.md` | Règles de visibilité des données |
-| `06-cycle-de-vie-des-tickets.md` | États et transitions des tickets |
-| `07-documents-devis-factures-couts.md` | Photos, devis, factures, décisions, comptes-rendus, coûts |
-| `08-notifications.md` | Notifications |
-| `09-recherche-filtres-tableau-de-bord.md` | Recherche, filtres, tableau de bord |
-| `10-stockage-et-contraintes-techniques.md` | Stockage des fichiers, stack, sécurité, RGPD |
-| `11-comportements-constates-code-fonctionnels.md` | Comportements présents dans le code et absents des specs ci-dessus (inventaire) |
-| `12-comportements-constates-code-techniques.md` | Comportements techniques/sécurité présents dans le code et absents des specs ci-dessus (inventaire) |
-| `16-serveur-mail-et-domaine.md` | Serveur mail auto-hébergé, domaine `copro-pinede-gardanne.fr`, notifications par email, confirmation de compte par email, liste de diffusion du CS |
-
-Les fichiers `11` et `12` sont un inventaire neutre du code existant : ils décrivent ce que fait l'application, sans le prescrire.
+| `vision-et-principes.md` | Contexte, objectifs, principes généraux, livrables attendus |
+| `comptes-et-roles.md` | Rôles, auto-inscription, vérification d'email, gestion du statut CS, page de gestion des comptes, suppression de compte |
+| `unites.md` | Villas, garages, parties communes |
+| `rattachements.md` | Rattachement d'un compte à une unité, péremption, page des rattachements, cas du compte sans unité |
+| `visibilite.md` | Règles générales de visibilité des données |
+| `cycle-de-vie-des-tickets.md` | États, transitions contraintes et droits, archivage, réouverture/refus, édition, urgence, fil de suivi |
+| `fiche-ticket-et-ergonomie.md` | Organisation des sections de la fiche ticket, formulaire de création, photos, composants d'interface |
+| `consultations-entreprises-factures.md` | Consultations et devis, référentiel des entreprises, factures, avenants |
+| `bilans-de-intervention.md` | Bilan par personne concernée, boutons Accepter/Refuser, cycles et figeage |
+| `liste-tickets-recherche-tableau-de-bord.md` | Liste des tickets, recherche, filtres, tri, tableau de bord |
+| `notifications.md` | Canaux, événements notifiés, destinataires, affichage |
+| `profil-compte-utilisateur.md` | Page Mon profil, export RGPD, raccourci écran d'accueil (PWA minimale) |
+| `administration.md` | Panneau d'administration (délais de péremption et d'archivage automatique) |
+| `mail-et-domaine.md` | Serveur mail auto-hébergé, domaine `copro-pinede-gardanne.fr`, liste de diffusion du CS, envoi des emails |
+| `stockage-securite-deploiement.md` | Stockage des fichiers, stack, sécurité, RGPD, sauvegarde, déploiement |
