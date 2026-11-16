@@ -660,7 +660,7 @@ router.post('/:id/unites', (req, res) => {
   const ticket = db.prepare('SELECT * FROM tickets WHERE id = ?').get(id);
   if (!ticket) return res.status(404).render('erreur', { user: req.user, message: 'Ticket introuvable.' });
   if (!peutEditerUnites(req.user, ticket)) {
-    return res.status(403).render('erreur', { user: req.user, message: 'Tant que le ticket est « Créé », son déclarant et les résidents concernés peuvent modifier les unités ; ensuite seuls les membres du conseil syndical et l\'admin le peuvent.' });
+    return res.status(403).render('erreur', { user: req.user, message: 'Les unités ne sont modifiables qu\'aux étapes « Créé » et « En consultation » (jusqu\'au passage en « Travaux planifiés »), par le déclarant, les résidents concernés, le conseil syndical ou l\'admin.' });
   }
   let { unite_ids } = req.body;
   const ids = Array.isArray(unite_ids) ? unite_ids : [unite_ids].filter(Boolean);
