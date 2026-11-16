@@ -8,7 +8,7 @@ const {
   estResidentConcerne, peutEditerTicket, peutEditerUnites, peutSupprimerTicket,
   infosValidation, peutAccepterRefuser, peutReouvrir, dateArchivageAuto,
   nbFactures, peutArchiver, consultationComplete,
-  personnesConcerneesCR, peutRedigerCR, crVisibles, peutVoirCR,
+  personnesConcerneesCR, peutRedigerCR, crVisibles, peutVoirCR, sectionsVisibles,
   ETAPES, ETIQUETTES_ETAPES
 } = require('../droits');
 const { getParametreJours } = require('../parametres');
@@ -35,13 +35,20 @@ function listeTickets(user, filtres = {}) {
   const params = [];
   const where = [];
   const mesUnites = unitsDeUser(user.id);
+  // Filtre unite multiselect (spec 29) : unite peut etre une valeur ou un tableau.
+  const unitesBrutes = (!filtres.unite ? [] : (Array.isArray(filtres.unite) ? filtres.unite : [filtres.unite]))
+    .map(String).filter(v => v !== '');
+  const toutes = unitesBrutes.includes('toutes');
+  const unitesSel = unitesBrutes.filter(v => v !== 'toutes');
   if (!isAdmin(user) && mesUnites.length === 0) {
     // Sans unite validee, aucun ticket n'est visible.
     where.push('1 = 0');
-  } else if (filtres.unite && filtres.unite !== 'toutes') {
-    where.push('tu.unit_id = ?');
-    params.push(Number(filtres.unite));
-  } else if (!filtres.unite && mesUnites.length > 0) {
+  } else if (toutes) {
+    // « Toutes les unités » l'emporte sur toute sélection individuelle.
+  } else if (unitesSel.length > 0) {
+    where.push(`tu.unit_id IN (${unitesSel.map(() => '?').join(',')})`);
+    params.push(...unitesSel.map(Number));
+  } else if (mesUnites.length > 0) {
     // Filtre par defaut : les unites du resident (lecture ouverte sinon).
     where.push(`t.id IN (SELECT ticket_id FROM ticket_units WHERE unit_id IN (${mesUnites.map(() => '?').join(',')}))`);
     params.push(...mesUnites);
@@ -130,7 +137,8 @@ function detailTicket(user, id) {
     nbFactures: nbFactures(id),
     crVisibles: crVisibles(ticket),
     peutVoirCR: peutVoirCR(user, ticket),
-    peutRedigerCR: peutRedigerCR(null, ticket) // recalcule par user dans la route
+    peutRedigerCR: peutRedigerCR(null, ticket), // recalcule par user dans la route
+    sections: sectionsVisibles(ticket) // spec 29 : visibilite par etat, regle « archive » incluse
   };
 }
 
@@ -139,8 +147,8 @@ function detailTicket(user, id) {
 function faireTransition(db, ticket, nouvelleEtape, auteurId, contenu) {
   const ancienne = ticket.etape;
   db.prepare("UPDATE tickets SET etape = ?, updated_at = datetime('now') WHERE id = ?").run(nouvelleEtape, ticket.id);
-  db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'changement_etape', ?, ?)")
-    .run(ticket.id, auteurId, contenu);
+  db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu, donnees) VALUES (?, 'changement_etape', ?, ?, ?)")
+    .run(ticket.id, auteurId, contenu, JSON.stringify({ etape: nouvelleEtape }));
   const t = db.prepare('SELECT * FROM tickets WHERE id = ?').get(ticket.id);
   notifierTicket(t, 'changement_etape', `Le ticket « ${t.titre} » passe à l'étape « ${ETIQUETTES_ETAPES[nouvelleEtape]} »${auteurId ? '' : ' (automatique)'} — ${contenu}`, auteurId, !!t.urgent);
   return ancienne;
@@ -164,9 +172,16 @@ router.get('/', (req, res) => {
   const tickets = listeTickets(req.user, req.query);
   const db = getDb();
   const unitesFiltre = db.prepare('SELECT * FROM units ORDER BY type DESC, numero').all();
+  // Multiselect « search » des unites (spec 29) : options + valeurs selectionnees.
+  const unitesOptions = [
+    { value: 'toutes', label: 'Toutes les unités' },
+    ...unitesFiltre.map(u => ({ value: String(u.id), label: u.label }))
+  ];
+  const unitesSelectionnees = (!req.query.unite ? [] : (Array.isArray(req.query.unite) ? req.query.unite : [req.query.unite]))
+    .map(String).filter(v => v !== '' && unitesOptions.some(o => o.value === v));
   res.render('tickets', {
     user: req.user, tickets,
-    etapes: ETAPES, etiquettes: ETIQUETTES_ETAPES, unitesFiltre,
+    etapes: ETAPES, etiquettes: ETIQUETTES_ETAPES, unitesFiltre, unitesOptions, unitesSelectionnees,
     filtres: req.query, gestionnaire: isGestionnaire(req.user),
     mesUnites: unitsDeUser(req.user.id),
     nonLues: require('../notifications').nonLues(req.user.id)
@@ -508,8 +523,8 @@ router.post('/:id/accepter', (req, res) => {
       .run(ticket.id, req.user.id, `${req.user.nom} a accepté les travaux${commentaire ? ` — « ${commentaire.slice(0, 120)} »` : ''}${(req.files || []).length ? ` (${req.files.length} photo(s))` : ''}`);
     // Un seul acceptant suffit -> passage immédiat en « travaux acceptés ».
     db.prepare("UPDATE tickets SET etape = 'travaux_acceptes', acceptes_at = datetime('now'), notif_archive_j3 = 0, notif_archive_j1 = 0, updated_at = datetime('now') WHERE id = ?").run(ticket.id);
-    db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'changement_etape', ?, ?)")
-      .run(ticket.id, req.user.id, 'Passage à « Travaux acceptés » (un seul acceptant a suffi)');
+    db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu, donnees) VALUES (?, 'changement_etape', ?, ?, ?)")
+      .run(ticket.id, req.user.id, 'Passage à « Travaux acceptés » (un seul acceptant a suffi)', JSON.stringify({ etape: 'travaux_acceptes' }));
     const t = db.prepare('SELECT * FROM tickets WHERE id = ?').get(ticket.id);
     notifierTicket(t, 'changement_etape', `Le ticket « ${t.titre} » passe à l'étape « Travaux acceptés »`, req.user.id, !!t.urgent);
     res.redirect('/tickets/' + ticket.id);
@@ -543,8 +558,8 @@ router.post('/:id/refuser', (req, res) => {
     db.prepare('UPDATE consultations SET caduque = 1 WHERE ticket_id = ?').run(ticket.id);
     db.prepare('UPDATE resolutions SET caduque = 1 WHERE ticket_id = ?').run(ticket.id);
     db.prepare("UPDATE tickets SET etape = 'consultation', acceptes_at = NULL, cycle = cycle + 1, notif_archive_j3 = 0, notif_archive_j1 = 0, updated_at = datetime('now') WHERE id = ?").run(ticket.id);
-    db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'changement_etape', ?, ?)")
-      .run(ticket.id, req.user.id, `Travaux refusés par ${req.user.nom} — retour en consultation — « ${commentaire.slice(0, 120)} » (${req.files.length} photo(s)) ; consultations et acceptations précédentes caduques, bilans figés (cycle suivant)`);
+    db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu, donnees) VALUES (?, 'changement_etape', ?, ?, ?)")
+      .run(ticket.id, req.user.id, `Travaux refusés par ${req.user.nom} — retour en consultation — « ${commentaire.slice(0, 120)} » (${req.files.length} photo(s)) ; consultations et acceptations précédentes caduques, bilans figés (cycle suivant)`, JSON.stringify({ etape: 'consultation' }));
     const t = db.prepare('SELECT * FROM tickets WHERE id = ?').get(ticket.id);
     notifierTicket(t, 'changement_etape', `Le ticket « ${t.titre} » est refusé et repasse en « En consultation »`, req.user.id, !!t.urgent);
     res.redirect('/tickets/' + ticket.id);
@@ -578,8 +593,8 @@ router.post('/:id/reouvrir', (req, res) => {
     db.prepare('UPDATE consultations SET caduque = 1 WHERE ticket_id = ?').run(ticket.id);
     db.prepare('UPDATE resolutions SET caduque = 1 WHERE ticket_id = ?').run(ticket.id);
     db.prepare("UPDATE tickets SET etape = 'consultation', acceptes_at = NULL, cycle = cycle + 1, notif_archive_j3 = 0, notif_archive_j1 = 0, updated_at = datetime('now') WHERE id = ?").run(ticket.id);
-    db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'changement_etape', ?, ?)")
-      .run(ticket.id, req.user.id, `Ticket rouvert par ${req.user.nom} — retour en consultation — « ${commentaire.slice(0, 120)} » (${req.files.length} photo(s)) ; consultations et validations précédentes caduques`);
+    db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu, donnees) VALUES (?, 'changement_etape', ?, ?, ?)")
+      .run(ticket.id, req.user.id, `Ticket rouvert par ${req.user.nom} — retour en consultation — « ${commentaire.slice(0, 120)} » (${req.files.length} photo(s)) ; consultations et validations précédentes caduques`, JSON.stringify({ etape: 'consultation' }));
     const t = db.prepare('SELECT * FROM tickets WHERE id = ?').get(ticket.id);
     notifierTicket(t, 'changement_etape', `Le ticket « ${t.titre} » est rouvert et repasse en « En consultation »`, req.user.id, !!t.urgent);
     res.redirect('/tickets/' + ticket.id);

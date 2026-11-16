@@ -61,6 +61,18 @@ router.post('/profil/reclamer', (req, res) => {
   res.redirect('/profil?message=' + encodeURIComponent('Demande de rattachement envoyée. Elle sera examinée par un résident de l\'unité ou le conseil syndical.'));
 });
 
+// Annulation d'une demande de rattachement en attente (spec 29), avec modale
+// de confirmation cote client (data-confirm).
+router.post('/profil/rattachements/:id/annuler', (req, res) => {
+  const db = getDb();
+  const r = db.prepare('SELECT * FROM rattachements WHERE id = ? AND user_id = ?').get(Number(req.params.id), req.user.id);
+  if (r && r.statut === 'en_attente') {
+    db.prepare('DELETE FROM rattachements WHERE id = ?').run(r.id);
+    return res.redirect('/profil?message=' + encodeURIComponent('Demande de rattachement annulée.'));
+  }
+  res.redirect('/profil');
+});
+
 // Auto-retrait d'une unite : aucun impact sur les tickets (ils restent
 // rattaches a l'unite).
 router.post('/profil/retirer-unite', (req, res) => {

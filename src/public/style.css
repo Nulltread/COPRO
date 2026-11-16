@@ -196,3 +196,17 @@ fieldset { border: 1px solid #c5c9d1; border-radius: 10px; }
   .nav { font-size: 0.85rem; gap: 8px; }
   .ligne2-unites { width: 100%; text-align: left; }
 }
+
+/* Multiselect « search » du filtre unités (spec 29) */
+.multiselect { position: relative; }
+.multiselect-zone { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; border: 1px solid #c5c9d1; border-radius: 8px; padding: 5px 8px; background: #fff; min-width: 240px; max-width: 420px; }
+.multiselect-zone input[type=search] { border: none; outline: none; flex: 1; min-width: 130px; font-size: 0.95rem; padding: 4px; background: transparent; }
+.chip { display: inline-flex; align-items: center; gap: 4px; background: var(--bleu); color: #fff; border-radius: 999px; padding: 4px 6px 4px 12px; font-size: 0.85rem; font-weight: 600; }
+.chip-x { background: none; border: none; color: #fff; cursor: pointer; font-size: 1rem; line-height: 1; padding: 0 4px; }
+.multiselect-liste { max-height: 240px; }
+.multiselect-hidden { display: contents; }
+
+/* Liste des consultations : tuples {entreprise, devis, prix, date, bouton de choix} (spec 29) */
+.liste-consultations { list-style: none; padding: 0; margin: 10px 0; }
+.liste-consultations .consultation { list-style: none; }
+.consultation.nouvelle { border-style: dashed; }

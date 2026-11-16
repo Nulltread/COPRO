@@ -300,4 +300,130 @@
       });
     });
   });
+
+  // --- Filtre des unités : multiselect « search » (spec 29) ---
+  // Champ texte + dropdown des 5 premiers résultats, affinée à la saisie ;
+  // un clic sur une valeur ajoute une puce à gauche du texte.
+  var filtreUnites = document.getElementById('filtre-unites');
+  if (filtreUnites) {
+    var msOptions = JSON.parse(filtreUnites.dataset.options || '[]');
+    var msChips = document.getElementById('unites-chips');
+    var msHidden = document.getElementById('unites-hidden');
+    var msInput = document.getElementById('recherche-unite');
+    var msListe = document.getElementById('unites-liste');
+    function msSelection() {
+      return Array.prototype.map.call(msHidden.querySelectorAll('input[name=unite]'), function (i) { return i.value; });
+    }
+    function msFermer() { msListe.hidden = true; }
+    function msOuvrir() {
+      var q = msInput.value.trim().toLowerCase();
+      var dispo = msOptions.filter(function (o) {
+        return msSelection().indexOf(o.value) === -1 && (!q || o.label.toLowerCase().indexOf(q) !== -1);
+      }).slice(0, 5);
+      msListe.innerHTML = '';
+      if (dispo.length === 0) {
+        var liVide = document.createElement('li');
+        var bVide = document.createElement('button');
+        bVide.type = 'button';
+        bVide.className = 'dropdown-option';
+        bVide.disabled = true;
+        bVide.textContent = 'Aucun résultat';
+        liVide.appendChild(bVide);
+        msListe.appendChild(liVide);
+      }
+      dispo.forEach(function (o) {
+        var li = document.createElement('li');
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'dropdown-option';
+        b.textContent = o.label;
+        b.addEventListener('click', function (e) { e.stopPropagation(); msAjouter(o); });
+        li.appendChild(b);
+        msListe.appendChild(li);
+      });
+      msListe.hidden = false;
+    }
+    function msAjouter(o) {
+      var chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.dataset.value = o.value;
+      chip.appendChild(document.createTextNode(o.label));
+      var x = document.createElement('button');
+      x.type = 'button';
+      x.className = 'chip-x';
+      x.dataset.value = o.value;
+      x.textContent = '×';
+      x.setAttribute('aria-label', 'Retirer ' + o.label);
+      chip.appendChild(x);
+      msChips.appendChild(chip);
+      var h = document.createElement('input');
+      h.type = 'hidden';
+      h.name = 'unite';
+      h.value = o.value;
+      msHidden.appendChild(h);
+      msInput.value = '';
+      msFermer();
+      filtres.submit();
+    }
+    function msRetirer(v) {
+      var chip = msChips.querySelector('.chip[data-value="' + v + '"]');
+      if (chip) chip.remove();
+      var h = msHidden.querySelector('input[name=unite][value="' + v + '"]');
+      if (h) h.remove();
+      msInput.value = '';
+      msFermer();
+      filtres.submit();
+    }
+    msChips.addEventListener('click', function (e) {
+      var x = e.target.closest('.chip-x');
+      if (x) { e.stopPropagation(); msRetirer(x.dataset.value); }
+    });
+    msInput.addEventListener('input', msOuvrir);
+    msInput.addEventListener('focus', msOuvrir);
+    msInput.addEventListener('click', function (e) { e.stopPropagation(); msOuvrir(); });
+    document.addEventListener('click', msFermer);
+  }
+
+  // --- Section consultations (spec 29) : bouton « ajouter » + modale « nouvelle entreprise » ---
+  var btnAjouter = document.getElementById('btn-ajouter-consultation');
+  var nouvelleConsultation = document.getElementById('nouvelle-consultation');
+  if (btnAjouter && nouvelleConsultation) {
+    btnAjouter.addEventListener('click', function () {
+      nouvelleConsultation.hidden = !nouvelleConsultation.hidden;
+      if (!nouvelleConsultation.hidden) nouvelleConsultation.scrollIntoView({ block: 'nearest' });
+    });
+  }
+  var selectEntreprise = document.getElementById('select-entreprise');
+  var modaleEntreprise = document.getElementById('modale-entreprise');
+  if (selectEntreprise && modaleEntreprise) {
+    var ficheNouvelle = document.getElementById('fiche-nouvelle-entreprise');
+    function fermerModaleEntreprise() { modaleEntreprise.hidden = true; }
+    document.getElementById('modale-entreprise-annuler').addEventListener('click', function () {
+      selectEntreprise.value = '';
+      fermerModaleEntreprise();
+    });
+    modaleEntreprise.addEventListener('click', function (e) {
+      if (e.target === modaleEntreprise) { selectEntreprise.value = ''; fermerModaleEntreprise(); }
+    });
+    document.getElementById('modale-entreprise-valider').addEventListener('click', function () {
+      var raison = document.getElementById('me-raison');
+      if (!raison.value.trim()) { raison.focus(); return; }
+      var champs = [
+        ['nouvelle_raison_sociale', 'me-raison'],
+        ['nouveau_siren_siret', 'me-siren'],
+        ['nouveau_contact_nom', 'me-contact'],
+        ['nouveau_telephone', 'me-tel'],
+        ['nouveau_mail', 'me-mail']
+      ];
+      champs.forEach(function (paire) {
+        var dest = ficheNouvelle.querySelector('input[name="' + paire[0] + '"]');
+        var src = document.getElementById(paire[1]);
+        if (dest && src) dest.value = src.value;
+      });
+      fermerModaleEntreprise();
+    });
+    selectEntreprise.addEventListener('change', function () {
+      if (selectEntreprise.value === 'nouvelle') modaleEntreprise.hidden = false;
+    });
+  }
 })();

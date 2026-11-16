@@ -10,7 +10,7 @@
 <input type="search" id="recherche-tickets" class="recherche recherche-pleine" placeholder="Rechercher un ticket (titre, description)…" value="<%= filtres.q || '' %>" autocomplete="off">
 <form method="get" action="/tickets" id="filtres-tickets">
   <div class="filtres">
-  <% const uniteSel = unitesFiltre.find(u => String(u.id) === String(filtres.unite)); %>
+  <%# Multiselect « search » des unités (spec 29) : champ texte + dropdown des 5 premiers résultats, puces à gauche %>
   <div class="dropdown" data-filtre="etape">
     <button type="button" class="dropdown-bouton" aria-expanded="false">
       <span class="dropdown-valeur"><%= filtres.etape ? etiquettes[filtres.etape] : 'Tous les états (hors archivés)' %></span> ▾
@@ -23,20 +23,19 @@
     </ul>
     <input type="hidden" name="etape" value="<%= filtres.etape || '' %>">
   </div>
-  <div class="dropdown" data-filtre="unite">
-    <button type="button" class="dropdown-bouton" aria-expanded="false">
-      <span class="dropdown-valeur"><%= filtres.unite === 'toutes' ? 'Toutes les unités' : (uniteSel ? uniteSel.label : (mesUnites.length > 0 ? 'Mes unités (défaut)' : 'Toutes les unités')) %></span> ▾
-    </button>
-    <ul class="dropdown-liste" hidden>
-      <% if (mesUnites.length > 0) { %>
-        <li><button type="button" class="dropdown-option <%= !filtres.unite ? 'selectionne' : '' %>" data-value="">Mes unités (défaut)</button></li>
-      <% } %>
-      <li><button type="button" class="dropdown-option <%= filtres.unite === 'toutes' ? 'selectionne' : '' %>" data-value="toutes">Toutes les unités</button></li>
-      <% for (const u of unitesFiltre) { %>
-        <li><button type="button" class="dropdown-option <%= String(filtres.unite) === String(u.id) ? 'selectionne' : '' %>" data-value="<%= u.id %>"><%= u.label %></button></li>
-      <% } %>
-    </ul>
-    <input type="hidden" name="unite" value="<%= filtres.unite || '' %>">
+  <div class="multiselect" id="filtre-unites" data-options="<%= JSON.stringify(unitesOptions) %>">
+    <div class="multiselect-zone">
+      <span class="multiselect-chips" id="unites-chips">
+        <% for (const v of unitesSelectionnees) { const opt = unitesOptions.find(o => o.value === v); %>
+          <span class="chip" data-value="<%= opt.value %>"><%= opt.label %><button type="button" class="chip-x" data-value="<%= opt.value %>" aria-label="Retirer <%= opt.label %>">×</button></span>
+        <% } %>
+      </span>
+      <input type="search" id="recherche-unite" placeholder="<%= mesUnites.length > 0 ? 'Filtrer par villa / garage… (défaut : mes unités)' : 'Filtrer par villa / garage…' %>" autocomplete="off">
+    </div>
+    <ul class="multiselect-liste dropdown-liste" id="unites-liste" hidden></ul>
+    <span class="multiselect-hidden" id="unites-hidden">
+      <% for (const v of unitesSelectionnees) { %><input type="hidden" name="unite" value="<%= v %>"><% } %>
+    </span>
   </div>
   <label class="case"><input type="checkbox" name="urgent" value="1" <%= filtres.urgent === '1' ? 'checked' : '' %>> Urgents</label>
   </div>
