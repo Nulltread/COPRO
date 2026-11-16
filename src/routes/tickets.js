@@ -6,9 +6,9 @@ const { requireAuth } = require('../auth');
 const {
   isGestionnaire, isAdmin, isCS, unitsDeUser, peutVoirTicket, peutChoisirUnites,
   estResidentConcerne, peutEditerTicket, peutEditerUnites, peutSupprimerTicket,
-  infosValidation, peutValiderTravaux, peutReouvrir, dateArchivageAuto,
+  infosValidation, peutAccepterRefuser, peutReouvrir, dateArchivageAuto,
   nbFactures, peutArchiver, consultationComplete,
-  personnesConcerneesCR, peutRedigerCR, crVisibles,
+  personnesConcerneesCR, peutRedigerCR, crVisibles, peutVoirCR,
   ETAPES, ETIQUETTES_ETAPES
 } = require('../droits');
 const { getParametreJours } = require('../parametres');
@@ -110,16 +110,26 @@ function detailTicket(user, id) {
   const comptesRendus = db.prepare(
     `SELECT cr.*, a.nom AS auteur_nom, a.prenom AS auteur_prenom FROM comptes_rendus cr
      LEFT JOIN users a ON a.id = cr.auteur_id
-     WHERE cr.ticket_id = ? ORDER BY cr.updated_at`
+     WHERE cr.ticket_id = ? ORDER BY cr.cycle DESC, cr.updated_at`
   ).all(id);
+  // Photos des bilans, groupees par cycle (spec 28) : les cycles passes sont
+  // figes en lecture seule, le cycle en cours reste modifiable par son auteur.
+  const photosCRParCycle = {};
+  for (const f of fichiers) {
+    if (f.categorie === 'photo' && (f.contexte || 'creation') === 'compte_rendu') {
+      const c = f.cycle || 1;
+      (photosCRParCycle[c] = photosCRParCycle[c] || []).push(f);
+    }
+  }
   const personnesCR = personnesConcerneesCR(id);
   const validation = infosValidation(id);
   return {
     ticket, unites, evenements, fichiers, photos, photosParContexte, factures, devis, consultations, entreprises,
-    unitesIds, validations, residents, comptesRendus, personnesCR,
+    unitesIds, validations, residents, comptesRendus, personnesCR, photosCRParCycle,
     infosValidation: validation,
     nbFactures: nbFactures(id),
     crVisibles: crVisibles(ticket),
+    peutVoirCR: peutVoirCR(user, ticket),
     peutRedigerCR: peutRedigerCR(null, ticket) // recalcule par user dans la route
   };
 }
@@ -229,7 +239,8 @@ router.get('/:id', (req, res) => {
     peutEditerUnites: peutEditerUnites(req.user, d.ticket),
     peutRedigerCR: peutRedigerCR(req.user, d.ticket),
     peutSupprimer: peutSupprimerTicket(req.user, d.ticket),
-    peutValiderTravaux: peutValiderTravaux(req.user, d.ticket),
+    peutAccepterRefuser: peutAccepterRefuser(req.user, d.ticket),
+    peutVoirCR: d.peutVoirCR,
     peutReouvrir: peutReouvrir(req.user, d.ticket),
     peutArchiver: peutArchiver(req.user, d.ticket),
     dateArchivageAuto: dateArchivageAuto(d.ticket),
@@ -471,25 +482,16 @@ router.post('/:id/factures', (req, res) => {
     res.redirect('/tickets/' + ticket.id + '#factures');
   });
 });
-
-// Validation des travaux (planifie -> acceptes), spec 24 :
-// - chaque proprietaire/locataire concerne valide les travaux (commentaire
-//   et/ou photos facultatifs) ;
-// - au moins un membre du CS / admin valide la RECEPTION des travaux, ce qui
-//   exige qu'au moins une facture soit jointe au ticket.
-// Le passage a "travaux acceptes" n'a lieu que quand tous les residents
-// concernes ont validé ET qu'un membre du CS a validé la réception.
-router.post('/:id/valider-travaux', (req, res) => {
+// Acceptation des travaux (planifie -> acceptes), spec 28 : un SEUL acceptant
+// au total suffit (occupant d'une unite concernee ou membre du CS — admin
+// exclu du quorum). Commentaire et photos facultatifs. AUCUNE facture requise
+// en v1 (reception des travaux « en sommeil », spec 28).
+router.post('/:id/accepter', (req, res) => {
   const db = getDb();
   const ticket = trouverTicket(req, res);
   if (!ticket) return;
-  if (!peutValiderTravaux(req.user, ticket)) {
-    return res.status(403).render('erreur', { user: req.user, message: 'Seuls les propriétaires/locataires des unités concernées et les membres du conseil syndical peuvent valider (travaux / réception).' });
-  }
-  // Réception des travaux : réservée à un membre du CS (l'admin est exclu du quorum, spec 25).
-  const estReception = isCS(req.user) && req.body.action === 'reception';
-  if (estReception && nbFactures(ticket.id) === 0) {
-    return res.status(400).render('erreur', { user: req.user, message: 'La réception des travaux nécessite au moins une facture jointe au ticket (section Factures).' });
+  if (!peutAccepterRefuser(req.user, ticket)) {
+    return res.status(403).render('erreur', { user: req.user, message: 'Seuls les occupants des unités concernées et les membres du conseil syndical peuvent accepter ou refuser les travaux.' });
   }
   upload.array('photos', 10)(req, res, (err) => {
     if (err) return res.status(400).render('erreur', { user: req.user, message: err.message });
@@ -498,36 +500,57 @@ router.post('/:id/valider-travaux', (req, res) => {
       .run(ticket.id, req.user.id, commentaire);
     db.prepare('UPDATE resolutions SET commentaire = ? WHERE ticket_id = ? AND user_id = ? AND caduque = 0')
       .run(commentaire, ticket.id, req.user.id);
-    // Photos : moment cadre n°2 = la validation des travaux (facultative).
+    // Photos : moment cadre n°2 = l'acceptation des travaux (facultative).
     if ((req.files || []).length > 0) {
       enregistrerFichiers(db, ticket.id, 'photo', req.files, {}, req.user.id, 'validation');
     }
     db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'resolution', ?, ?)")
-      .run(ticket.id, req.user.id, estReception
-        ? `${req.user.nom} a validé la réception des travaux${commentaire ? ` — « ${commentaire.slice(0, 120)} »` : ''}`
-        : `${req.user.nom} a validé les travaux${commentaire ? ` — « ${commentaire.slice(0, 120)} »` : ''}${(req.files || []).length ? ` (${req.files.length} photo(s))` : ''}`);
-    // Passage a "travaux acceptes" (spec 25) : au moins UN représentant par
-    // unité concernée a validé, ET au moins un membre du CS (jamais l'admin)
-    // a validé la réception (facture requise).
-    const { parUnite } = infosValidation(ticket.id);
-    const validees = new Set(
-      db.prepare('SELECT user_id FROM resolutions WHERE ticket_id = ? AND caduque = 0').all(ticket.id).map(r => r.user_id)
-    );
-    const chaqueUniteOK = parUnite.every(u => u.residents.some(r => validees.has(r.id)));
-    const receptionOK = db.prepare(
-      `SELECT COUNT(*) AS n FROM resolutions r JOIN users u ON u.id = r.user_id
-       WHERE r.ticket_id = ? AND r.caduque = 0 AND u.conseil_syndical = 1 AND u.role != 'admin' AND u.statut = 'actif'`
-    ).get(ticket.id).n > 0;
-    if (chaqueUniteOK && receptionOK) {
-      db.prepare("UPDATE tickets SET etape = 'travaux_acceptes', acceptes_at = datetime('now'), notif_archive_j3 = 0, notif_archive_j1 = 0, updated_at = datetime('now') WHERE id = ?").run(ticket.id);
-      db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'changement_etape', ?, ?)")
-        .run(ticket.id, req.user.id, 'Un représentant par unité a validé et la réception est validée — passage à « Travaux acceptés »');
-      const t = db.prepare('SELECT * FROM tickets WHERE id = ?').get(ticket.id);
-      notifierTicket(t, 'changement_etape', `Le ticket « ${t.titre} » passe à l'étape « Travaux acceptés » (représentants des unités + réception CS validés)`, req.user.id, !!t.urgent);
-    }
+      .run(ticket.id, req.user.id, `${req.user.nom} a accepté les travaux${commentaire ? ` — « ${commentaire.slice(0, 120)} »` : ''}${(req.files || []).length ? ` (${req.files.length} photo(s))` : ''}`);
+    // Un seul acceptant suffit -> passage immédiat en « travaux acceptés ».
+    db.prepare("UPDATE tickets SET etape = 'travaux_acceptes', acceptes_at = datetime('now'), notif_archive_j3 = 0, notif_archive_j1 = 0, updated_at = datetime('now') WHERE id = ?").run(ticket.id);
+    db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'changement_etape', ?, ?)")
+      .run(ticket.id, req.user.id, 'Passage à « Travaux acceptés » (un seul acceptant a suffi)');
+    const t = db.prepare('SELECT * FROM tickets WHERE id = ?').get(ticket.id);
+    notifierTicket(t, 'changement_etape', `Le ticket « ${t.titre} » passe à l'étape « Travaux acceptés »`, req.user.id, !!t.urgent);
     res.redirect('/tickets/' + ticket.id);
   });
 });
+
+// Refus des travaux (planifie -> consultation), spec 28 : tout occupant d'une
+// unite du ticket ou membre du CS peut refuser, avec commentaire obligatoire
+// et au moins une photo obligatoire. Consultations et acceptations precedentes
+// caduques ; on passe au cycle suivant (les bilans du cycle sont figes
+// definitivement en lecture seule).
+router.post('/:id/refuser', (req, res) => {
+  const db = getDb();
+  const ticket = trouverTicket(req, res);
+  if (!ticket) return;
+  if (!peutAccepterRefuser(req.user, ticket)) {
+    return res.status(403).render('erreur', { user: req.user, message: 'Seuls les occupants des unités concernées et les membres du conseil syndical peuvent refuser les travaux.' });
+  }
+  upload.array('photos', 10)(req, res, (err) => {
+    if (err) return res.status(400).render('erreur', { user: req.user, message: err.message });
+    const commentaire = (req.body.commentaire || '').trim();
+    if (!commentaire) {
+      nettoyerFichiers(req.files);
+      return res.status(400).render('erreur', { user: req.user, message: 'Un commentaire est obligatoire pour refuser les travaux.' });
+    }
+    // Photos : moment cadre n°4 = le refus des travaux (au moins une obligatoire).
+    if ((req.files || []).length === 0) {
+      return res.status(400).render('erreur', { user: req.user, message: 'Au moins une photo est obligatoire pour refuser les travaux.' });
+    }
+    enregistrerFichiers(db, ticket.id, 'photo', req.files, {}, req.user.id, 'refus');
+    db.prepare('UPDATE consultations SET caduque = 1 WHERE ticket_id = ?').run(ticket.id);
+    db.prepare('UPDATE resolutions SET caduque = 1 WHERE ticket_id = ?').run(ticket.id);
+    db.prepare("UPDATE tickets SET etape = 'consultation', acceptes_at = NULL, cycle = cycle + 1, notif_archive_j3 = 0, notif_archive_j1 = 0, updated_at = datetime('now') WHERE id = ?").run(ticket.id);
+    db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'changement_etape', ?, ?)")
+      .run(ticket.id, req.user.id, `Travaux refusés par ${req.user.nom} — retour en consultation — « ${commentaire.slice(0, 120)} » (${req.files.length} photo(s)) ; consultations et acceptations précédentes caduques, bilans figés (cycle suivant)`);
+    const t = db.prepare('SELECT * FROM tickets WHERE id = ?').get(ticket.id);
+    notifierTicket(t, 'changement_etape', `Le ticket « ${t.titre} » est refusé et repasse en « En consultation »`, req.user.id, !!t.urgent);
+    res.redirect('/tickets/' + ticket.id);
+  });
+});
+
 
 // Reouverture (travaux acceptes -> consultation) : dans le delai d'archivage
 // auto, par tout proprietaire/locataire concerne (parties communes : au moins
@@ -554,7 +577,7 @@ router.post('/:id/reouvrir', (req, res) => {
     enregistrerFichiers(db, ticket.id, 'photo', req.files, {}, req.user.id, 'reouverture');
     db.prepare('UPDATE consultations SET caduque = 1 WHERE ticket_id = ?').run(ticket.id);
     db.prepare('UPDATE resolutions SET caduque = 1 WHERE ticket_id = ?').run(ticket.id);
-    db.prepare("UPDATE tickets SET etape = 'consultation', acceptes_at = NULL, notif_archive_j3 = 0, notif_archive_j1 = 0, updated_at = datetime('now') WHERE id = ?").run(ticket.id);
+    db.prepare("UPDATE tickets SET etape = 'consultation', acceptes_at = NULL, cycle = cycle + 1, notif_archive_j3 = 0, notif_archive_j1 = 0, updated_at = datetime('now') WHERE id = ?").run(ticket.id);
     db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'changement_etape', ?, ?)")
       .run(ticket.id, req.user.id, `Ticket rouvert par ${req.user.nom} — retour en consultation — « ${commentaire.slice(0, 120)} » (${req.files.length} photo(s)) ; consultations et validations précédentes caduques`);
     const t = db.prepare('SELECT * FROM tickets WHERE id = ?').get(ticket.id);
@@ -563,7 +586,7 @@ router.post('/:id/reouvrir', (req, res) => {
   });
 });
 
-// Archivage : a tout moment par le CS/admin, mais IMPOSSIBLE sans facture.
+// Archivage : a tout moment par le CS/admin, sans condition de facture (spec 24).
 router.post('/:id/archiver', (req, res) => {
   const db = getDb();
   const ticket = trouverTicket(req, res);
@@ -638,17 +661,20 @@ router.post('/:id/cr', (req, res) => {
       for (const f of req.files || []) fs.unlinkSync(f.path);
       return res.redirect('/tickets/' + id + '#cr');
     }
-    const existe = db.prepare('SELECT id FROM comptes_rendus WHERE ticket_id = ? AND user_id = ?').get(id, req.user.id);
+    // Bilan du cycle en cours uniquement (spec 28) : les bilans des cycles
+    // passes restent figes en lecture seule.
+    const cycle = ticket.cycle || 1;
+    const existe = db.prepare('SELECT id FROM comptes_rendus WHERE ticket_id = ? AND user_id = ? AND cycle = ?').get(id, req.user.id, cycle);
     if (existe) {
       db.prepare("UPDATE comptes_rendus SET contenu = ?, auteur_id = ?, updated_at = datetime('now') WHERE id = ?")
         .run(contenu, req.user.id, existe.id);
     } else {
-      db.prepare('INSERT INTO comptes_rendus (ticket_id, user_id, contenu, auteur_id) VALUES (?, ?, ?, ?)')
-        .run(id, req.user.id, contenu, req.user.id);
+      db.prepare('INSERT INTO comptes_rendus (ticket_id, user_id, cycle, contenu, auteur_id) VALUES (?, ?, ?, ?, ?)')
+        .run(id, req.user.id, cycle, contenu, req.user.id);
     }
     // Photos saisies avec le compte-rendu (contexte 'compte_rendu').
     if ((req.files || []).length > 0) {
-      enregistrerFichiers(db, id, 'photo', req.files, {}, req.user.id, 'compte_rendu');
+      enregistrerFichiers(db, id, 'photo', req.files, {}, req.user.id, 'compte_rendu', cycle);
     }
     db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'compte_rendu', ?, ?)")
       .run(id, req.user.id, `${req.user.nom} a rédigé son bilan de l’intervention${(req.files || []).length ? ` (${req.files.length} photo(s))` : ''}`);

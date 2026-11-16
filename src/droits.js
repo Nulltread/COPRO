@@ -79,10 +79,8 @@ function unitesDuTicket(ticketId) {
   ).all(ticketId);
 }
 
-// Qui doit valider les travaux (planifie -> acceptes), spec 25 :
-// - au moins UN représentant (proprietaire ou locataire) par unité concernée
-//   (villa/garage ; parties communes exclues ici) ;
-// - au moins un membre du CS (jamais l'admin) pour la réception des travaux.
+// Résidents concernés par un ticket (occupants de ses unités) : utilisés pour
+// les droits d'acceptation/refus des travaux (spec 28) et la réouverture.
 // Retourne la liste par unité avec ses résidents actifs.
 function infosValidation(ticketId) {
   const db = getDb();
@@ -102,10 +100,10 @@ function infosValidation(ticketId) {
   return { parUnite, residents, aCommunes };
 }
 
-// Peut valider en « travaux planifiés » : un résident d'une unité concernée
-// (représentant de l'unité) OU un membre du CS (réception — l'admin est exclu
-// du quorum, spec 25).
-function peutValiderTravaux(user, ticket) {
+// Peut accepter OU refuser les travaux en « travaux planifiés » (spec 28) :
+// un occupant d'une unité concernée (propriétaire/locataire) OU un membre du CS
+// — l'admin pur est exclu (jamais dans le quorum, spec 25).
+function peutAccepterRefuser(user, ticket) {
   if (!estActif(user) || !ticket || ticket.etape !== 'intervention_planifiee') return false;
   if (user.role === 'admin' && !isCS(user)) return false; // admin jamais dans le quorum
   const { residents } = infosValidation(ticket.id);
@@ -171,19 +169,31 @@ function personnesConcerneesCR(ticketId) {
   ).all(ticketId);
 }
 
-// Un bilan par personne concernee : redigeable par soi-meme (resident concerne
-// ou membre du CS — admin exclu), a partir de « travaux planifiés ».
+// Un bilan par personne concernee, modifiable UNIQUEMENT en « travaux
+// planifiés » (spec 28) : dès que le ticket passe en « travaux acceptés »,
+// la section bilan passe en lecture seule. Redigeable par soi-meme (resident
+// concerne ou membre du CS — admin exclu), pour le cycle en cours.
 function peutRedigerCR(user, ticket) {
   if (!estActif(user) || !ticket) return false;
   if (user.role === 'admin' && !isCS(user)) return false;
-  if (!['intervention_planifiee', 'travaux_acceptes'].includes(ticket.etape)) return false;
+  if (ticket.etape !== 'intervention_planifiee') return false;
   if (isCS(user)) return true;
   return estResidentConcerne(user, ticket.id);
 }
 
-// Section comptes-rendus visible a partir de « travaux planifies » (et archive).
+// Section bilans visible a partir de « travaux planifies » (et archive).
 function crVisibles(ticket) {
   return !!ticket && ['intervention_planifiee', 'travaux_acceptes', 'archive'].includes(ticket.etape);
+}
+
+// Visibilite de la SECTION bilans (spec 28) : UNIQUEMENT les personnes
+// concernees — occupants des unites du ticket + membres du CS ; l'admin en est
+// exclu. Les autres utilisateurs connectes ne voient pas la section.
+function peutVoirCR(user, ticket) {
+  if (!estActif(user) || !ticket) return false;
+  if (user.role === 'admin') return false; // admin exclu, meme avec le statut CS
+  if (isCS(user)) return true;
+  return estResidentConcerne(user, ticket.id);
 }
 
 // Suppression : UNIQUEMENT si le ticket n'a jamais ete passe en consultation
@@ -247,8 +257,8 @@ module.exports = {
   unitsDeUser, qualiteDeUnit, estUniteCommune, unitesDuTicket,
   peutVoirTicket, peutChoisirUnites, estResidentConcerne,
   peutEditerTicket, peutEditerUnites, peutSupprimerTicket,
-  personnesConcerneesCR, peutRedigerCR, crVisibles,
-  infosValidation, peutValiderTravaux, peutReouvrir, dansDelaiArchivage, dateArchivageAuto,
+  personnesConcerneesCR, peutRedigerCR, crVisibles, peutVoirCR,
+  infosValidation, peutAccepterRefuser, peutReouvrir, dansDelaiArchivage, dateArchivageAuto,
   nbFactures, peutArchiver, entrepriseComplete, consultationComplete,
   ETAPES, ETIQUETTES_ETAPES,
   CATEGORIES_FICHIER_CS

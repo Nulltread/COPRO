@@ -68,6 +68,10 @@ CREATE TABLE IF NOT EXISTS tickets (
   acceptes_at TEXT,
   notif_archive_j3 INTEGER NOT NULL DEFAULT 0,
   notif_archive_j1 INTEGER NOT NULL DEFAULT 0,
+  -- Numero du cycle de consultation en cours (spec 28) : incremente a chaque
+  -- repassage en consultation (reouverture ou refus) ; les bilans des cycles
+  -- passes sont figes en lecture seule.
+  cycle INTEGER NOT NULL DEFAULT 1,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -133,16 +137,18 @@ CREATE TABLE IF NOT EXISTS consultations (
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- Comptes-rendus d'intervention : UNE instance par personne concernee
--- (resident des unites du ticket, membre du CS ou admin) -> cle (ticket_id, user_id).
+-- Bilans d'intervention : UNE instance par personne concernee ET par cycle
+-- (spec 28) -> cle (ticket_id, user_id, cycle). Les bilans des cycles passes
+-- sont figes en lecture seule de facon definitive.
 CREATE TABLE IF NOT EXISTS comptes_rendus (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   ticket_id INTEGER NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  cycle INTEGER NOT NULL DEFAULT 1,
   contenu TEXT NOT NULL DEFAULT '',
   auteur_id INTEGER NOT NULL REFERENCES users(id),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-  UNIQUE (ticket_id, user_id)
+  UNIQUE (ticket_id, user_id, cycle)
 );
 
 CREATE TABLE IF NOT EXISTS fichiers (
@@ -159,6 +165,9 @@ CREATE TABLE IF NOT EXISTS fichiers (
   retenu INTEGER NOT NULL DEFAULT 0,
   consultation_id INTEGER REFERENCES consultations(id) ON DELETE CASCADE,
   contexte TEXT NOT NULL DEFAULT 'creation',
+  -- Cycle du ticket auquel la photo de bilan est rattachee (contexte
+  -- 'compte_rendu') ; NULL pour les autres contextes (spec 28).
+  cycle INTEGER,
   auteur_id INTEGER NOT NULL REFERENCES users(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

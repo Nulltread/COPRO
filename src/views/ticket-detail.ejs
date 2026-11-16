@@ -82,7 +82,7 @@
 
 <% if (ticket.etape === 'travaux_acceptes') { %>
 <section class="bloc">
-  <h2>État des validations</h2>
+  <h2>Acceptations des travaux</h2>
   <ul class="liste-simple">
     <% for (const v of validations) { %>
       <li class="<%= v.caduque ? 'lue' : '' %>"><%= v.auteur_nom || 'Compte supprimé' %> — <% if (v.caduque) { %>🗄 caduque (conservée)<% } else { %>✅ a validé<% } %><% if (v.commentaire) { %> — « <%= v.commentaire %> »<% } %></li>
@@ -259,20 +259,22 @@
 </section>
 <% } %>
 
-<%# ---- Comptes-rendus : visibles à partir de « Travaux planifiés », un par personne concernée %>
-<% if (crVisibles) { %>
+<%# ---- Bilans : visibles dès « Travaux planifiés », UNIQUEMENT aux personnes concernées (occupants des unités + CS, admin exclu) — spec 28 %>
+<% if (crVisibles && peutVoirCR) { %>
 <section class="bloc" id="cr">
   <h2>Bilans de l’intervention</h2>
-  <% if (ticket.etape === 'intervention_planifiee' && peutValiderTravaux) { %>
-    <h3>Acceptation de l'intervention</h3>
-    <p class="aide">Le ticket passera à « Travaux acceptés » quand <strong>au moins un représentant par unité concernée</strong> aura accepté l'intervention <strong>et</strong> qu'au moins un membre du conseil syndical aura validé la réception (une facture doit alors être jointe).</p>
+
+  <%# Boutons Accepter (bleu) / Refuser (rouge) : visibles UNIQUEMENT en « Travaux planifiés » et pour la personne concernée courante (spec 28), chacun avec modale de confirmation %>
+  <% if (ticket.etape === 'intervention_planifiee' && peutAccepterRefuser) { %>
+    <h3>Acceptation ou refus de l’intervention</h3>
+    <p class="aide">Dès qu’<strong>une seule</strong> personne concernée (occupant d’une unité du ticket — propriétaire ou locataire — ou membre du CS) a accepté, le ticket passe en « Travaux acceptés ». Un refus repasse le ticket en « En consultation » (commentaire et au moins une photo obligatoires).</p>
     <ul class="liste-simple">
-      <% for (const u of infosValidation.parUnite) { %>
-        <% const v = u.residents.map(r => validations.find(x => x.user_id === r.id && !x.caduque)).find(Boolean); %>
-        <li><strong><%= u.label %></strong> — <% if (v) { %>✅ accepté par <%= v.auteur_nom %><% if (v.commentaire) { %> — « <%= v.commentaire %> »<% } %><% } else { %>⏳ en attente d'un représentant<% } %></li>
+      <% for (const v of validations.filter(v => !v.caduque)) { %>
+        <li>✅ <%= v.auteur_nom || 'Compte supprimé' %> a accepté<% if (v.commentaire) { %> — « <%= v.commentaire %> »<% } %></li>
       <% } %>
-      <% const vcs = validations.find(x => !x.caduque && x.conseil_syndical === 1 && x.role !== 'admin'); %>
-      <li>Réception des travaux (membre du conseil syndical) : <% if (vcs) { %>✅ validée par <%= vcs.auteur_nom %><% } else { %>⏳ en attente<% } %></li>
+      <% for (const v of validations.filter(v => v.caduque)) { %>
+        <li class="lue">📄 <%= v.auteur_nom || 'Compte supprimé' %> — acceptation caduque (cycle précédent, conservée en lecture seule)</li>
+      <% } %>
     </ul>
     <% if ((photosParContexte['validation'] || []).length > 0) { %>
       <ul class="liste-docs">
@@ -281,39 +283,63 @@
         <% } %>
       </ul>
     <% } %>
-    <% const estConcerneResident = infosValidation.residents.some(r => r.id === user.id); %>
-    <% if (estConcerneResident) { %>
-      <form method="post" action="/tickets/<%= ticket.id %>/valider-travaux" class="formulaire" enctype="multipart/form-data">
-        <input type="hidden" name="action" value="travaux">
+    <div class="actions-acceptation">
+      <form method="post" action="/tickets/<%= ticket.id %>/accepter" class="formulaire" enctype="multipart/form-data" data-confirm="Accepter les travaux ? Dès l’acceptation, le ticket passe à « Travaux acceptés » et cette section passe en lecture seule." data-confirm-titre="Accepter les travaux">
         <label>Commentaire (facultatif)
-          <input type="text" name="commentaire" placeholder="Un mot sur l'intervention…">
+          <input type="text" name="commentaire" placeholder="Un mot sur l’intervention…">
         </label>
         <div class="bloc-photos">
           <label class="zone-photos">
             <input type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple class="champ-fichiers-caches">
             <span class="zone-photos-plus" aria-hidden="true">+</span>
             <span class="zone-photos-icone" aria-hidden="true">📷</span>
-            <span class="zone-photos-texte">Ajouter des photos (facultatif)<br><small>compressées automatiquement avant l'envoi</small></span>
+            <span class="zone-photos-texte">Ajouter des photos (facultatif)<br><small>compressées automatiquement avant l’envoi</small></span>
           </label>
           <div class="apercu"></div>
         </div>
-        <button class="bouton" type="submit">J'accepte l'intervention</button>
+        <button class="bouton" type="submit">Accepter</button>
       </form>
-    <% } %>
-    <% if (user.conseil_syndical === 1) { %>
-      <form method="post" action="/tickets/<%= ticket.id %>/valider-travaux" class="formulaire-ligne" data-confirm="Valider la réception des travaux ? (une facture doit être jointe)" data-confirm-titre="Valider la réception">
-        <input type="hidden" name="action" value="reception">
-        <label>Commentaire (facultatif)
-          <input type="text" name="commentaire" placeholder="Réception constatée…">
+      <form method="post" action="/tickets/<%= ticket.id %>/refuser" class="formulaire" enctype="multipart/form-data" data-confirm="Refuser les travaux ? Le ticket repassera en « En consultation » : les consultations et acceptations précédentes seront caduques et les bilans figés en lecture seule." data-confirm-titre="Refuser les travaux">
+        <label>Commentaire (obligatoire)
+          <input type="text" name="commentaire" required placeholder="Pourquoi refuser ces travaux ?">
         </label>
-        <button class="bouton" type="submit" <%= nbFactures > 0 ? '' : 'disabled' %> title="<%= nbFactures > 0 ? 'Valider la rÃ©ception des travaux' : 'Une facture doit d’abord Ãªtre jointe (section Factures)' %>">Valider la rÃ©ception des travaux</button>
+        <div class="bloc-photos">
+          <label class="zone-photos">
+            <input type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple required class="champ-fichiers-caches">
+            <span class="zone-photos-plus" aria-hidden="true">+</span>
+            <span class="zone-photos-icone" aria-hidden="true">📷</span>
+            <span class="zone-photos-texte">Au moins une photo (obligatoire)<br><small>compressées automatiquement avant l’envoi</small></span>
+          </label>
+          <div class="apercu"></div>
+        </div>
+        <button class="bouton danger" type="submit">Refuser</button>
       </form>
-    <% } %>
+    </div>
   <% } %>
-  <p class="aide">Un bilan par personne concernée (résidents des unités, membres du CS — l’admin n’en a pas).</p>
-  <% for (const p of personnesCR) { const cr = comptesRendus.find(x => x.user_id === p.id); %>
-    <h3><%= p.prenom %> <%= p.nom %><% if (p.conseil_syndical === 1 || p.role === 'admin') { %> <span class="tag-cs">CS</span><% } %></h3>
-    <% if (cr) { %><p><%= cr.contenu %></p><p class="aide">rédigé le <%= cr.updated_at %></p><% } %>
+
+  <%# Bilans du cycle en cours : zone d'édition pour soi (uniquement en « Travaux planifiés »), lecture seule pour les autres personnes concernées (spec 28) %>
+  <% const cycleCourant = ticket.cycle || 1; %>
+  <% const crsCycle = comptesRendus.filter(cr => (cr.cycle || 1) === cycleCourant); %>
+  <% const anciensCycles = [...new Set(comptesRendus.map(cr => cr.cycle || 1))].filter(c => c < cycleCourant).sort((a, b) => b - a); %>
+  <% if (ticket.etape === 'intervention_planifiee') { %><h3>Bilan du cycle <%= cycleCourant %></h3><% } %>
+  <% for (const p of personnesCR) { const cr = crsCycle.find(x => x.user_id === p.id); %>
+    <h3><%= p.prenom %> <%= p.nom %><% if (p.conseil_syndical === 1) { %> <span class="tag-cs">CS</span><% } %></h3>
+    <% if (cr && cr.contenu) { %><p><%= cr.contenu %></p><p class="aide">rédigé le <%= cr.updated_at %></p><% } %>
+    <% const photosP = (photosCRParCycle[cycleCourant] || []).filter(f => f.auteur_id === p.id); %>
+    <% if (photosP.length > 0) { %>
+      <ul class="liste-docs">
+        <% for (const f of photosP) { %>
+          <li>
+            <a href="/fichiers/<%= f.id %>" target="_blank" rel="noopener">🖼 <%= f.nom_original %></a>
+            <% if (peutRedigerCR && p.id === user.id) { %>
+              <form method="post" action="/fichiers/<%= f.id %>/supprimer" class="formulaire-ligne" data-confirm="Supprimer cette photo ?" data-confirm-titre="Supprimer la photo">
+                <button class="bouton-secondaire" type="submit">Supprimer</button>
+              </form>
+            <% } %>
+          </li>
+        <% } %>
+      </ul>
+    <% } %>
     <% if (peutRedigerCR && p.id === user.id) { %>
       <form method="post" action="/tickets/<%= ticket.id %>/cr" class="formulaire" enctype="multipart/form-data" data-autosave>
         <label>Votre bilan <span class="autosave-etat" aria-live="polite"></span>
@@ -324,28 +350,31 @@
             <input type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple class="champ-fichiers-caches">
             <span class="zone-photos-plus" aria-hidden="true">+</span>
             <span class="zone-photos-icone" aria-hidden="true">📷</span>
-            <span class="zone-photos-texte">Ajouter des photos avec le bilan<br><small>compressées automatiquement avant l'envoi</small></span>
+            <span class="zone-photos-texte">Ajouter des photos avec le bilan<br><small>compressées automatiquement avant l’envoi</small></span>
           </label>
           <div class="apercu"></div>
         </div>
       </form>
     <% } %>
   <% } %>
-  <% if ((photosParContexte['compte_rendu'] || []).length > 0) { %>
-    <h3>Photos des bilans</h3>
-    <ul class="liste-docs">
-      <% for (const f of photosParContexte['compte_rendu']) { %>
-        <li>
-          <a href="/fichiers/<%= f.id %>" target="_blank" rel="noopener">🖼 <%= f.nom_original %></a>
-          <span class="auteur">par <%= f.auteur_nom || 'Compte supprimé' %></span>
-          <% if (f.auteur_id === user.id || gestionnaire) { %>
-            <form method="post" action="/fichiers/<%= f.id %>/supprimer" class="formulaire-ligne" data-confirm="Supprimer cette photo ?" data-confirm-titre="Supprimer la photo">
-              <button class="bouton-secondaire" type="submit">Supprimer</button>
-            </form>
-          <% } %>
-        </li>
+
+  <%# Bilans des cycles précédents : figés définitivement en lecture seule (spec 28) %>
+  <% for (const c of anciensCycles) { %>
+    <h3>Bilan du cycle <%= c %> <span class="auteur">📄 figé — lecture seule</span></h3>
+    <% for (const p of personnesCR) { const cr = comptesRendus.find(x => x.user_id === p.id && (x.cycle || 1) === c); %>
+      <% if (cr) { %>
+        <h4><%= p.prenom %> <%= p.nom %></h4>
+        <% if (cr.contenu) { %><p><%= cr.contenu %></p><p class="aide">rédigé le <%= cr.updated_at %></p><% } %>
       <% } %>
-    </ul>
+      <% const photosC = (photosCRParCycle[c] || []).filter(f => f.auteur_id === p.id); %>
+      <% if (photosC.length > 0) { %>
+        <ul class="liste-docs">
+          <% for (const f of photosC) { %>
+            <li><a href="/fichiers/<%= f.id %>" target="_blank" rel="noopener">🖼 <%= f.nom_original %></a></li>
+          <% } %>
+        </ul>
+      <% } %>
+    <% } %>
   <% } %>
 </section>
 <% } %>

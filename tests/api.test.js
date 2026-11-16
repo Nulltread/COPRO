@@ -255,50 +255,49 @@ test('cycle v2 : créé → consultation (CS/admin seul), archivage avec facture
   assert.strictEqual(resEdit.status, 403);
 });
 
-test('travaux planifiés → acceptés : au moins UN représentant par unité + réception par un membre du CS (admin exclu)', async () => {
+test('travaux planifiés → acceptés : UN SEUL acceptant suffit (occupant ou membre du CS), SANS facture (spec 28)', async () => {
   const cs = await client(); await login(cs, 'cs@test.local', 'motdepasse1');
   const r1 = await client(); await login(r1, 'r1@test.local', 'motdepasse1');
   const r2 = await client(); await login(r2, 'r2@test.local', 'motdepasse1');
+  const admin = await client(); await login(admin, 'admin@test.local', 'motdepasse1');
   // villa 2 : seul résident = r2
-  const { tid } = await creerTicket(r2, [ids.villa2], 'Validation r2 seul');
+  const { tid } = await creerTicket(r2, [ids.villa2], 'Acceptation un seul');
   await cs.req('POST', `/tickets/${tid}/passer-consultation`);
   const cid = ajouterConsultationComplete(tid, ids.cs);
   await cs.req('POST', `/tickets/${tid}/consultations/${cid}/valider`);
   assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'intervention_planifiee');
-  // un résident non concerné ne peut pas valider
-  const resKo = await r1.req('POST', `/tickets/${tid}/valider-travaux`, { commentaire: 'ok' });
-  assert.strictEqual(resKo.status, 403);
-  // r2 (seul résident de villa 2) valide les travaux → toujours planifié (réception CS manquante)
-  const resOk = await r2.req('POST', `/tickets/${tid}/valider-travaux`, { action: 'travaux', commentaire: 'Vu, OK pour moi' });
+  // un résident non concerné ne peut ni accepter ni refuser → 403
+  assert.strictEqual((await r1.req('POST', `/tickets/${tid}/accepter`, { commentaire: 'ok' })).status, 403);
+  assert.strictEqual((await r1.req('POST', `/tickets/${tid}/refuser`, { commentaire: 'non' })).status, 403);
+  // l'admin (jamais dans le quorum) → 403
+  assert.strictEqual((await admin.req('POST', `/tickets/${tid}/accepter`, {})).status, 403);
+  assert.strictEqual((await admin.req('POST', `/tickets/${tid}/refuser`, {})).status, 403);
+  // r2 accepte : passage immédiat en « travaux acceptés », SANS aucune facture
+  const resOk = await r2.req('POST', `/tickets/${tid}/accepter`, { commentaire: 'Vu, OK pour moi' });
   assert.strictEqual(resOk.status, 302);
-  assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'intervention_planifiee');
-  // le CS ne peut pas valider la réception sans facture → 400
-  assert.strictEqual((await cs.req('POST', `/tickets/${tid}/valider-travaux`, { action: 'reception' })).status, 400);
-  // l'ADMIN ne peut pas valider la réception (jamais dans le quorum, spec 25) → 403
-  const admin = await client(); await login(admin, 'admin@test.local', 'motdepasse1');
-  assert.strictEqual((await admin.req('POST', `/tickets/${tid}/valider-travaux`, { action: 'reception' })).status, 403);
-  // avec une facture, le CS valide la réception → travaux acceptés
-  ajouterFacture(tid, ids.cs, 500);
-  assert.strictEqual((await cs.req('POST', `/tickets/${tid}/valider-travaux`, { action: 'reception', commentaire: 'Réception OK' })).status, 302);
   const t = db().prepare('SELECT etape, acceptes_at FROM tickets WHERE id=?').get(tid);
   assert.strictEqual(t.etape, 'travaux_acceptes');
   assert.ok(t.acceptes_at);
+  assert.strictEqual(db().prepare("SELECT COUNT(*) AS n FROM fichiers WHERE ticket_id=? AND categorie='facture'").get(tid).n, 0);
+  // une fois acceptés, plus d'acceptation/refus possible
+  assert.strictEqual((await cs.req('POST', `/tickets/${tid}/accepter`, {})).status, 403);
+  assert.strictEqual((await cs.req('POST', `/tickets/${tid}/refuser`, {})).status, 403);
 
-  // ticket multi-unités (villa 1 : r1 + nouveau, villa 2 : r2) : UN seul représentant
-  // par unité suffit (r1 pour villa 1, r2 pour villa 2 — "nouveau" ne valide pas)
-  const { tid: tid2 } = await creerTicket(r2, [ids.villa1, ids.villa2], 'Validation un représentant par unité');
+  // ticket multi-unités (villa 1 + villa 2) : un seul acceptant au total suffit
+  const { tid: tid2 } = await creerTicket(r2, [ids.villa1, ids.villa2], 'Un seul acceptant au total');
   await cs.req('POST', `/tickets/${tid2}/passer-consultation`);
   const cid2 = ajouterConsultationComplete(tid2, ids.cs);
   await cs.req('POST', `/tickets/${tid2}/consultations/${cid2}/valider`);
-  await r1.req('POST', `/tickets/${tid2}/valider-travaux`, { action: 'travaux', commentaire: 'ok pour moi' });
-  // villa 2 pas encore représentée → toujours planifié
-  assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid2).etape, 'intervention_planifiee');
-  await r2.req('POST', `/tickets/${tid2}/valider-travaux`, { action: 'travaux', commentaire: 'ok pour moi aussi' });
-  // chaque unité a un représentant, mais pas de réception → toujours planifié
-  assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid2).etape, 'intervention_planifiee');
-  ajouterFacture(tid2, ids.cs, 200);
-  await cs.req('POST', `/tickets/${tid2}/valider-travaux`, { action: 'reception' });
+  await r1.req('POST', `/tickets/${tid2}/accepter`, { commentaire: 'ok pour moi' });
   assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid2).etape, 'travaux_acceptes');
+
+  // le CS peut aussi accepter seul
+  const { tid: tid3 } = await creerTicket(r2, [ids.villa2], 'Acceptation par le CS');
+  await cs.req('POST', `/tickets/${tid3}/passer-consultation`);
+  const cid3 = ajouterConsultationComplete(tid3, ids.cs);
+  await cs.req('POST', `/tickets/${tid3}/consultations/${cid3}/valider`);
+  await cs.req('POST', `/tickets/${tid3}/accepter`, { commentaire: 'réception ok' });
+  assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid3).etape, 'travaux_acceptes');
 });
 
 test('édition : possible tant que non archivé (loguée avec auteur), interdite une fois archivé', async () => {
@@ -390,10 +389,11 @@ test('section documents supprimée ; factures (PDF + coût) réservées au CS, l
   assert.strictEqual(resSansMontant.status, 400);
 });
 
-test('compte-rendu : UNE instance par personne concernée, à partir de « Travaux planifiés » uniquement', async () => {
+test('bilans : une instance par personne concernée et par cycle ; visibilité = personnes concernées uniquement (spec 28)', async () => {
   const cs = await client(); await login(cs, 'cs@test.local', 'motdepasse1');
   const r1 = await client(); await login(r1, 'r1@test.local', 'motdepasse1');
   const r2 = await client(); await login(r2, 'r2@test.local', 'motdepasse1');
+  const admin = await client(); await login(admin, 'admin@test.local', 'motdepasse1');
   const { tid } = await creerTicket(r1, [ids.villa1], 'Ticket CR');
   // pas rédigeable en « créé » ni en « consultation »
   assert.strictEqual((await r1.req('POST', `/tickets/${tid}/cr`, { contenu: 'trop tôt' })).status, 403);
@@ -401,32 +401,45 @@ test('compte-rendu : UNE instance par personne concernée, à partir de « Trava
   assert.strictEqual((await r1.req('POST', `/tickets/${tid}/cr`, { contenu: 'trop tôt' })).status, 403);
   const cid = ajouterConsultationComplete(tid, ids.cs);
   await cs.req('POST', `/tickets/${tid}/consultations/${cid}/valider`);
-  // r1 rédige SON compte-rendu, puis le modifie : toujours UNE seule ligne
-  assert.strictEqual((await r1.req('POST', `/tickets/${tid}/cr`, { contenu: 'CR de r1' })).status, 302);
-  assert.strictEqual((await r1.req('POST', `/tickets/${tid}/cr`, { contenu: 'CR de r1 modifié' })).status, 302);
+  // r1 rédige SON bilan, puis le modifie : toujours UNE seule ligne pour le cycle 1
+  assert.strictEqual((await r1.req('POST', `/tickets/${tid}/cr`, { contenu: 'Bilan de r1' })).status, 302);
+  assert.strictEqual((await r1.req('POST', `/tickets/${tid}/cr`, { contenu: 'Bilan de r1 modifié' })).status, 302);
   let crs = db().prepare('SELECT * FROM comptes_rendus WHERE ticket_id=?').all(tid);
   assert.strictEqual(crs.length, 1);
   assert.strictEqual(crs[0].user_id, ids.r1);
-  assert.strictEqual(crs[0].contenu, 'CR de r1 modifié');
-  // le CS rédige le sien -> 2 lignes (une par personne concernée)
-  assert.strictEqual((await cs.req('POST', `/tickets/${tid}/cr`, { contenu: 'CR du CS' })).status, 302);
+  assert.strictEqual(crs[0].cycle, 1);
+  assert.strictEqual(crs[0].contenu, 'Bilan de r1 modifié');
+  // le CS rédige le sien -> 2 lignes (une par personne concernée, cycle 1)
+  assert.strictEqual((await cs.req('POST', `/tickets/${tid}/cr`, { contenu: 'Bilan du CS' })).status, 302);
   crs = db().prepare('SELECT * FROM comptes_rendus WHERE ticket_id=? ORDER BY user_id').all(tid);
   assert.strictEqual(crs.length, 2);
   // r2 (non concerné) ne peut pas rédiger
   assert.strictEqual((await r2.req('POST', `/tickets/${tid}/cr`, { contenu: 'x' })).status, 403);
-  // la page affiche la section « Bilans » en « planifié », avec le bouton d'acceptation
-  // et la sauvegarde à la volée (pas de bouton Enregistrer)
+  // l'admin n'a pas de bilan et ne peut pas en rédiger
+  assert.strictEqual((await admin.req('POST', `/tickets/${tid}/cr`, { contenu: 'bilan admin' })).status, 403);
+  // page en « planifié » : section bilans + boutons Accepter/Refuser + autosave, phrase « Un bilan par personne concernée » masquée
   const page = await (await r1.req('GET', '/tickets/' + tid)).text();
   assert.ok(page.includes('Bilans de l\u2019intervention'));
-  assert.ok(page.includes("J'accepte l'intervention"));
+  assert.ok(page.includes('/accepter') && page.includes('/refuser'));
+  assert.ok(page.includes('>Accepter</button>') && page.includes('>Refuser</button>'));
   assert.ok(page.includes('data-autosave'));
+  assert.ok(!page.includes('Un bilan par personne concern\u00e9e'));
   assert.ok(!page.includes('>Enregistrer</button>'));
-  assert.ok(page.includes('CR de r1 modifié'));
-  // l'admin n'a pas de bilan à rédiger (jamais dans le quorum) et ne peut pas en rédiger
-  const admin = await client(); await login(admin, 'admin@test.local', 'motdepasse1');
-  assert.strictEqual((await admin.req('POST', `/tickets/${tid}/cr`, { contenu: 'bilan admin' })).status, 403);
+  assert.ok(page.includes('Bilan de r1 modifié'));
+  // visibilité : r2 (non concerné) et l'admin ne voient PAS la section bilans
+  const pageR2 = await (await r2.req('GET', '/tickets/' + tid)).text();
+  assert.ok(!pageR2.includes('Bilans de l\u2019intervention'));
   const pageAdmin = await (await admin.req('GET', '/tickets/' + tid)).text();
-  assert.ok(!pageAdmin.includes('Votre bilan'));
+  assert.ok(!pageAdmin.includes('Bilans de l\u2019intervention'));
+  // en « travaux acceptés » : section en lecture seule (plus de formulaire, plus de boutons)
+  await r1.req('POST', `/tickets/${tid}/accepter`, { commentaire: 'ok' });
+  assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'travaux_acceptes');
+  assert.strictEqual((await r1.req('POST', `/tickets/${tid}/cr`, { contenu: 'modif après acceptation' })).status, 403);
+  const pageA = await (await r1.req('GET', '/tickets/' + tid)).text();
+  assert.ok(pageA.includes('Bilans de l\u2019intervention')); // toujours visible aux concernés
+  assert.ok(!pageA.includes('/accepter') && !pageA.includes('/refuser')); // boutons masqués
+  assert.ok(!pageA.includes('Votre bilan')); // plus de zone d'édition
+  assert.ok(pageA.includes('Bilan de r1 modifié')); // lecture seule
 });
 
 test('notifications : uniquement sur les transitions ; destinataires = résidents concernés + CS + admin (hors auteur)', async () => {
@@ -628,16 +641,16 @@ test('panneau d\'administration : réservé à l\'admin, réglages péremption +
   assert.strictEqual(getParametre('peremption_rattachement_jours'), '14');
 });
 
-test('réouverture d\'un ticket « travaux acceptés » (commentaire + photo obligatoires) → retour en consultation, caduques', async () => {
+test('réouverture d\'un ticket « travaux acceptés » (commentaire + photo obligatoires) → retour en consultation, caduques, cycle suivant, bilans figés', async () => {
   const cs = await client(); await login(cs, 'cs@test.local', 'motdepasse1');
   const r2 = await client(); await login(r2, 'r2@test.local', 'motdepasse1');
   const { tid } = await creerTicket(r2, [ids.villa2], 'Réouverture test');
   await cs.req('POST', `/tickets/${tid}/passer-consultation`);
   const cid = ajouterConsultationComplete(tid, ids.cs);
   await cs.req('POST', `/tickets/${tid}/consultations/${cid}/valider`);
-  await r2.req('POST', `/tickets/${tid}/valider-travaux`, { action: 'travaux', commentaire: 'ok' });
-  ajouterFacture(tid, ids.cs, 300);
-  await cs.req('POST', `/tickets/${tid}/valider-travaux`, { action: 'reception' });
+  // bilan du cycle 1 avant acceptation
+  await r2.req('POST', `/tickets/${tid}/cr`, { contenu: 'Bilan cycle 1' });
+  await r2.req('POST', `/tickets/${tid}/accepter`, { commentaire: 'ok' });
   assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'travaux_acceptes');
   // sans commentaire → 400
   const formSans = new FormData();
@@ -654,17 +667,79 @@ test('réouverture d\'un ticket « travaux acceptés » (commentaire + photo obl
   form.append('photos', new Blob(['x'], { type: 'image/png' }), 'p.png');
   const res = await r2.req('POST', `/tickets/${tid}/reouvrir`, undefined, form);
   assert.strictEqual(res.status, 302);
-  const t = db().prepare('SELECT etape, acceptes_at FROM tickets WHERE id=?').get(tid);
+  const t = db().prepare('SELECT etape, acceptes_at, cycle FROM tickets WHERE id=?').get(tid);
   assert.strictEqual(t.etape, 'consultation');
   assert.strictEqual(t.acceptes_at, null);
+  assert.strictEqual(t.cycle, 2); // nouveau cycle : les bilans du cycle 1 sont figés
   // consultations et validations précédentes caduques (conservées en lecture seule)
   assert.strictEqual(db().prepare('SELECT caduque FROM consultations WHERE id=?').get(cid).caduque, 1);
   assert.strictEqual(db().prepare('SELECT caduque FROM resolutions WHERE ticket_id=?').get(tid).caduque, 1);
   // la consultation caduque ne permet plus de valider
   assert.strictEqual((await cs.req('POST', `/tickets/${tid}/consultations/${cid}/valider`)).status, 400);
+  // le bilan du cycle 1 est conservé en lecture seule ; plus modifiable
+  assert.strictEqual((await r2.req('POST', `/tickets/${tid}/cr`, { contenu: 'modif cycle 1' })).status, 403);
+  const cr1 = db().prepare('SELECT * FROM comptes_rendus WHERE ticket_id=? AND cycle=1').get(tid);
+  assert.ok(cr1 && cr1.contenu === 'Bilan cycle 1');
   // la photo de réouverture est bien enregistrée
-  const nbPhotos = db().prepare("SELECT COUNT(*) AS n FROM fichiers WHERE ticket_id=? AND categorie='photo'").get(tid).n;
-  assert.ok(nbPhotos >= 1);
+  assert.strictEqual(db().prepare("SELECT COUNT(*) AS n FROM fichiers WHERE ticket_id=? AND categorie='photo' AND contexte='reouverture'").get(tid).n, 1);
+  // nouveau cycle : on valide une NOUVELLE consultation, puis on rédige un NOUVEAU bilan (cycle 2)
+  const cid2 = ajouterConsultationComplete(tid, ids.cs);
+  await cs.req('POST', `/tickets/${tid}/consultations/${cid2}/valider`);
+  assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'intervention_planifiee');
+  assert.strictEqual((await r2.req('POST', `/tickets/${tid}/cr`, { contenu: 'Bilan cycle 2' })).status, 302);
+  const crs = db().prepare('SELECT cycle, contenu FROM comptes_rendus WHERE ticket_id=? ORDER BY cycle').all(tid);
+  assert.strictEqual(crs.length, 2);
+  assert.deepStrictEqual(crs.map(c => c.cycle), [1, 2]);
+  assert.strictEqual(crs[1].contenu, 'Bilan cycle 2');
+});
+
+test('refus des travaux (planifiés → consultation) : commentaire + photo obligatoires, consultations caduques, cycle suivant (spec 28)', async () => {
+  const cs = await client(); await login(cs, 'cs@test.local', 'motdepasse1');
+  const r2 = await client(); await login(r2, 'r2@test.local', 'motdepasse1');
+  const r1 = await client(); await login(r1, 'r1@test.local', 'motdepasse1');
+  const { tid } = await creerTicket(r2, [ids.villa2], 'Refus test');
+  await cs.req('POST', `/tickets/${tid}/passer-consultation`);
+  const cid = ajouterConsultationComplete(tid, ids.cs);
+  await cs.req('POST', `/tickets/${tid}/consultations/${cid}/valider`);
+  await r2.req('POST', `/tickets/${tid}/cr`, { contenu: 'Bilan avant refus' });
+  // refus sans commentaire → 400
+  const f1 = new FormData();
+  f1.append('photos', new Blob(['x'], { type: 'image/png' }), 'p.png');
+  assert.strictEqual((await r2.req('POST', `/tickets/${tid}/refuser`, undefined, f1)).status, 400);
+  // refus sans photo → 400
+  const f2 = new FormData();
+  f2.append('commentaire', 'travaux insuffisants');
+  assert.strictEqual((await r2.req('POST', `/tickets/${tid}/refuser`, undefined, f2)).status, 400);
+  // non concerné → 403
+  assert.strictEqual((await r1.req('POST', `/tickets/${tid}/refuser`, undefined, f2)).status, 403);
+  // refus avec commentaire + photo → retour en consultation, cycle 2
+  const f3 = new FormData();
+  f3.append('commentaire', 'travaux insuffisants');
+  f3.append('photos', new Blob(['x'], { type: 'image/png' }), 'p.png');
+  const res = await r2.req('POST', `/tickets/${tid}/refuser`, undefined, f3);
+  assert.strictEqual(res.status, 302);
+  const t = db().prepare('SELECT etape, cycle FROM tickets WHERE id=?').get(tid);
+  assert.strictEqual(t.etape, 'consultation');
+  assert.strictEqual(t.cycle, 2);
+  // consultations précédentes caduques (nouvelle instance de la phase consultation)
+  assert.strictEqual(db().prepare('SELECT caduque FROM consultations WHERE id=?').get(cid).caduque, 1);
+  assert.strictEqual((await cs.req('POST', `/tickets/${tid}/consultations/${cid}/valider`)).status, 400);
+  // photo du refus enregistrée (contexte 'refus')
+  assert.strictEqual(db().prepare("SELECT COUNT(*) AS n FROM fichiers WHERE ticket_id=? AND categorie='photo' AND contexte='refus'").get(tid).n, 1);
+  // bilan du cycle 1 figé : plus modifiable, conservé
+  assert.strictEqual((await r2.req('POST', `/tickets/${tid}/cr`, { contenu: 'x' })).status, 403);
+  assert.strictEqual(db().prepare('SELECT contenu FROM comptes_rendus WHERE ticket_id=? AND cycle=1').get(tid).contenu, 'Bilan avant refus');
+  // le CS peut aussi refuser
+  const { tid: tid2 } = await creerTicket(r2, [ids.villa2], 'Refus par le CS');
+  await cs.req('POST', `/tickets/${tid2}/passer-consultation`);
+  const cid2 = ajouterConsultationComplete(tid2, ids.cs);
+  await cs.req('POST', `/tickets/${tid2}/consultations/${cid2}/valider`);
+  const f4 = new FormData();
+  f4.append('commentaire', 'devis insuffisant');
+  f4.append('photos', new Blob(['x'], { type: 'image/png' }), 'p.png');
+  assert.strictEqual((await cs.req('POST', `/tickets/${tid2}/refuser`, undefined, f4)).status, 302);
+  assert.strictEqual(db().prepare('SELECT etape, cycle FROM tickets WHERE id=?').get(tid2).etape, 'consultation');
+  assert.strictEqual(db().prepare('SELECT cycle FROM tickets WHERE id=?').get(tid2).cycle, 2);
 });
 
 test('péremption des demandes de rattachement (tâche périodique) + alertes J-3/J-1 aux admin et CS', async () => {
@@ -687,7 +762,7 @@ test('péremption des demandes de rattachement (tâche périodique) + alertes J-
   assert.ok(db().prepare('SELECT COUNT(*) AS n FROM rattachements WHERE unit_id=? AND user_id=?').get(ids.garage1, ids.r2).n >= 1);
 });
 
-test('archivage automatique des « travaux acceptés » après le délai (uniquement avec facture) + alerte J-3', async () => {
+test('archivage automatique des « travaux acceptés » après le délai (sans condition de facture, spec 24) + alerte J-3', async () => {
   const { executerTaches } = require('../src/taches');
   const r1 = await client(); await login(r1, 'r1@test.local', 'motdepasse1');
   // acceptés depuis 40 jours → archivé automatiquement (spec 24 : sans condition de facture)
