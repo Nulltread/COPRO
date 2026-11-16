@@ -1,0 +1,15 @@
+<%# Mosaïque de photos (spec 32) : tuiles carrées, miniature, poubelle en overlay si suppression possible %>
+<% if (photos && photos.length > 0) { %>
+<div class="mosaic">
+  <% for (const f of photos) { %>
+    <div class="tuile">
+      <a href="/fichiers/<%= f.id %>" target="_blank" rel="noopener"><img src="/fichiers/<%= f.id %>" alt="<%= f.nom_original %>" loading="lazy"></a>
+      <% if (typeof peutSupprimer !== 'undefined' && peutSupprimer) { %>
+        <form method="post" action="/fichiers/<%= f.id %>/supprimer" class="form-poubelle" data-confirm="Supprimer cette photo ?" data-confirm-titre="Supprimer la photo">
+          <button type="submit" class="poubelle-overlay" title="Supprimer cette photo" aria-label="Supprimer <%= f.nom_original %>">🗑</button>
+        </form>
+      <% } %>
+    </div>
+  <% } %>
+</div>
+<% } %>

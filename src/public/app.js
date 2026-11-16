@@ -129,7 +129,26 @@
         compresses.forEach(function (f) { dt.items.add(f); });
         champ.files = dt.files;
         afficherApercu();
+        var formAuto = champ.closest('form');
+        if (formAuto && formAuto.hasAttribute('data-autosubmit-photos')) {
+          montrerOverlay();
+          formAuto.requestSubmit();
+        }
       });
+    });
+  });
+
+  // --- Overlay de chargement (voile grisé + serpent tournant, spec 32) ---
+  function montrerOverlay() {
+    var o = document.getElementById('overlay-chargement');
+    if (o) o.hidden = false;
+  }
+  document.querySelectorAll('form:not([data-autosave])').forEach(function (form) {
+    form.addEventListener('submit', function (e) {
+      if (form.dataset.confirme === '1') { montrerOverlay(); return; }
+      var s = e.submitter;
+      if (form.dataset.confirm || (s && s.dataset.confirm)) return; // la modale de confirmation passe d'abord
+      montrerOverlay();
     });
   });
 
