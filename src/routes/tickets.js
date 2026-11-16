@@ -9,6 +9,7 @@ const {
   infosValidation, peutAccepterRefuser, peutReouvrir, dateArchivageAuto,
   nbFactures, peutArchiver, consultationComplete,
   personnesConcerneesCR, peutRedigerCR, crVisibles, peutVoirCR, sectionsVisibles,
+  peutToggleUrgent, peutGererPhotosDescription,
   ETAPES, ETIQUETTES_ETAPES
 } = require('../droits');
 const { getParametreJours } = require('../parametres');
@@ -255,6 +256,8 @@ router.get('/:id', (req, res) => {
     peutRedigerCR: peutRedigerCR(req.user, d.ticket),
     peutSupprimer: peutSupprimerTicket(req.user, d.ticket),
     peutAccepterRefuser: peutAccepterRefuser(req.user, d.ticket),
+    peutToggleUrgent: peutToggleUrgent(req.user, d.ticket),
+    peutGererPhotos: peutGererPhotosDescription(req.user, d.ticket),
     peutVoirCR: d.peutVoirCR,
     peutReouvrir: peutReouvrir(req.user, d.ticket),
     peutArchiver: peutArchiver(req.user, d.ticket),
@@ -510,7 +513,8 @@ router.post('/:id/accepter', (req, res) => {
   }
   upload.array('photos', 10)(req, res, (err) => {
     if (err) return res.status(400).render('erreur', { user: req.user, message: err.message });
-    const commentaire = (req.body.commentaire || '').trim();
+    // spec 31 : la zone unique du bilan envoie « contenu » ; le commentaire d'acceptation en hérite.
+    const commentaire = (req.body.commentaire ?? req.body.contenu ?? '').trim();
     db.prepare('INSERT OR IGNORE INTO resolutions (ticket_id, user_id, commentaire, caduque) VALUES (?, ?, ?, 0)')
       .run(ticket.id, req.user.id, commentaire);
     db.prepare('UPDATE resolutions SET commentaire = ? WHERE ticket_id = ? AND user_id = ? AND caduque = 0')
@@ -545,15 +549,13 @@ router.post('/:id/refuser', (req, res) => {
   }
   upload.array('photos', 10)(req, res, (err) => {
     if (err) return res.status(400).render('erreur', { user: req.user, message: err.message });
-    const commentaire = (req.body.commentaire || '').trim();
-    if (!commentaire) {
+    // spec 31 : le refus exige au moins un commentaire OU une photo (l'un des deux suffit).
+    const commentaire = (req.body.commentaire ?? req.body.contenu ?? '').trim();
+    if (!commentaire && (req.files || []).length === 0) {
       nettoyerFichiers(req.files);
-      return res.status(400).render('erreur', { user: req.user, message: 'Un commentaire est obligatoire pour refuser les travaux.' });
+      return res.status(400).render('erreur', { user: req.user, message: 'Un commentaire ou au moins une photo est obligatoire pour refuser les travaux.' });
     }
-    // Photos : moment cadre n°4 = le refus des travaux (au moins une obligatoire).
-    if ((req.files || []).length === 0) {
-      return res.status(400).render('erreur', { user: req.user, message: 'Au moins une photo est obligatoire pour refuser les travaux.' });
-    }
+    // Photos : moment cadre n°4 = le refus des travaux.
     enregistrerFichiers(db, ticket.id, 'photo', req.files, {}, req.user.id, 'refus');
     db.prepare('UPDATE consultations SET caduque = 1 WHERE ticket_id = ?').run(ticket.id);
     db.prepare('UPDATE resolutions SET caduque = 1 WHERE ticket_id = ?').run(ticket.id);
@@ -612,6 +614,44 @@ router.post('/:id/archiver', (req, res) => {
   if (ticket.etape === 'archive') return res.redirect('/tickets/' + ticket.id);
   faireTransition(db, ticket, 'archive', req.user.id, 'Ticket archivé manuellement');
   res.redirect('/tickets/' + ticket.id);
+});
+
+// Toggle « urgent » (spec 31) : uniquement a l'etape « cree », par les acteurs
+// du ticket (occupants des unites concernees, CS, admin).
+router.post('/:id/urgent', (req, res) => {
+  const db = getDb();
+  const ticket = trouverTicket(req, res);
+  if (!ticket) return;
+  if (!peutToggleUrgent(req.user, ticket)) {
+    return res.status(403).render('erreur', { user: req.user, message: 'Le caractère urgent n\'est modifiable qu\'à l\'étape « Créé », par un occupant des unités concernées, un membre du conseil syndical ou l\'admin.' });
+  }
+  const urgent = req.body.urgent ? 1 : 0;
+  if (ticket.urgent !== urgent) {
+    db.prepare("UPDATE tickets SET urgent = ?, updated_at = datetime('now') WHERE id = ?").run(urgent, ticket.id);
+    db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'edition', ?, ?)")
+      .run(ticket.id, req.user.id, `${req.user.nom} a ${urgent ? 'marqué le ticket comme URGENT' : 'retiré le caractère urgent du ticket'}`);
+  }
+  res.redirect('/tickets/' + ticket.id);
+});
+
+// Ajout de photos a la section Description (spec 31) : uniquement a l'etape
+// « cree », par toute personne concernee (occupant, CS, admin).
+router.post('/:id/photos', (req, res) => {
+  const db = getDb();
+  const ticket = trouverTicket(req, res);
+  if (!ticket) return;
+  if (!peutGererPhotosDescription(req.user, ticket)) {
+    return res.status(403).render('erreur', { user: req.user, message: 'Les photos de la description ne sont ajoutables qu\'à l\'étape « Créé », par une personne concernée.' });
+  }
+  upload.array('photos', 10)(req, res, (err) => {
+    if (err) return res.status(400).render('erreur', { user: req.user, message: err.message });
+    if ((req.files || []).length > 0) {
+      enregistrerFichiers(db, ticket.id, 'photo', req.files, {}, req.user.id, 'creation');
+      db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'fichier', ?, ?)")
+        .run(ticket.id, req.user.id, `${req.user.nom} a ajouté ${req.files.length} photo(s) à la description`);
+    }
+    res.redirect('/tickets/' + ticket.id + '#description');
+  });
 });
 
 router.post('/:id/unites', (req, res) => {

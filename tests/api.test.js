@@ -693,7 +693,7 @@ test('réouverture d\'un ticket « travaux acceptés » (commentaire + photo obl
   assert.strictEqual(crs[1].contenu, 'Bilan cycle 2');
 });
 
-test('refus des travaux (planifiés → consultation) : commentaire + photo obligatoires, consultations caduques, cycle suivant (spec 28)', async () => {
+test('refus des travaux (planifiés → consultation) : commentaire OU photo obligatoire (spec 31), consultations caduques, cycle suivant (spec 28)', async () => {
   const cs = await client(); await login(cs, 'cs@test.local', 'motdepasse1');
   const r2 = await client(); await login(r2, 'r2@test.local', 'motdepasse1');
   const r1 = await client(); await login(r1, 'r1@test.local', 'motdepasse1');
@@ -702,21 +702,15 @@ test('refus des travaux (planifiés → consultation) : commentaire + photo obli
   const cid = ajouterConsultationComplete(tid, ids.cs);
   await cs.req('POST', `/tickets/${tid}/consultations/${cid}/valider`);
   await r2.req('POST', `/tickets/${tid}/cr`, { contenu: 'Bilan avant refus' });
-  // refus sans commentaire → 400
-  const f1 = new FormData();
-  f1.append('photos', new Blob(['x'], { type: 'image/png' }), 'p.png');
-  assert.strictEqual((await r2.req('POST', `/tickets/${tid}/refuser`, undefined, f1)).status, 400);
-  // refus sans photo → 400
+  // spec 31 : refus = au moins un commentaire OU une photo
+  // refus sans commentaire NI photo → 400
+  assert.strictEqual((await r2.req('POST', `/tickets/${tid}/refuser`, undefined, new FormData())).status, 400);
+  // non concerné → 403
   const f2 = new FormData();
   f2.append('commentaire', 'travaux insuffisants');
-  assert.strictEqual((await r2.req('POST', `/tickets/${tid}/refuser`, undefined, f2)).status, 400);
-  // non concerné → 403
   assert.strictEqual((await r1.req('POST', `/tickets/${tid}/refuser`, undefined, f2)).status, 403);
-  // refus avec commentaire + photo → retour en consultation, cycle 2
-  const f3 = new FormData();
-  f3.append('commentaire', 'travaux insuffisants');
-  f3.append('photos', new Blob(['x'], { type: 'image/png' }), 'p.png');
-  const res = await r2.req('POST', `/tickets/${tid}/refuser`, undefined, f3);
+  // refus avec commentaire SEUL (sans photo) → accepté, retour en consultation, cycle 2
+  const res = await r2.req('POST', `/tickets/${tid}/refuser`, undefined, f2);
   assert.strictEqual(res.status, 302);
   const t = db().prepare('SELECT etape, cycle FROM tickets WHERE id=?').get(tid);
   assert.strictEqual(t.etape, 'consultation');
@@ -724,8 +718,7 @@ test('refus des travaux (planifiés → consultation) : commentaire + photo obli
   // consultations précédentes caduques (nouvelle instance de la phase consultation)
   assert.strictEqual(db().prepare('SELECT caduque FROM consultations WHERE id=?').get(cid).caduque, 1);
   assert.strictEqual((await cs.req('POST', `/tickets/${tid}/consultations/${cid}/valider`)).status, 400);
-  // photo du refus enregistrée (contexte 'refus')
-  assert.strictEqual(db().prepare("SELECT COUNT(*) AS n FROM fichiers WHERE ticket_id=? AND categorie='photo' AND contexte='refus'").get(tid).n, 1);
+
   // bilan du cycle 1 figé : plus modifiable, conservé
   assert.strictEqual((await r2.req('POST', `/tickets/${tid}/cr`, { contenu: 'x' })).status, 403);
   assert.strictEqual(db().prepare('SELECT contenu FROM comptes_rendus WHERE ticket_id=? AND cycle=1').get(tid).contenu, 'Bilan avant refus');
@@ -734,12 +727,14 @@ test('refus des travaux (planifiés → consultation) : commentaire + photo obli
   await cs.req('POST', `/tickets/${tid2}/passer-consultation`);
   const cid2 = ajouterConsultationComplete(tid2, ids.cs);
   await cs.req('POST', `/tickets/${tid2}/consultations/${cid2}/valider`);
+  // refus du CS avec une photo SEULE (sans commentaire) → accepté aussi
   const f4 = new FormData();
-  f4.append('commentaire', 'devis insuffisant');
   f4.append('photos', new Blob(['x'], { type: 'image/png' }), 'p.png');
   assert.strictEqual((await cs.req('POST', `/tickets/${tid2}/refuser`, undefined, f4)).status, 302);
   assert.strictEqual(db().prepare('SELECT etape, cycle FROM tickets WHERE id=?').get(tid2).etape, 'consultation');
   assert.strictEqual(db().prepare('SELECT cycle FROM tickets WHERE id=?').get(tid2).cycle, 2);
+  // photo du refus enregistrée (contexte 'refus')
+  assert.strictEqual(db().prepare("SELECT COUNT(*) AS n FROM fichiers WHERE ticket_id=? AND categorie='photo' AND contexte='refus'").get(tid2).n, 1);
 });
 
 test('péremption des demandes de rattachement (tâche périodique) + alertes J-3/J-1 aux admin et CS', async () => {
@@ -969,4 +964,66 @@ test('spec 29 : fiche ticket réorganisée (sections par état, règle archive),
   const demande2 = db().prepare('SELECT id FROM rattachements WHERE user_id = ? AND statut = ?').get(ids.r2, 'en_attente');
   await r1.req('POST', `/profil/rattachements/${demande2.id}/annuler`);
   assert.strictEqual(db().prepare('SELECT COUNT(*) AS n FROM rattachements WHERE id = ?').get(demande2.id).n, 1);
+});
+
+test('spec 31 : toggle urgent (Créé seulement, acteurs), libellés description, photos description jusqu\'en consultation, bilan = une seule zone + Accepter/Refuser', async () => {
+  const cs = await client(); await login(cs, 'cs@test.local', 'motdepasse1');
+  const r1 = await client(); await login(r1, 'r1@test.local', 'motdepasse1');
+  const r2 = await client(); await login(r2, 'r2@test.local', 'motdepasse1');
+  const { tid } = await creerTicket(r1, [ids.villa1], 'Spec31 test');
+
+  // --- libellés : plus de label "Description" ni de titre "Unités concernées" (spec 31) ---
+  let page = await (await r1.req('GET', '/tickets/' + tid)).text();
+  assert.ok(page.includes('<h2>Description</h2>'));
+  assert.ok(page.includes('aria-label="Description"'));
+  assert.ok(!page.includes('<label>Description'));
+  assert.ok(!page.includes('<h3>Unités concernées</h3>'));
+
+  // --- toggle urgent : visible et fonctionnel à l'état « Créé » pour les acteurs ---
+  assert.ok(page.includes(`action="/tickets/${tid}/urgent"`));
+  const pageR2 = await (await r2.req('GET', '/tickets/' + tid)).text();
+  assert.ok(!pageR2.includes(`action="/tickets/${tid}/urgent"`)); // r2 non concerné
+  assert.strictEqual((await r2.req('POST', `/tickets/${tid}/urgent`, { urgent: '1' })).status, 403);
+  assert.strictEqual((await r1.req('POST', `/tickets/${tid}/urgent`, { urgent: '1' })).status, 302);
+  assert.strictEqual(db().prepare('SELECT urgent FROM tickets WHERE id=?').get(tid).urgent, 1);
+  assert.strictEqual((await cs.req('POST', `/tickets/${tid}/urgent`, {})).status, 302); // CS peut retirer
+  assert.strictEqual(db().prepare('SELECT urgent FROM tickets WHERE id=?').get(tid).urgent, 0);
+
+  // --- photos de la description : ajout/suppression par toute personne concernée tant que « Créé » ---
+  const fp = new FormData();
+  fp.append('photos', new Blob(['x'], { type: 'image/png' }), 'p.png');
+  assert.strictEqual((await r2.req('POST', `/tickets/${tid}/photos`, undefined, fp)).status, 403); // non concerné
+  assert.strictEqual((await r1.req('POST', `/tickets/${tid}/photos`, undefined, fp)).status, 302);
+  assert.strictEqual(db().prepare("SELECT COUNT(*) AS n FROM fichiers WHERE ticket_id=? AND categorie='photo' AND contexte='creation'").get(tid).n, 1);
+  page = await (await r1.req('GET', '/tickets/' + tid)).text();
+  assert.ok(page.includes(`action="/tickets/${tid}/photos"`)); // formulaire d'ajout présent
+  const fid = db().prepare("SELECT id FROM fichiers WHERE ticket_id=? AND categorie='photo' AND contexte='creation'").get(tid).id;
+  // suppression par le CS (personne concernée) autorisée à l'état « Créé »
+  assert.strictEqual((await cs.req('POST', `/fichiers/${fid}/supprimer`)).status, 302);
+  assert.strictEqual(db().prepare('SELECT COUNT(*) AS n FROM fichiers WHERE id=?').get(fid).n, 0);
+
+  // --- passage en consultation : urgent figé, photos figées ---
+  await cs.req('POST', `/tickets/${tid}/passer-consultation`);
+  assert.strictEqual((await cs.req('POST', `/tickets/${tid}/urgent`, { urgent: '1' })).status, 403);
+  assert.strictEqual((await r1.req('POST', `/tickets/${tid}/photos`, undefined, fp)).status, 403);
+  page = await (await r1.req('GET', '/tickets/' + tid)).text();
+  assert.ok(!page.includes(`action="/tickets/${tid}/urgent"`));
+  assert.ok(!page.includes(`action="/tickets/${tid}/photos"`));
+
+  // --- bilan : une seule zone (texte + photos) + boutons Accepter/Refuser en formaction (spec 31) ---
+  const cid = ajouterConsultationComplete(tid, ids.cs);
+  await cs.req('POST', `/tickets/${tid}/consultations/${cid}/valider`);
+  page = await (await r1.req('GET', '/tickets/' + tid)).text();
+  assert.ok(page.includes(`formaction="/tickets/${tid}/accepter"`));
+  assert.ok(page.includes(`formaction="/tickets/${tid}/refuser"`));
+  assert.ok(page.includes('actions-acceptation'));
+  // une seule zone commentaire+photos dans la section bilans : un seul input fichier sur la page
+  assert.strictEqual((page.match(/type="file"/g) || []).length, 1);
+  // acceptation via le champ contenu (même zone) : le commentaire est repris depuis le bilan
+  await r1.req('POST', `/tickets/${tid}/cr`, { contenu: 'Bilan ok' });
+  const fa = new FormData();
+  fa.append('contenu', 'Bilan ok');
+  assert.strictEqual((await r1.req('POST', `/tickets/${tid}/accepter`, undefined, fa)).status, 302);
+  assert.strictEqual(db().prepare('SELECT commentaire FROM resolutions WHERE ticket_id=? AND user_id=?').get(tid, ids.r1).commentaire, 'Bilan ok');
+  assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'travaux_acceptes');
 });
