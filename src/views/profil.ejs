@@ -12,7 +12,7 @@
 <ul class="liste-simple">
   <% for (const u of mesUnites) { %>
     <li><%= u.label %> (<%= u.qualite %>)<% if (u.type !== 'communes') { %>
-      <form method="post" action="/profil/retirer-unite" class="formulaire-ligne">
+      <form method="post" action="/profil/retirer-unite" class="formulaire-ligne" data-confirm="Annuler votre rattachement à « <%= u.label %> » ? Vous ne serez plus rattaché à cette unité (sans impact sur les tickets)." data-confirm-titre="Annuler le rattachement">
         <input type="hidden" name="unit_id" value="<%= u.id %>">
         <button class="bouton-secondaire" type="submit" title="Se retirer de cette unité (sans impact sur les tickets)">se retirer</button>
       </form><% } %>
@@ -54,6 +54,9 @@
           <span class="unite-qualite"><%= r.qualite %></span>
           <% if (r.statut === 'en_attente') { %>
             <span class="unite-statut en-attente">⏳ en attente</span>
+            <form method="post" action="/profil/rattachements/<%= r.id %>/annuler" class="formulaire-ligne" data-confirm="Annuler votre demande de rattachement à « <%= r.unite_label %> » ?" data-confirm-titre="Annuler la demande">
+              <button class="bouton-secondaire" type="submit">annuler la demande</button>
+            </form>
           <% } else if (r.statut === 'accepte') { %>
             <span class="unite-statut valide">✅ validé</span>
           <% } else { %>
@@ -82,8 +85,8 @@
   </form>
   <p class="aide">La demande sera acceptée par un résident de l'unité ou par le conseil syndical.</p>
 </section>
-<section class="bloc">
-  <h2>📱 Ajouter à l'écran d'accueil</h2>
+<%# Section raccourci écran d'accueil (spec 15) : sans titre (spec 29) %>
+<section class="bloc" id="install">
   <div id="install-etat"></div>
 </section>
 <section class="bloc">

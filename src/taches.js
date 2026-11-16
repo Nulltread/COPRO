@@ -62,8 +62,8 @@ function archivageAuto() {
     if (ecoule >= total) {
       // Archivage automatique après le délai, sans condition de facture (spec 24).
       db.prepare("UPDATE tickets SET etape = 'archive', updated_at = datetime('now') WHERE id = ?").run(t.id);
-      db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'changement_etape', NULL, ?)")
-        .run(t.id, `Ticket archivé automatiquement après ${jours} jours en « Travaux acceptés »`);
+      db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu, donnees) VALUES (?, 'changement_etape', NULL, ?, ?)")
+        .run(t.id, `Ticket archivé automatiquement après ${jours} jours en « Travaux acceptés »`, JSON.stringify({ etape: 'archive' }));
       const maj = db.prepare('SELECT * FROM tickets WHERE id = ?').get(t.id);
       notifierTicket(maj, 'changement_etape', `Le ticket « ${maj.titre} » est archivé automatiquement (travaux acceptés depuis ${jours} jours).`, null, !!maj.urgent);
     }

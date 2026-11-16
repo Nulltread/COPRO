@@ -805,12 +805,18 @@ test('UI : recherche comptes/tickets présentes, boutons archiver/supprimer sous
   // filtres en dropdowns custom (ouverture instantanée, pas de picker natif)
   assert.ok(liste.includes('class="dropdown"'));
   assert.ok(liste.includes('name="etape"'));
-  assert.ok(liste.includes('name="unite"'));
   assert.ok(!liste.includes('<select name="etape"'));
+  // filtre unités en multiselect « search » (spec 29) : champ texte + puces, plus de dropdown simple
+  assert.ok(liste.includes('id="filtre-unites"'));
+  assert.ok(liste.includes('id="recherche-unite"'));
+  assert.ok(liste.includes('data-options='));
+  assert.ok(!liste.includes('data-filtre="unite"'));
   const appjs = await (await r1.req('GET', '/app.js')).text();
   assert.ok(appjs.includes("getElementById('recherche-tickets')"));
   assert.ok(appjs.includes('#liste-tickets li'));
   assert.ok(appjs.includes('dropdown-bouton'));
+  assert.ok(appjs.includes("getElementById('filtre-unites')"));
+  assert.ok(appjs.includes("getElementById('modale-entreprise')"));
   assert.ok(appjs.includes('data-autosave'));
   assert.ok(appjs.includes("getElementById('unites-edit')"));
   // fiche ticket en « créé » : boutons sous le titre, pas de section coût / "Modifier le ticket" / commentaire / consultations / CR
@@ -826,8 +832,10 @@ test('UI : recherche comptes/tickets présentes, boutons archiver/supprimer sous
   assert.ok(page.includes('data-autosave'));
   assert.ok(!page.includes('Enregistrer la description'));
   assert.ok(page.includes('id="unites-edit"'));
+  assert.ok(!page.includes('Un clic sur une unité'));
   assert.ok(!page.includes('Modifier les unités'));
   assert.ok(!page.includes('id="consultations"'));
+  assert.ok(!page.includes('id="factures"'));
   assert.ok(!page.includes('Comptes-rendus d\'intervention'));
   // service worker : réseau d'abord (sinon l'ancien app.js reste servi en cache)
   const sw = await (await r1.req('GET', '/sw.js')).text();
@@ -859,4 +867,95 @@ test('PWA : manifest, service worker, icônes servis ; page profil propose le ra
   assert.ok(profil.includes('id="install-etat"'));
   assert.ok(profil.includes('/manifest.webmanifest'));
   assert.ok(profil.includes('apple-touch-icon'));
+  // spec 29 : plus de titre « Ajouter à l'écran d'accueil » dans la page de compte
+  assert.ok(!profil.includes('Ajouter à l\'écran d\'accueil</h2>'));
+});
+
+test('spec 29 : fiche ticket réorganisée (sections par état, règle archive), multiselect unités, consultations en tuples + modale, profil annulations', async () => {
+  const cs = await client(); await login(cs, 'cs@test.local', 'motdepasse1');
+  const r1 = await client(); await login(r1, 'r1@test.local', 'motdepasse1');
+
+  // --- filtre unités multiselect (spec 29) ---
+  const t1 = (await creerTicket(r1, [ids.villa1], 'Spec29 villa 1')).tid;
+  const t2 = (await creerTicket(r1, [ids.villa2, ids.villa1], 'Spec29 villa 2')).tid;
+  let liste = await (await r1.req('GET', `/tickets?unite=${ids.villa1}&unite=${ids.villa2}&etape=cree`)).text();
+  assert.ok(liste.includes('Spec29 villa 1') && liste.includes('Spec29 villa 2'));
+  assert.ok(liste.includes('id="filtre-unites"') && liste.includes('class="chip"'));
+  assert.ok(liste.includes(`name="unite" value="${ids.villa1}"`) && liste.includes(`name="unite" value="${ids.villa2}"`));
+  liste = await (await r1.req('GET', `/tickets?unite=${ids.villa2}&etape=cree`)).text();
+  assert.ok(!liste.includes('Spec29 villa 1') && liste.includes('Spec29 villa 2'));
+  // « toutes » l'emporte sur une sélection individuelle
+  liste = await (await r1.req('GET', `/tickets?unite=${ids.villa1}&unite=toutes&etape=cree`)).text();
+  assert.ok(liste.includes('Spec29 villa 1') && liste.includes('Spec29 villa 2'));
+
+  // --- fiche ticket : sections selon l'état (spec 29) ---
+  let page = await (await r1.req('GET', '/tickets/' + t1)).text();
+  assert.ok(page.includes('id="description"'));
+  assert.ok(page.includes('id="unites-edit"'));
+  assert.ok(!page.includes('Un clic sur une unité'));
+  assert.ok(!page.includes('id="consultations"') && !page.includes('id="factures"') && !page.includes('id="cr"'));
+
+  // passage en consultation : section Consultation (liste de tuples + bouton ajouter + modale), PAS de factures
+  await cs.req('POST', `/tickets/${t1}/passer-consultation`);
+  page = await (await cs.req('GET', '/tickets/' + t1)).text();
+  assert.ok(page.includes('id="consultations"'));
+  assert.ok(page.includes('class="liste-consultations"'));
+  assert.ok(page.includes('id="btn-ajouter-consultation"'));
+  assert.ok(page.includes('id="modale-entreprise"'));
+  assert.ok(page.includes('id="fiche-nouvelle-entreprise" hidden'));
+  assert.ok(!page.includes('id="factures"'));
+  assert.ok(!page.includes('id="cr"'));
+  // ordre des sections : description < consultations
+  assert.ok(page.indexOf('id="description"') < page.indexOf('id="consultations"'));
+  // ajout d'une consultation complète en base -> tuple affiché (entreprise, devis, prix, date, bouton de choix)
+  const cid = ajouterConsultationComplete(t1, ids.cs);
+  page = await (await cs.req('GET', '/tickets/' + t1)).text();
+  assert.ok(page.includes('Entreprise Test SARL') && page.includes('500.00 €') && page.includes('2026-12-01'));
+  assert.ok(page.includes(`/tickets/${t1}/consultations/${cid}/valider`));
+
+  // validation -> travaux planifiés : section Bilan visible (personne concernée), toujours pas de factures
+  await cs.req('POST', `/tickets/${t1}/consultations/${cid}/valider`);
+  page = await (await r1.req('GET', '/tickets/' + t1)).text();
+  assert.ok(page.includes('id="cr"'));
+  assert.ok(!page.includes('id="factures"'));
+  assert.ok(page.indexOf('id="consultations"') < page.indexOf('id="cr"'));
+
+  // acceptation -> travaux acceptés : section Factures enfin visible, après le bilan
+  await r1.req('POST', `/tickets/${t1}/accepter`, { commentaire: 'ok' });
+  page = await (await r1.req('GET', '/tickets/' + t1)).text();
+  assert.ok(page.includes('id="factures"'));
+  assert.ok(page.indexOf('id="description"') < page.indexOf('id="consultations"')
+    && page.indexOf('id="consultations"') < page.indexOf('id="cr"')
+    && page.indexOf('id="cr"') < page.indexOf('id="factures"'));
+
+  // archivé après travaux acceptés : toutes les sections restent affichées (règle archive, lecture seule)
+  await cs.req('POST', `/tickets/${t1}/archiver`);
+  page = await (await r1.req('GET', '/tickets/' + t1)).text();
+  assert.ok(page.includes('id="consultations"') && page.includes('id="cr"') && page.includes('id="factures"'));
+  assert.ok(!page.includes(`/tickets/${t1}/factures"`)); // plus de formulaire d'ajout en archivé
+
+  // archivé directement depuis « créé » : aucune section d'état non atteint
+  const t3 = (await creerTicket(r1, [ids.villa1], 'Spec29 archivé direct')).tid;
+  await cs.req('POST', `/tickets/${t3}/archiver`);
+  page = await (await r1.req('GET', '/tickets/' + t3)).text();
+  assert.ok(!page.includes('id="consultations"') && !page.includes('id="cr"') && !page.includes('id="factures"'));
+
+  // --- profil : annulation demande en attente + modales de confirmation (spec 29) ---
+  const r2 = await client(); await login(r2, 'r2@test.local', 'motdepasse1');
+  await r2.req('POST', '/profil/reclamer', { unite_id: String(ids.garage1), qualite: 'locataire' });
+  const demande = db().prepare('SELECT id FROM rattachements WHERE user_id = ? AND statut = ?').get(ids.r2, 'en_attente');
+  assert.ok(demande);
+  let profil = await (await r2.req('GET', '/profil')).text();
+  assert.ok(profil.includes(`/profil/rattachements/${demande.id}/annuler`));
+  assert.ok(profil.includes('data-confirm="Annuler votre demande de rattachement'));
+  // modale de confirmation aussi sur le retrait d'une unité acceptée
+  assert.ok(profil.includes('data-confirm="Annuler votre rattachement'));
+  const resAnnul = await r2.req('POST', `/profil/rattachements/${demande.id}/annuler`);
+  assert.strictEqual(resAnnul.status, 302);
+  assert.strictEqual(db().prepare('SELECT COUNT(*) AS n FROM rattachements WHERE id = ?').get(demande.id).n, 0);
+  // annulation d'une autre demande d'un autre user : refusée (404/redirect sans suppression)
+  await r2.req('POST', '/profil/reclamer', { unite_id: String(ids.garage1), qualite: 'locataire' });
+  const demande2 = db().prepare('SELECT id FROM rattachements WHERE user_id = ? AND statut = ?').get(ids.r2, 'en_attente');
+  await r1.req('POST', `/profil/rattachements/${demande2.id}/annuler`);
+  assert.strictEqual(db().prepare('SELECT COUNT(*) AS n FROM rattachements WHERE id = ?').get(demande2.id).n, 1);
 });

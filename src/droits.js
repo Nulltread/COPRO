@@ -186,6 +186,36 @@ function crVisibles(ticket) {
   return !!ticket && ['intervention_planifiee', 'travaux_acceptes', 'archive'].includes(ticket.etape);
 }
 
+// Le ticket a-t-il DEJA connu l'etape demandee (historique, spec 29) ?
+// Les transitions sont loguees dans ticket_events avec l'etape en donnees JSON
+// (secours : le contenu contient « <étiquette> »).
+function aConnuEtape(ticketId, etape) {
+  const etiquette = ETIQUETTES_ETAPES[etape];
+  if (!etiquette) return false;
+  const n = getDb().prepare(
+    `SELECT COUNT(*) AS n FROM ticket_events
+     WHERE ticket_id = ? AND type = 'changement_etape'
+       AND (donnees LIKE ? OR contenu LIKE ?)`
+  ).get(ticketId, `%"etape":"${etape}"%`, `%« ${etiquette} »%`).n;
+  return n > 0;
+}
+
+// Visibilite des sections par etat, avec la regle « archive » de la spec 29 :
+// en archive, une section n'apparait que si le ticket a deja connu l'etat
+// correspondant (affichage en lecture seule).
+function sectionsVisibles(ticket) {
+  const e = ticket.etape;
+  const archive = e === 'archive';
+  return {
+    consultation: ['consultation', 'intervention_planifiee', 'travaux_acceptes'].includes(e)
+      || (archive && aConnuEtape(ticket.id, 'consultation')),
+    bilans: ['intervention_planifiee', 'travaux_acceptes'].includes(e)
+      || (archive && aConnuEtape(ticket.id, 'intervention_planifiee')),
+    factures: e === 'travaux_acceptes'
+      || (archive && aConnuEtape(ticket.id, 'travaux_acceptes'))
+  };
+}
+
 // Visibilite de la SECTION bilans (spec 28) : UNIQUEMENT les personnes
 // concernees — occupants des unites du ticket + membres du CS ; l'admin en est
 // exclu. Les autres utilisateurs connectes ne voient pas la section.
@@ -257,7 +287,7 @@ module.exports = {
   unitsDeUser, qualiteDeUnit, estUniteCommune, unitesDuTicket,
   peutVoirTicket, peutChoisirUnites, estResidentConcerne,
   peutEditerTicket, peutEditerUnites, peutSupprimerTicket,
-  personnesConcerneesCR, peutRedigerCR, crVisibles, peutVoirCR,
+  personnesConcerneesCR, peutRedigerCR, crVisibles, peutVoirCR, aConnuEtape, sectionsVisibles,
   infosValidation, peutAccepterRefuser, peutReouvrir, dansDelaiArchivage, dateArchivageAuto,
   nbFactures, peutArchiver, entrepriseComplete, consultationComplete,
   ETAPES, ETIQUETTES_ETAPES,

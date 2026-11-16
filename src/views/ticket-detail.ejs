@@ -22,38 +22,20 @@
   <% }) %>
 </ol>
 
-<%# Description : le champ de saisie suffit ; en lecture seule (archivé) on affiche le texte %>
-<% if (peutEditer) { %>
-<section class="bloc">
-  <form method="post" action="/tickets/<%= ticket.id %>/editer" class="formulaire" data-autosave>
-    <label>Description <span class="autosave-etat" aria-live="polite"></span>
-      <textarea name="description" rows="4"><%= ticket.description %></textarea>
-    </label>
-  </form>
-</section>
-<% } else if (ticket.description) { %>
-<p><%= ticket.description %></p>
-<% } %>
-
-<%# Photos de la création : affichées sous la description %>
-<% if ((photosParContexte['creation'] || []).length > 0) { %>
-<ul class="liste-docs">
-  <% for (const f of photosParContexte['creation']) { %>
-    <li>
-      <a href="/fichiers/<%= f.id %>" target="_blank" rel="noopener">🖼 <%= f.nom_original %></a>
-      <span class="auteur">par <%= f.auteur_nom || 'Compte supprimé' %></span>
-      <% if (f.auteur_id === user.id || gestionnaire) { %>
-        <form method="post" action="/fichiers/<%= f.id %>/supprimer" class="formulaire-ligne" data-confirm="Supprimer cette photo ?" data-confirm-titre="Supprimer la photo">
-          <button class="bouton-secondaire" type="submit">Supprimer</button>
-        </form>
-      <% } %>
-    </li>
+<%# ---- Section Description (spec 29) : champ description + unités concernées + photos de création ---- %>
+<section class="bloc" id="description">
+  <h2>Description</h2>
+  <% if (peutEditer) { %>
+    <form method="post" action="/tickets/<%= ticket.id %>/editer" class="formulaire" data-autosave>
+      <label>Description <span class="autosave-etat" aria-live="polite"></span>
+        <textarea name="description" rows="4"><%= ticket.description %></textarea>
+      </label>
+    </form>
+  <% } else if (ticket.description) { %>
+    <p><%= ticket.description %></p>
   <% } %>
-</ul>
-<% } %>
 
-<section class="bloc">
-  <h2>Unités concernées</h2>
+  <h3>Unités concernées</h3>
   <% if (peutEditerUnites) { %>
     <div class="unites-edit" id="unites-edit" data-action="/tickets/<%= ticket.id %>/unites">
       <% for (const u of unitesModifiables) { %>
@@ -61,9 +43,26 @@
       <% } %>
       <span class="autosave-etat" id="unites-etat" aria-live="polite"></span>
     </div>
-    <p class="aide">Un clic sur une unité la sélectionne et l'enregistre directement.</p>
   <% } else { %>
     <p><%= unites.map(u => u.label).join(', ') %></p>
+  <% } %>
+
+  <%# Photos de la création : attachées à la section Description (spec 23/29) %>
+  <% if ((photosParContexte['creation'] || []).length > 0) { %>
+    <h3>Photos</h3>
+    <ul class="liste-docs">
+      <% for (const f of photosParContexte['creation']) { %>
+        <li>
+          <a href="/fichiers/<%= f.id %>" target="_blank" rel="noopener">🖼 <%= f.nom_original %></a>
+          <span class="auteur">par <%= f.auteur_nom || 'Compte supprimé' %></span>
+          <% if (f.auteur_id === user.id || gestionnaire) { %>
+            <form method="post" action="/fichiers/<%= f.id %>/supprimer" class="formulaire-ligne" data-confirm="Supprimer cette photo ?" data-confirm-titre="Supprimer la photo">
+              <button class="bouton-secondaire" type="submit">Supprimer</button>
+            </form>
+          <% } %>
+        </li>
+      <% } %>
+    </ul>
   <% } %>
 </section>
 
@@ -128,22 +127,27 @@
 </section>
 <% } %>
 
-<%# ---- Consultations : visibles dès que le ticket a atteint « En consultation » %>
-<% if (ticket.etape !== 'cree') { %>
+<%# ---- Consultations (spec 29) : visibles si l'état « consultation » est en cours ou déjà atteint (règle archive incluse) %>
+<% if (sections.consultation) { %>
 <section class="bloc" id="consultations">
   <h2>Consultations</h2>
+  <% if (gestionnaire && ticket.etape === 'consultation') { %>
+    <button type="button" class="bouton" id="btn-ajouter-consultation">+ Ajouter une consultation</button>
+  <% } %>
   <% if (consultations.length === 0) { %>
     <p class="aide">Aucune consultation pour le moment.</p>
   <% } %>
+  <%# Liste de tuples {Entreprise, devis, prix, date d'intervention, bouton de choix} : actives d'abord, caduques ensuite en lecture seule %>
+  <ul class="liste-consultations">
   <% for (const c of consultations) { %>
-    <div class="consultation <%= c.validee ? 'validee' : '' %> <%= c.caduque ? 'caduque' : '' %>">
+    <li class="consultation <%= c.validee ? 'validee' : '' %> <%= c.caduque ? 'caduque' : '' %>">
       <h3><%= c.raison_sociale %>
         <% if (c.validee && !c.caduque) { %><span class="tag-retenu">VALIDÉE</span><% } %>
         <% if (c.caduque) { %><span class="auteur">🗄 caduque (lecture seule)</span><% } %>
       </h3>
       <p class="aide">
         SIREN/SIRET : <%= c.siren_siret || '—' %> · contact : <%= c.contact_nom || '—' %> · tél : <%= c.ent_telephone || '—' %> · mail : <%= c.ent_mail || '—' %><br>
-        Date planifiée : <strong><%= c.date_planifiee || '—' %></strong> · ajoutée par <%= c.auteur_nom || 'Compte supprimé' %> le <%= c.created_at %>
+        Date d'intervention : <strong><%= c.date_planifiee || '—' %></strong> · ajoutée par <%= c.auteur_nom || 'Compte supprimé' %> le <%= c.created_at %>
       </p>
       <ul class="liste-docs">
         <% for (const d of devis.filter(x => x.consultation_id === c.id)) { %>
@@ -183,13 +187,15 @@
           <button class="bouton" type="submit">Valider cette consultation → Travaux planifiés</button>
         </form>
       <% } %>
-    </div>
+    </li>
   <% } %>
+  </ul>
   <% if (gestionnaire && ticket.etape === 'consultation') { %>
+    <div id="nouvelle-consultation" class="consultation nouvelle" hidden>
     <h3>Nouvelle consultation</h3>
     <form method="post" action="/tickets/<%= ticket.id %>/consultations" class="formulaire" enctype="multipart/form-data">
-      <label>Entreprise connue
-        <select name="entreprise_id">
+      <label>Entreprise
+        <select name="entreprise_id" id="select-entreprise">
           <option value="">— Choisir une entreprise…</option>
           <% for (const e of entreprises) { %>
             <option value="<%= e.id %>"><%= e.raison_sociale %></option>
@@ -197,25 +203,15 @@
           <option value="nouvelle">➕ Créer une nouvelle entreprise</option>
         </select>
       </label>
-      <fieldset>
-        <legend>…ou créer une fiche entreprise à la volée (si « nouvelle » est choisi)</legend>
-        <label>Raison sociale (obligatoire)
-          <input type="text" name="nouvelle_raison_sociale">
-        </label>
-        <label>SIREN/SIRET
-          <input type="text" name="nouveau_siren_siret">
-        </label>
-        <label>Nom du contact
-          <input type="text" name="nouveau_contact_nom">
-        </label>
-        <label>Téléphone
-          <input type="tel" name="nouveau_telephone">
-        </label>
-        <label>Email
-          <input type="email" name="nouveau_mail">
-        </label>
+      <%# Fiche « à la volée » : saisie dans la modale (spec 29), valeurs recopiées ici à la validation %>
+      <fieldset id="fiche-nouvelle-entreprise" hidden>
+        <input type="text" name="nouvelle_raison_sociale">
+        <input type="text" name="nouveau_siren_siret">
+        <input type="text" name="nouveau_contact_nom">
+        <input type="tel" name="nouveau_telephone">
+        <input type="email" name="nouveau_mail">
       </fieldset>
-      <label>Date planifiée (obligatoire)
+      <label>Date d'intervention (obligatoire)
         <input type="date" name="date_planifiee" required>
       </label>
       <label>Devis (au moins un : pièce jointe + montant)
@@ -226,41 +222,43 @@
       <div class="apercu"></div>
       <button class="bouton" type="submit">Ajouter la consultation</button>
     </form>
+    </div>
   <% } %>
 </section>
 
-<%# ---- Factures : visibles dès « En consultation » (ajout CS/admin tant que non archivé) %>
-<section class="bloc" id="factures">
-  <h2>Factures</h2>
-  <% if (factures.length === 0) { %>
-    <p class="aide">Aucune facture pour le moment.</p>
-  <% } else { %>
-    <ul class="liste-docs">
-      <% for (const f of factures) { %>
-        <li>
-          <a href="/fichiers/<%= f.id %>" target="_blank" rel="noopener">📄 <%= f.nom_original %></a>
-          <span class="montant"><%= f.montant != null ? f.montant.toFixed(2) + ' €' : '' %></span>
-          <span class="auteur">par <%= f.auteur_nom || 'Compte supprimé' %></span>
-        </li>
-      <% } %>
-    </ul>
-  <% } %>
-  <% if (gestionnaire && ticket.etape !== 'archive' && ticket.etape !== 'cree') { %>
-    <form method="post" action="/tickets/<%= ticket.id %>/factures" class="formulaire" enctype="multipart/form-data">
-      <label>Facture (PDF)
-        <input type="file" name="fichier" accept="application/pdf" required class="champ-fichiers-visible">
+<%# ---- Modale « créer une nouvelle entreprise » : la fiche à la volée s'y affiche, pas dans la page (spec 29) %>
+<% if (gestionnaire && ticket.etape === 'consultation') { %>
+<div class="modale-fond" id="modale-entreprise" hidden>
+  <div class="modale" role="dialog" aria-modal="true" aria-labelledby="modale-entreprise-titre">
+    <h2 id="modale-entreprise-titre">Nouvelle entreprise</h2>
+    <form id="form-nouvelle-entreprise" class="formulaire">
+      <label>Raison sociale (obligatoire)
+        <input type="text" id="me-raison" required>
       </label>
-      <label>Coût (€)
-        <input type="number" name="montant" min="0.01" step="0.01" required>
+      <label>SIREN/SIRET
+        <input type="text" id="me-siren">
       </label>
-      <button class="bouton-secondaire" type="submit">Ajouter la facture</button>
+      <label>Nom du contact
+        <input type="text" id="me-contact">
+      </label>
+      <label>Téléphone
+        <input type="tel" id="me-tel">
+      </label>
+      <label>Email
+        <input type="email" id="me-mail">
+      </label>
+      <div class="modale-actions">
+        <button type="button" id="modale-entreprise-annuler" class="bouton-secondaire">Annuler</button>
+        <button type="button" id="modale-entreprise-valider" class="bouton">Créer et utiliser</button>
+      </div>
     </form>
-  <% } %>
-</section>
+  </div>
+</div>
+<% } %>
 <% } %>
 
-<%# ---- Bilans : visibles dès « Travaux planifiés », UNIQUEMENT aux personnes concernées (occupants des unités + CS, admin exclu) — spec 28 %>
-<% if (crVisibles && peutVoirCR) { %>
+<%# ---- Bilans : visibles si « Travaux planifiés » est en cours ou déjà atteint (spec 29), UNIQUEMENT aux personnes concernées (spec 28) %>
+<% if (sections.bilans && peutVoirCR) { %>
 <section class="bloc" id="cr">
   <h2>Bilans de l’intervention</h2>
 
@@ -375,6 +373,37 @@
         </ul>
       <% } %>
     <% } %>
+  <% } %>
+</section>
+<% } %>
+
+<%# ---- Factures (spec 29) : UNIQUEMENT en « Travaux acceptés », ou en « Archivé » si l'état a déjà été connu (alors lecture seule) %>
+<% if (sections.factures) { %>
+<section class="bloc" id="factures">
+  <h2>Factures</h2>
+  <% if (factures.length === 0) { %>
+    <p class="aide">Aucune facture pour le moment.</p>
+  <% } else { %>
+    <ul class="liste-docs">
+      <% for (const f of factures) { %>
+        <li>
+          <a href="/fichiers/<%= f.id %>" target="_blank" rel="noopener">📄 <%= f.nom_original %></a>
+          <span class="montant"><%= f.montant != null ? f.montant.toFixed(2) + ' €' : '' %></span>
+          <span class="auteur">par <%= f.auteur_nom || 'Compte supprimé' %></span>
+        </li>
+      <% } %>
+    </ul>
+  <% } %>
+  <% if (gestionnaire && ticket.etape === 'travaux_acceptes') { %>
+    <form method="post" action="/tickets/<%= ticket.id %>/factures" class="formulaire" enctype="multipart/form-data">
+      <label>Facture (PDF)
+        <input type="file" name="fichier" accept="application/pdf" required class="champ-fichiers-visible">
+      </label>
+      <label>Coût (€)
+        <input type="number" name="montant" min="0.01" step="0.01" required>
+      </label>
+      <button class="bouton-secondaire" type="submit">Ajouter la facture</button>
+    </form>
   <% } %>
 </section>
 <% } %>
