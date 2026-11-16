@@ -189,24 +189,31 @@ test('création : au moins une unité perso, les autres libres ; parties commune
   assert.strictEqual(okC.res.status, 302);
 });
 
-test('unités modifiables après création, puis réservées au CS/admin une fois en consultation', async () => {
+test('spec 33 : unités modifiables jusqu\'au passage en « Travaux planifiés » (créé + consultation), figées ensuite', async () => {
   const cs = await client(); await login(cs, 'cs@test.local', 'motdepasse1');
   const r1 = await client(); await login(r1, 'r1@test.local', 'motdepasse1');
   const { tid } = await creerTicket(r1, [ids.villa1], 'Unités modifiables');
-  // tant que « créé » : le créateur peut modifier
-  const res = await r1.req('POST', `/tickets/${tid}/unites`, { unite_ids: [String(ids.villa1), String(ids.garage1)] });
+  // « Créé » : le créateur peut modifier
+  let res = await r1.req('POST', `/tickets/${tid}/unites`, { unite_ids: [String(ids.villa1), String(ids.garage1)] });
   assert.strictEqual(res.status, 302);
-  const n = db().prepare('SELECT COUNT(*) AS n FROM ticket_units WHERE ticket_id = ?').get(tid).n;
-  assert.strictEqual(n, 2);
-  // passé en consultation : le créateur (occupant) ne peut PLUS modifier
+  assert.strictEqual(db().prepare('SELECT COUNT(*) AS n FROM ticket_units WHERE ticket_id = ?').get(tid).n, 2);
+  // « En consultation » : toujours modifiable, par le créateur/occupant ET par le CS
   await cs.req('POST', `/tickets/${tid}/passer-consultation`);
-  const resKo = await r1.req('POST', `/tickets/${tid}/unites`, { unite_ids: [String(ids.villa1)] });
-  assert.strictEqual(resKo.status, 403);
-  // mais le CS oui
-  const resOk = await cs.req('POST', `/tickets/${tid}/unites`, { unite_ids: [String(ids.villa1), String(ids.villa2)] });
-  assert.strictEqual(resOk.status, 302);
-  const n2 = db().prepare('SELECT COUNT(*) AS n FROM ticket_units WHERE ticket_id = ?').get(tid).n;
-  assert.strictEqual(n2, 2);
+  res = await r1.req('POST', `/tickets/${tid}/unites`, { unite_ids: [String(ids.villa1)] });
+  assert.strictEqual(res.status, 302);
+  res = await cs.req('POST', `/tickets/${tid}/unites`, { unite_ids: [String(ids.villa1), String(ids.villa2)] });
+  assert.strictEqual(res.status, 302);
+  assert.strictEqual(db().prepare('SELECT COUNT(*) AS n FROM ticket_units WHERE ticket_id = ?').get(tid).n, 2);
+  // « Travaux planifiés » (devis validé) : figé — personne ne peut modifier
+  const cid = ajouterConsultationComplete(tid, ids.cs);
+  await cs.req('POST', `/tickets/${tid}/consultations/${cid}/valider`);
+  assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'intervention_planifiee');
+  assert.strictEqual((await r1.req('POST', `/tickets/${tid}/unites`, { unite_ids: [String(ids.villa1)] })).status, 403);
+  assert.strictEqual((await cs.req('POST', `/tickets/${tid}/unites`, { unite_ids: [String(ids.villa1)] })).status, 403);
+  assert.strictEqual(db().prepare('SELECT COUNT(*) AS n FROM ticket_units WHERE ticket_id = ?').get(tid).n, 2);
+  // la fiche affiche alors la simple liste (plus de multiselect éditable)
+  const page = await (await r1.req('GET', '/tickets/' + tid)).text();
+  assert.ok(!page.includes('id="unites-edit"'));
 });
 
 test('visibilité : lecture ouverte à tous, filtre par défaut sur ses unités', async () => {

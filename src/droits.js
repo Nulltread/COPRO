@@ -148,10 +148,14 @@ function peutEditerTicket(user, ticket) {
 // Modification des unites du ticket : tant que le ticket est « cree », les
 // memes regles que l'edition (createur, residents concernes, gestionnaire) ;
 // une fois passe en consultation, UNIQUEMENT les membres du CS et l'admin.
+// Modification des unites du ticket (spec 33) : modifiable aux etats « cree »
+// et « consultation » (jusqu'au passage en « travaux planifies », exclu) par les
+// memes acteurs que l'edition (createur, residents concernes, CS/admin) ;
+// fige ensuite (planifies, acceptes, archive).
 function peutEditerUnites(user, ticket) {
-  if (!estActif(user) || !ticket || ticket.etape === 'archive') return false;
-  if (ticket.etape === 'cree') return peutEditerTicket(user, ticket);
-  return isGestionnaire(user);
+  if (!estActif(user) || !ticket) return false;
+  if (!['cree', 'consultation'].includes(ticket.etape)) return false;
+  return peutEditerTicket(user, ticket);
 }
 
 // Personnes concernees pour les BILANS de l'intervention (spec 25) :
