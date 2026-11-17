@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Moodboard B — Terre de Gardanne</title>
+<style>
+  :root {
+    --brique: #9C4A2F; --sable: #F7F3EB; --sable-fonce: #EFE8DB; --encre: #2A2118;
+    --olive: #6B7A3F; --urgent: #C01C28; --bordure: #E0D8C8;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--sable); color: var(--encre);
+         font-family: -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 17px; line-height: 1.45; }
+  .page { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-family: Georgia, "Times New Roman", serif; font-weight: 700; font-size: 2rem; margin: 18px 0 4px; }
+  h2 { font-family: Georgia, serif; font-size: 1.25rem; margin: 32px 0 12px; border-bottom: 1px solid var(--bordure); padding-bottom: 6px; }
+  .concept { color: #6b5c48; max-width: 60ch; }
+  .hero { width: 100%; border-radius: 16px; border: 1px solid var(--bordure); display: block; }
+  .swatches { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+  .swatch { border: 1px solid var(--bordure); border-radius: 12px; overflow: hidden; background: #fff; }
+  .swatch .coul { height: 64px; }
+  .swatch .meta { padding: 8px 10px; font-size: .8rem; }
+  .swatch .meta b { display: block; font-size: .9rem; }
+  .typo { background: #fff; border: 1px solid var(--bordure); border-radius: 12px; padding: 16px; }
+  .typo .serif { font-family: Georgia, serif; font-size: 1.6rem; font-weight: 700; }
+  .typo .ui { margin-top: 6px; }
+  .barre { background: var(--sable); border-bottom: 1px solid var(--bordure); padding: 10px 14px;
+           display: flex; gap: 10px; align-items: center; flex-wrap: wrap; border-radius: 12px 12px 0 0; }
+  .marque { font-family: Georgia, serif; font-weight: 700; font-size: 1.05rem; margin-right: auto; color: var(--encre); }
+  .nav a { color: var(--encre); text-decoration: none; font-size: .92rem; margin-left: 10px; }
+  .bouton-nav { border: 1.5px solid var(--brique); color: var(--brique) !important; border-radius: 10px; padding: 6px 12px; font-weight: 600; }
+  .ecran { background: #fff; border: 1px solid var(--bordure); border-radius: 12px; overflow: hidden; }
+  .contenu { padding: 14px; }
+  .bouton { background: var(--brique); color: #fff; border: none; border-radius: 12px; padding: 14px 18px;
+            font-size: 1rem; font-weight: 700; display: inline-block; }
+  .bouton-secondaire { background: var(--sable-fonce); color: var(--encre); border: 1px solid var(--bordure);
+                       border-radius: 12px; padding: 10px 14px; font-size: .95rem; display: inline-block; }
+  .carte { background: #fff; border: 1px solid var(--bordure); border-radius: 16px; padding: 12px 14px;
+           box-shadow: 0 1px 2px rgba(42,33,24,.05), 0 8px 20px rgba(42,33,24,.06); }
+  .tag-urgent { background: var(--urgent); color: #fff; border-radius: 6px; padding: 3px 8px; font-size: .78rem; font-weight: 700; }
+  .tag-etape { background: var(--brique); color: #fff; border-radius: 20px; padding: 3px 10px; font-size: .8rem; font-weight: 700; }
+  .mini-metro { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; }
+  .mini-puce { width: 10px; height: 10px; border-radius: 50%; background: #e6ddcd; }
+  .mini-puce.faite { background: #cfc4ae; }
+  .mini-puce.actuelle { background: var(--brique); }
+  .mini-lien { width: 10px; height: 2px; background: #e6ddcd; }
+  .mosaic { display: flex; gap: 8px; margin-top: 10px; }
+  .tuile { width: 72px; height: 72px; border-radius: 10px; border: 1px dashed #cfc4ae; background: var(--sable-fonce);
+           display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+  .tuile.plein { background: var(--olive); border-style: solid; color: #fff; }
+  .principes { padding-left: 20px; color: #5c4f3e; }
+  .principes li { margin: 4px 0; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Direction B — « Terre de Gardanne »</h1>
+  <p class="concept">La terre des toits de tuiles et les chênes-lièges : fond sable chaud, cartes blanc pur
+  en relief doux, brique sourde comme couleur vive. Chaleureux et ancré dans le sud, sans cliché criard.</p>
+  <img class="hero" src="scene-02-terre-de-gardanne.jpg" alt="Scène d'ambiance : pavillons aux toits de tuiles sur une colline, chênes et végétation méditerranéenne, illustration plate dans la palette de la direction B">
+
+  <h2>Palette</h2>
+  <div class="swatches">
+    <div class="swatch"><div class="coul" style="background:#9C4A2F"></div><div class="meta"><b>brique</b>#9C4A2F — primaire</div></div>
+    <div class="swatch"><div class="coul" style="background:#F7F3EB"></div><div class="meta"><b>sable</b>#F7F3EB — fond</div></div>
+    <div class="swatch"><div class="coul" style="background:#EFE8DB"></div><div class="meta"><b>sable-foncé</b>#EFE8DB — blocs</div></div>
+    <div class="swatch"><div class="coul" style="background:#2A2118"></div><div class="meta"><b>encre</b>#2A2118 — texte</div></div>
+    <div class="swatch"><div class="coul" style="background:#6B7A3F"></div><div class="meta"><b>olive</b>#6B7A3F — secondaire</div></div>
+    <div class="swatch"><div class="coul" style="background:#C01C28"></div><div class="meta"><b>urgent</b>#C01C28 — urgence</div></div>
+  </div>
+
+  <h2>Typographie</h2>
+  <div class="typo">
+    <div class="serif">Copro La Pinède de Notre Dame</div>
+    <div class="ui">Serif Georgia réservé à la marque et aux titres h1 ; tout le reste en sans système, lisible à 17 px.</div>
+  </div>
+
+  <h2>Composants (maquette)</h2>
+  <div class="ecran">
+    <div class="barre">
+      <span class="marque">🏠 Copro La Pinède de Notre Dame</span>
+      <nav class="nav"><a href="#">Tickets</a><a href="#" class="bouton-nav">+ Nouveau ticket</a><a href="#">🔔</a><a href="#">Profil</a></nav>
+    </div>
+    <div class="contenu">
+      <div class="carte">
+        <b>Fuite dans la salle de bains</b> <span class="tag-urgent">URGENT</span>
+        <div><span class="tag-etape">En consultation</span></div>
+        <div class="mini-metro">
+          <span class="mini-puce faite"></span><span class="mini-lien"></span>
+          <span class="mini-puce faite"></span><span class="mini-lien"></span>
+          <span class="mini-puce actuelle"></span><span class="mini-lien"></span>
+          <span class="mini-puce"></span><span class="mini-lien"></span>
+          <span class="mini-puce"></span>
+        </div>
+        <div class="mosaic"><div class="tuile plein">🛁</div><div class="tuile plein">🧱</div><div class="tuile">📷</div></div>
+      </div>
+      <p style="margin-top:14px">
+        <span class="bouton">Déclarer le ticket</span>
+        <span class="bouton-secondaire">Annuler</span>
+      </p>
+    </div>
+  </div>
+
+  <h2>Principes</h2>
+  <ul class="principes">
+    <li>Contraste ≥ AA vérifié (blanc sur brique ≈ 6:1) ; focus visible ; cibles ≥ 44 px.</li>
+    <li>États : en cours = brique, validé = olive, faite = grisé, urgent = rouge — toujours avec le <b>texte</b>.</li>
+    <li>Brique sourde (pas l'orange vif générique), aucun dégradé, radius 16 px pour le « doux ».</li>
+    <li>Icône PWA : toit de pavillon en « V » imbriqué sur fond brique ; <code>theme-color</code> = #9C4A2F.</li>
+  </ul>
+</div>
+</body>
+</html>

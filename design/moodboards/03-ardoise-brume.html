@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Moodboard C — Ardoise &amp; brume</title>
+<style>
+  :root {
+    --ardoise: #2F4858; --brume: #F5F7F6; --gris-clair: #EDF0EF; --encre: #232B2E;
+    --sauge: #8FA98F; --urgent: #C01C28; --bordure: #DDE3E1;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--brume); color: var(--encre);
+         font-family: -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 17px; line-height: 1.45; }
+  .page { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-weight: 700; font-size: 2rem; margin: 18px 0 4px; letter-spacing: -0.01em; }
+  h2 { font-size: 1.15rem; font-weight: 700; margin: 32px 0 12px; border-bottom: 1px solid var(--bordure); padding-bottom: 6px; }
+  .concept { color: #55605e; max-width: 60ch; }
+  .hero { width: 100%; border-radius: 12px; border: 1px solid var(--bordure); display: block; }
+  .swatches { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+  .swatch { border: 1px solid var(--bordure); border-radius: 10px; overflow: hidden; background: #fff; }
+  .swatch .coul { height: 64px; }
+  .swatch .meta { padding: 8px 10px; font-size: .8rem; }
+  .swatch .meta b { display: block; font-size: .9rem; }
+  .typo { background: #fff; border: 1px solid var(--bordure); border-radius: 10px; padding: 16px; }
+  .typo .sans { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.01em; }
+  .typo .ui { margin-top: 6px; }
+  .barre { background: #fff; border-bottom: 1px solid var(--bordure); padding: 10px 14px;
+           display: flex; gap: 10px; align-items: center; flex-wrap: wrap; border-radius: 10px 10px 0 0; }
+  .marque { font-weight: 700; font-size: 1.05rem; margin-right: auto; color: var(--encre); }
+  .nav a { color: var(--encre); text-decoration: none; font-size: .92rem; margin-left: 10px; }
+  .bouton-nav { border: 1.5px solid var(--ardoise); color: var(--ardoise) !important; border-radius: 8px; padding: 6px 12px; font-weight: 600; }
+  .ecran { background: #fff; border: 1px solid var(--bordure); border-radius: 10px; overflow: hidden; }
+  .contenu { padding: 14px; }
+  .bouton { background: var(--ardoise); color: #fff; border: none; border-radius: 10px; padding: 14px 18px;
+            font-size: 1rem; font-weight: 700; display: inline-block; }
+  .bouton-secondaire { background: var(--gris-clair); color: var(--encre); border: 1px solid var(--bordure);
+                       border-radius: 10px; padding: 10px 14px; font-size: .95rem; display: inline-block; }
+  .carte { border: 1px solid var(--bordure); border-radius: 12px; padding: 12px 14px; }
+  .tag-urgent { background: var(--urgent); color: #fff; border-radius: 6px; padding: 3px 8px; font-size: .78rem; font-weight: 700; }
+  .tag-etape { background: var(--ardoise); color: #fff; border-radius: 20px; padding: 3px 10px; font-size: .8rem; font-weight: 700; }
+  .mini-metro { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; }
+  .mini-puce { width: 10px; height: 10px; border-radius: 50%; background: #dfe5e3; }
+  .mini-puce.faite { background: #b6c0bd; }
+  .mini-puce.actuelle { background: var(--ardoise); }
+  .mini-lien { width: 10px; height: 2px; background: #dfe5e3; }
+  .mosaic { display: flex; gap: 8px; margin-top: 10px; }
+  .tuile { width: 72px; height: 72px; border-radius: 8px; border: 1px dashed #b6c0bd; background: var(--gris-clair);
+           display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+  .tuile.plein { background: var(--sauge); border-style: solid; color: #fff; }
+  .principes { padding-left: 20px; color: #4a5553; }
+  .principes li { margin: 4px 0; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Direction C — « Ardoise &amp; brume »</h1>
+  <p class="concept">La brume sur la colline : neutre froid, une seule famille de typo, bordures nettes et
+  quasi pas d'ombres. La version la plus épurée des trois.</p>
+  <img class="hero" src="scene-03-ardoise-brume.jpg" alt="Scène d'ambiance : colline brumeuse avec des pins ardoise, illustration plate dans la palette de la direction C">
+
+  <h2>Palette</h2>
+  <div class="swatches">
+    <div class="swatch"><div class="coul" style="background:#2F4858"></div><div class="meta"><b>ardoise</b>#2F4858 — primaire</div></div>
+    <div class="swatch"><div class="coul" style="background:#F5F7F6"></div><div class="meta"><b>brume</b>#F5F7F6 — fond</div></div>
+    <div class="swatch"><div class="coul" style="background:#EDF0EF"></div><div class="meta"><b>gris-clair</b>#EDF0EF — blocs</div></div>
+    <div class="swatch"><div class="coul" style="background:#232B2E"></div><div class="meta"><b>encre</b>#232B2E — texte</div></div>
+    <div class="swatch"><div class="coul" style="background:#8FA98F"></div><div class="meta"><b>sauge</b>#8FA98F — secondaire</div></div>
+    <div class="swatch"><div class="coul" style="background:#C01C28"></div><div class="meta"><b>urgent</b>#C01C28 — urgence</div></div>
+  </div>
+
+  <h2>Typographie</h2>
+  <div class="typo">
+    <div class="sans">Copro La Pinède de Notre Dame</div>
+    <div class="ui">Une seule famille (sans système), graisses 400 / 600 / 700 bien distinctes ; montants en chiffres tabulaires.</div>
+  </div>
+
+  <h2>Composants (maquette)</h2>
+  <div class="ecran">
+    <div class="barre">
+      <span class="marque">〰 Copro La Pinède de Notre Dame</span>
+      <nav class="nav"><a href="#">Tickets</a><a href="#" class="bouton-nav">+ Nouveau ticket</a><a href="#">🔔</a><a href="#">Profil</a></nav>
+    </div>
+    <div class="contenu">
+      <div class="carte">
+        <b>Fuite dans la salle de bains</b> <span class="tag-urgent">URGENT</span>
+        <div><span class="tag-etape">En consultation</span></div>
+        <div class="mini-metro">
+          <span class="mini-puce faite"></span><span class="mini-lien"></span>
+          <span class="mini-puce faite"></span><span class="mini-lien"></span>
+          <span class="mini-puce actuelle"></span><span class="mini-lien"></span>
+          <span class="mini-puce"></span><span class="mini-lien"></span>
+          <span class="mini-puce"></span>
+        </div>
+        <div class="mosaic"><div class="tuile plein">🛁</div><div class="tuile plein">🧱</div><div class="tuile">📷</div></div>
+      </div>
+      <p style="margin-top:14px">
+        <span class="bouton">Déclarer le ticket</span>
+        <span class="bouton-secondaire">Annuler</span>
+      </p>
+    </div>
+  </div>
+
+  <h2>Principes</h2>
+  <ul class="principes">
+    <li>Contraste ≥ AA vérifié (blanc sur ardoise ≈ 9:1) ; focus visible ; cibles ≥ 44 px.</li>
+    <li>États : en cours = ardoise, faite = grisé, urgent = rouge — toujours avec le <b>texte</b>.</li>
+    <li>Pas d'ombres (bordures seules), radius 10 px, espacement régulier : le plus épuré.</li>
+    <li>Icône PWA : trois lignes ondulées (colline + pinède) sur fond ardoise ; <code>theme-color</code> = #2F4858.</li>
+  </ul>
+</div>
+</body>
+</html>
