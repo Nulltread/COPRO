@@ -3,25 +3,32 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#1a5fb4">
+  <meta name="theme-color" content="#9C4A2F">
   <title>Tickets — Copro La Pinède de Notre Dame</title>
   <link rel="stylesheet" href="style.css">
   
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Copro">
+  <link rel="apple-touch-icon" href="/icon-192.png">
 </head>
 <body>
 
 <header class="barre">
-  <a class="marque" href="/tickets">🏠 Copro La Pinède de Notre Dame</a>
+  <a class="marque" href="/tickets"><svg class="marque-icone" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12 L12 4 L21 12" fill="none" stroke="#9C4A2F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 15.5 L12 10 L17.5 15.5" fill="none" stroke="#9C4A2F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/></svg>Copro La Pinède de Notre Dame</a>
   <nav class="nav">
     <a href="/tickets">Tickets</a>
-    <a href="/tickets/nouveau" class="bouton-nav">+ Nouveau</a>
-    <a href="/rattachements">Rattachements</a>
+    <a href="/tickets/nouveau" class="bouton-nav">+ Nouveau ticket</a>
     <a href="/notifications" class="nav-notif">🔔<span class="badge">3</span></a>
     
       <a href="/tableau-de-bord">Tableau de bord</a>
     
     
       <a href="/admin/comptes">Comptes</a>
+      <a href="/entreprises">Entreprises</a>
+    
     
     <a href="/profil">👤 Marie <span class="tag-cs">CS</span></a>
   </nav>
@@ -34,377 +41,264 @@
   <a class="bouton" href="/tickets/nouveau">+ Nouveau ticket</a>
 </div>
 
-<form method="get" action="/tickets" class="filtres">
-  <select name="etape">
-    <option value="">Tous les états</option>
-    
-      <option value="cree" >Créé</option>
-    
-      <option value="valide_cs" >Validé par le conseil syndical</option>
-    
-      <option value="consultation" >En consultation</option>
-    
-      <option value="intervention_planifiee" >Intervention planifiée</option>
-    
-      <option value="travaux_acceptes" >Travaux acceptés</option>
-    
-      <option value="archive" >Archivé</option>
-    
-  </select>
-  <select name="categorie">
-    <option value="">Toutes catégories</option>
-    
-      <option value="Plomberie" >Plomberie</option>
-    
-      <option value="Électricité" >Électricité</option>
-    
-      <option value="Chauffage" >Chauffage</option>
-    
-      <option value="Toiture" >Toiture</option>
-    
-      <option value="Menuiserie" >Menuiserie</option>
-    
-      <option value="Serrurerie" >Serrurerie</option>
-    
-      <option value="Extérieurs / Jardin" >Extérieurs / Jardin</option>
-    
-      <option value="Humidité / Infiltration" >Humidité / Infiltration</option>
-    
-      <option value="Autre" >Autre</option>
-    
-  </select>
-  <select name="unite">
-    
-      <option value="" >Mes unités (défaut)</option>
-    
-    <option value="toutes" selected>Toutes les unités</option>
-    
-      <option value="1" >Villa 1</option>
-    
-      <option value="3" >Villa 2</option>
-    
-      <option value="5" >Villa 3</option>
-    
-      <option value="7" >Villa 4</option>
-    
-      <option value="9" >Villa 5</option>
-    
-      <option value="11" >Villa 6</option>
-    
-      <option value="13" >Villa 7</option>
-    
-      <option value="15" >Villa 8</option>
-    
-      <option value="17" >Villa 9</option>
-    
-      <option value="19" >Villa 10</option>
-    
-      <option value="21" >Villa 11</option>
-    
-      <option value="23" >Villa 12</option>
-    
-      <option value="25" >Villa 13</option>
-    
-      <option value="27" >Villa 14</option>
-    
-      <option value="29" >Villa 15</option>
-    
-      <option value="31" >Villa 16</option>
-    
-      <option value="33" >Villa 17</option>
-    
-      <option value="35" >Villa 18</option>
-    
-      <option value="37" >Villa 19</option>
-    
-      <option value="39" >Villa 20</option>
-    
-      <option value="41" >Villa 21</option>
-    
-      <option value="43" >Villa 22</option>
-    
-      <option value="45" >Villa 23</option>
-    
-      <option value="47" >Villa 24</option>
-    
-      <option value="49" >Villa 25</option>
-    
-      <option value="51" >Villa 26</option>
-    
-      <option value="53" >Villa 27</option>
-    
-      <option value="55" >Villa 28</option>
-    
-      <option value="57" >Villa 29</option>
-    
-      <option value="59" >Villa 30</option>
-    
-      <option value="61" >Villa 31</option>
-    
-      <option value="63" >Villa 32</option>
-    
-      <option value="65" >Villa 33</option>
-    
-      <option value="67" >Villa 34</option>
-    
-      <option value="69" >Villa 35</option>
-    
-      <option value="71" >Villa 36</option>
-    
-      <option value="73" >Villa 37</option>
-    
-      <option value="75" >Villa 38</option>
-    
-      <option value="77" >Villa 39</option>
-    
-      <option value="79" >Villa 40</option>
-    
-      <option value="81" >Villa 41</option>
-    
-      <option value="83" >Villa 42</option>
-    
-      <option value="85" >Villa 43</option>
-    
-      <option value="87" >Villa 44</option>
-    
-      <option value="89" >Villa 45</option>
-    
-      <option value="91" >Villa 46</option>
-    
-      <option value="93" >Villa 47</option>
-    
-      <option value="95" >Villa 48</option>
-    
-      <option value="97" >Villa 49</option>
-    
-      <option value="99" >Villa 50</option>
-    
-      <option value="101" >Villa 51</option>
-    
-      <option value="103" >Villa 52</option>
-    
-      <option value="105" >Villa 53</option>
-    
-      <option value="107" >Villa 54</option>
-    
-      <option value="109" >Villa 55</option>
-    
-      <option value="111" >Villa 56</option>
-    
-      <option value="113" >Villa 57</option>
-    
-      <option value="115" >Villa 58</option>
-    
-      <option value="117" >Villa 59</option>
-    
-      <option value="119" >Villa 60</option>
-    
-      <option value="121" >Villa 61</option>
-    
-      <option value="2" >Garage 1</option>
-    
-      <option value="4" >Garage 2</option>
-    
-      <option value="6" >Garage 3</option>
-    
-      <option value="8" >Garage 4</option>
-    
-      <option value="10" >Garage 5</option>
-    
-      <option value="12" >Garage 6</option>
-    
-      <option value="14" >Garage 7</option>
-    
-      <option value="16" >Garage 8</option>
-    
-      <option value="18" >Garage 9</option>
-    
-      <option value="20" >Garage 10</option>
-    
-      <option value="22" >Garage 11</option>
-    
-      <option value="24" >Garage 12</option>
-    
-      <option value="26" >Garage 13</option>
-    
-      <option value="28" >Garage 14</option>
-    
-      <option value="30" >Garage 15</option>
-    
-      <option value="32" >Garage 16</option>
-    
-      <option value="34" >Garage 17</option>
-    
-      <option value="36" >Garage 18</option>
-    
-      <option value="38" >Garage 19</option>
-    
-      <option value="40" >Garage 20</option>
-    
-      <option value="42" >Garage 21</option>
-    
-      <option value="44" >Garage 22</option>
-    
-      <option value="46" >Garage 23</option>
-    
-      <option value="48" >Garage 24</option>
-    
-      <option value="50" >Garage 25</option>
-    
-      <option value="52" >Garage 26</option>
-    
-      <option value="54" >Garage 27</option>
-    
-      <option value="56" >Garage 28</option>
-    
-      <option value="58" >Garage 29</option>
-    
-      <option value="60" >Garage 30</option>
-    
-      <option value="62" >Garage 31</option>
-    
-      <option value="64" >Garage 32</option>
-    
-      <option value="66" >Garage 33</option>
-    
-      <option value="68" >Garage 34</option>
-    
-      <option value="70" >Garage 35</option>
-    
-      <option value="72" >Garage 36</option>
-    
-      <option value="74" >Garage 37</option>
-    
-      <option value="76" >Garage 38</option>
-    
-      <option value="78" >Garage 39</option>
-    
-      <option value="80" >Garage 40</option>
-    
-      <option value="82" >Garage 41</option>
-    
-      <option value="84" >Garage 42</option>
-    
-      <option value="86" >Garage 43</option>
-    
-      <option value="88" >Garage 44</option>
-    
-      <option value="90" >Garage 45</option>
-    
-      <option value="92" >Garage 46</option>
-    
-      <option value="94" >Garage 47</option>
-    
-      <option value="96" >Garage 48</option>
-    
-      <option value="98" >Garage 49</option>
-    
-      <option value="100" >Garage 50</option>
-    
-      <option value="102" >Garage 51</option>
-    
-      <option value="104" >Garage 52</option>
-    
-      <option value="106" >Garage 53</option>
-    
-      <option value="108" >Garage 54</option>
-    
-      <option value="110" >Garage 55</option>
-    
-      <option value="112" >Garage 56</option>
-    
-      <option value="114" >Garage 57</option>
-    
-      <option value="116" >Garage 58</option>
-    
-      <option value="118" >Garage 59</option>
-    
-      <option value="120" >Garage 60</option>
-    
-      <option value="122" >Garage 61</option>
-    
-      <option value="123" >Parties communes</option>
-    
-  </select>
-  <input type="number" name="cout_min" min="0" step="0.01" placeholder="Coût min (€)" value="" style="max-width:130px">
+
+<input type="search" id="recherche-tickets" class="recherche recherche-pleine" placeholder="Rechercher un ticket (titre, description)…" value="" autocomplete="off">
+<form method="get" action="/tickets" id="filtres-tickets">
+  <div class="filtres">
+  
+  <div class="dropdown" data-filtre="etape">
+    <button type="button" class="dropdown-bouton" aria-expanded="false">
+      <span class="dropdown-valeur">Tous les états (hors archivés)</span> ▾
+    </button>
+    <ul class="dropdown-liste" hidden>
+      <li><button type="button" class="dropdown-option selectionne" data-value="">Tous les états (hors archivés)</button></li>
+      
+        <li><button type="button" class="dropdown-option " data-value="cree">Créé</button></li>
+      
+        <li><button type="button" class="dropdown-option " data-value="consultation">En consultation</button></li>
+      
+        <li><button type="button" class="dropdown-option " data-value="intervention_planifiee">Travaux planifiés</button></li>
+      
+        <li><button type="button" class="dropdown-option " data-value="travaux_acceptes">Travaux acceptés</button></li>
+      
+        <li><button type="button" class="dropdown-option " data-value="archive">Archivé</button></li>
+      
+    </ul>
+    <input type="hidden" name="etape" value="">
+  </div>
+  <div class="multiselect" id="filtre-unites" data-options="[{&#34;value&#34;:&#34;toutes&#34;,&#34;label&#34;:&#34;Toutes les unités&#34;},{&#34;value&#34;:&#34;1&#34;,&#34;label&#34;:&#34;Villa 1&#34;},{&#34;value&#34;:&#34;3&#34;,&#34;label&#34;:&#34;Villa 2&#34;},{&#34;value&#34;:&#34;5&#34;,&#34;label&#34;:&#34;Villa 3&#34;},{&#34;value&#34;:&#34;7&#34;,&#34;label&#34;:&#34;Villa 4&#34;},{&#34;value&#34;:&#34;9&#34;,&#34;label&#34;:&#34;Villa 5&#34;},{&#34;value&#34;:&#34;11&#34;,&#34;label&#34;:&#34;Villa 6&#34;},{&#34;value&#34;:&#34;13&#34;,&#34;label&#34;:&#34;Villa 7&#34;},{&#34;value&#34;:&#34;15&#34;,&#34;label&#34;:&#34;Villa 8&#34;},{&#34;value&#34;:&#34;17&#34;,&#34;label&#34;:&#34;Villa 9&#34;},{&#34;value&#34;:&#34;19&#34;,&#34;label&#34;:&#34;Villa 10&#34;},{&#34;value&#34;:&#34;21&#34;,&#34;label&#34;:&#34;Villa 11&#34;},{&#34;value&#34;:&#34;23&#34;,&#34;label&#34;:&#34;Villa 12&#34;},{&#34;value&#34;:&#34;25&#34;,&#34;label&#34;:&#34;Villa 13&#34;},{&#34;value&#34;:&#34;27&#34;,&#34;label&#34;:&#34;Villa 14&#34;},{&#34;value&#34;:&#34;29&#34;,&#34;label&#34;:&#34;Villa 15&#34;},{&#34;value&#34;:&#34;31&#34;,&#34;label&#34;:&#34;Villa 16&#34;},{&#34;value&#34;:&#34;33&#34;,&#34;label&#34;:&#34;Villa 17&#34;},{&#34;value&#34;:&#34;35&#34;,&#34;label&#34;:&#34;Villa 18&#34;},{&#34;value&#34;:&#34;37&#34;,&#34;label&#34;:&#34;Villa 19&#34;},{&#34;value&#34;:&#34;39&#34;,&#34;label&#34;:&#34;Villa 20&#34;},{&#34;value&#34;:&#34;41&#34;,&#34;label&#34;:&#34;Villa 21&#34;},{&#34;value&#34;:&#34;43&#34;,&#34;label&#34;:&#34;Villa 22&#34;},{&#34;value&#34;:&#34;45&#34;,&#34;label&#34;:&#34;Villa 23&#34;},{&#34;value&#34;:&#34;47&#34;,&#34;label&#34;:&#34;Villa 24&#34;},{&#34;value&#34;:&#34;49&#34;,&#34;label&#34;:&#34;Villa 25&#34;},{&#34;value&#34;:&#34;51&#34;,&#34;label&#34;:&#34;Villa 26&#34;},{&#34;value&#34;:&#34;53&#34;,&#34;label&#34;:&#34;Villa 27&#34;},{&#34;value&#34;:&#34;55&#34;,&#34;label&#34;:&#34;Villa 28&#34;},{&#34;value&#34;:&#34;57&#34;,&#34;label&#34;:&#34;Villa 29&#34;},{&#34;value&#34;:&#34;59&#34;,&#34;label&#34;:&#34;Villa 30&#34;},{&#34;value&#34;:&#34;61&#34;,&#34;label&#34;:&#34;Villa 31&#34;},{&#34;value&#34;:&#34;63&#34;,&#34;label&#34;:&#34;Villa 32&#34;},{&#34;value&#34;:&#34;65&#34;,&#34;label&#34;:&#34;Villa 33&#34;},{&#34;value&#34;:&#34;67&#34;,&#34;label&#34;:&#34;Villa 34&#34;},{&#34;value&#34;:&#34;69&#34;,&#34;label&#34;:&#34;Villa 35&#34;},{&#34;value&#34;:&#34;71&#34;,&#34;label&#34;:&#34;Villa 36&#34;},{&#34;value&#34;:&#34;73&#34;,&#34;label&#34;:&#34;Villa 37&#34;},{&#34;value&#34;:&#34;75&#34;,&#34;label&#34;:&#34;Villa 38&#34;},{&#34;value&#34;:&#34;77&#34;,&#34;label&#34;:&#34;Villa 39&#34;},{&#34;value&#34;:&#34;79&#34;,&#34;label&#34;:&#34;Villa 40&#34;},{&#34;value&#34;:&#34;81&#34;,&#34;label&#34;:&#34;Villa 41&#34;},{&#34;value&#34;:&#34;83&#34;,&#34;label&#34;:&#34;Villa 42&#34;},{&#34;value&#34;:&#34;85&#34;,&#34;label&#34;:&#34;Villa 43&#34;},{&#34;value&#34;:&#34;87&#34;,&#34;label&#34;:&#34;Villa 44&#34;},{&#34;value&#34;:&#34;89&#34;,&#34;label&#34;:&#34;Villa 45&#34;},{&#34;value&#34;:&#34;91&#34;,&#34;label&#34;:&#34;Villa 46&#34;},{&#34;value&#34;:&#34;93&#34;,&#34;label&#34;:&#34;Villa 47&#34;},{&#34;value&#34;:&#34;95&#34;,&#34;label&#34;:&#34;Villa 48&#34;},{&#34;value&#34;:&#34;97&#34;,&#34;label&#34;:&#34;Villa 49&#34;},{&#34;value&#34;:&#34;99&#34;,&#34;label&#34;:&#34;Villa 50&#34;},{&#34;value&#34;:&#34;101&#34;,&#34;label&#34;:&#34;Villa 51&#34;},{&#34;value&#34;:&#34;103&#34;,&#34;label&#34;:&#34;Villa 52&#34;},{&#34;value&#34;:&#34;105&#34;,&#34;label&#34;:&#34;Villa 53&#34;},{&#34;value&#34;:&#34;107&#34;,&#34;label&#34;:&#34;Villa 54&#34;},{&#34;value&#34;:&#34;109&#34;,&#34;label&#34;:&#34;Villa 55&#34;},{&#34;value&#34;:&#34;111&#34;,&#34;label&#34;:&#34;Villa 56&#34;},{&#34;value&#34;:&#34;113&#34;,&#34;label&#34;:&#34;Villa 57&#34;},{&#34;value&#34;:&#34;115&#34;,&#34;label&#34;:&#34;Villa 58&#34;},{&#34;value&#34;:&#34;117&#34;,&#34;label&#34;:&#34;Villa 59&#34;},{&#34;value&#34;:&#34;119&#34;,&#34;label&#34;:&#34;Villa 60&#34;},{&#34;value&#34;:&#34;121&#34;,&#34;label&#34;:&#34;Villa 61&#34;},{&#34;value&#34;:&#34;2&#34;,&#34;label&#34;:&#34;Garage 1&#34;},{&#34;value&#34;:&#34;4&#34;,&#34;label&#34;:&#34;Garage 2&#34;},{&#34;value&#34;:&#34;6&#34;,&#34;label&#34;:&#34;Garage 3&#34;},{&#34;value&#34;:&#34;8&#34;,&#34;label&#34;:&#34;Garage 4&#34;},{&#34;value&#34;:&#34;10&#34;,&#34;label&#34;:&#34;Garage 5&#34;},{&#34;value&#34;:&#34;12&#34;,&#34;label&#34;:&#34;Garage 6&#34;},{&#34;value&#34;:&#34;14&#34;,&#34;label&#34;:&#34;Garage 7&#34;},{&#34;value&#34;:&#34;16&#34;,&#34;label&#34;:&#34;Garage 8&#34;},{&#34;value&#34;:&#34;18&#34;,&#34;label&#34;:&#34;Garage 9&#34;},{&#34;value&#34;:&#34;20&#34;,&#34;label&#34;:&#34;Garage 10&#34;},{&#34;value&#34;:&#34;22&#34;,&#34;label&#34;:&#34;Garage 11&#34;},{&#34;value&#34;:&#34;24&#34;,&#34;label&#34;:&#34;Garage 12&#34;},{&#34;value&#34;:&#34;26&#34;,&#34;label&#34;:&#34;Garage 13&#34;},{&#34;value&#34;:&#34;28&#34;,&#34;label&#34;:&#34;Garage 14&#34;},{&#34;value&#34;:&#34;30&#34;,&#34;label&#34;:&#34;Garage 15&#34;},{&#34;value&#34;:&#34;32&#34;,&#34;label&#34;:&#34;Garage 16&#34;},{&#34;value&#34;:&#34;34&#34;,&#34;label&#34;:&#34;Garage 17&#34;},{&#34;value&#34;:&#34;36&#34;,&#34;label&#34;:&#34;Garage 18&#34;},{&#34;value&#34;:&#34;38&#34;,&#34;label&#34;:&#34;Garage 19&#34;},{&#34;value&#34;:&#34;40&#34;,&#34;label&#34;:&#34;Garage 20&#34;},{&#34;value&#34;:&#34;42&#34;,&#34;label&#34;:&#34;Garage 21&#34;},{&#34;value&#34;:&#34;44&#34;,&#34;label&#34;:&#34;Garage 22&#34;},{&#34;value&#34;:&#34;46&#34;,&#34;label&#34;:&#34;Garage 23&#34;},{&#34;value&#34;:&#34;48&#34;,&#34;label&#34;:&#34;Garage 24&#34;},{&#34;value&#34;:&#34;50&#34;,&#34;label&#34;:&#34;Garage 25&#34;},{&#34;value&#34;:&#34;52&#34;,&#34;label&#34;:&#34;Garage 26&#34;},{&#34;value&#34;:&#34;54&#34;,&#34;label&#34;:&#34;Garage 27&#34;},{&#34;value&#34;:&#34;56&#34;,&#34;label&#34;:&#34;Garage 28&#34;},{&#34;value&#34;:&#34;58&#34;,&#34;label&#34;:&#34;Garage 29&#34;},{&#34;value&#34;:&#34;60&#34;,&#34;label&#34;:&#34;Garage 30&#34;},{&#34;value&#34;:&#34;62&#34;,&#34;label&#34;:&#34;Garage 31&#34;},{&#34;value&#34;:&#34;64&#34;,&#34;label&#34;:&#34;Garage 32&#34;},{&#34;value&#34;:&#34;66&#34;,&#34;label&#34;:&#34;Garage 33&#34;},{&#34;value&#34;:&#34;68&#34;,&#34;label&#34;:&#34;Garage 34&#34;},{&#34;value&#34;:&#34;70&#34;,&#34;label&#34;:&#34;Garage 35&#34;},{&#34;value&#34;:&#34;72&#34;,&#34;label&#34;:&#34;Garage 36&#34;},{&#34;value&#34;:&#34;74&#34;,&#34;label&#34;:&#34;Garage 37&#34;},{&#34;value&#34;:&#34;76&#34;,&#34;label&#34;:&#34;Garage 38&#34;},{&#34;value&#34;:&#34;78&#34;,&#34;label&#34;:&#34;Garage 39&#34;},{&#34;value&#34;:&#34;80&#34;,&#34;label&#34;:&#34;Garage 40&#34;},{&#34;value&#34;:&#34;82&#34;,&#34;label&#34;:&#34;Garage 41&#34;},{&#34;value&#34;:&#34;84&#34;,&#34;label&#34;:&#34;Garage 42&#34;},{&#34;value&#34;:&#34;86&#34;,&#34;label&#34;:&#34;Garage 43&#34;},{&#34;value&#34;:&#34;88&#34;,&#34;label&#34;:&#34;Garage 44&#34;},{&#34;value&#34;:&#34;90&#34;,&#34;label&#34;:&#34;Garage 45&#34;},{&#34;value&#34;:&#34;92&#34;,&#34;label&#34;:&#34;Garage 46&#34;},{&#34;value&#34;:&#34;94&#34;,&#34;label&#34;:&#34;Garage 47&#34;},{&#34;value&#34;:&#34;96&#34;,&#34;label&#34;:&#34;Garage 48&#34;},{&#34;value&#34;:&#34;98&#34;,&#34;label&#34;:&#34;Garage 49&#34;},{&#34;value&#34;:&#34;100&#34;,&#34;label&#34;:&#34;Garage 50&#34;},{&#34;value&#34;:&#34;102&#34;,&#34;label&#34;:&#34;Garage 51&#34;},{&#34;value&#34;:&#34;104&#34;,&#34;label&#34;:&#34;Garage 52&#34;},{&#34;value&#34;:&#34;106&#34;,&#34;label&#34;:&#34;Garage 53&#34;},{&#34;value&#34;:&#34;108&#34;,&#34;label&#34;:&#34;Garage 54&#34;},{&#34;value&#34;:&#34;110&#34;,&#34;label&#34;:&#34;Garage 55&#34;},{&#34;value&#34;:&#34;112&#34;,&#34;label&#34;:&#34;Garage 56&#34;},{&#34;value&#34;:&#34;114&#34;,&#34;label&#34;:&#34;Garage 57&#34;},{&#34;value&#34;:&#34;116&#34;,&#34;label&#34;:&#34;Garage 58&#34;},{&#34;value&#34;:&#34;118&#34;,&#34;label&#34;:&#34;Garage 59&#34;},{&#34;value&#34;:&#34;120&#34;,&#34;label&#34;:&#34;Garage 60&#34;},{&#34;value&#34;:&#34;122&#34;,&#34;label&#34;:&#34;Garage 61&#34;},{&#34;value&#34;:&#34;123&#34;,&#34;label&#34;:&#34;Parties communes&#34;}]">
+    <div class="multiselect-zone">
+      <span class="multiselect-chips" id="unites-chips">
+        
+          <span class="chip" data-value="toutes">Toutes les unités<button type="button" class="chip-x" data-value="toutes" aria-label="Retirer Toutes les unités">×</button></span>
+        
+      </span>
+      <input type="search" id="recherche-unite" placeholder="Filtrer par villa / garage… (défaut : mes unités)" autocomplete="off">
+    </div>
+    <ul class="multiselect-liste dropdown-liste" id="unites-liste" hidden></ul>
+    <span class="multiselect-hidden" id="unites-hidden">
+      <input type="hidden" name="unite" value="toutes">
+    </span>
+  </div>
   <label class="case"><input type="checkbox" name="urgent" value="1" > Urgents</label>
-  <button class="bouton-secondaire" type="submit">Filtrer</button>
+  </div>
 </form>
 
-<ul class="liste-tickets">
+<p class="aide" id="recherche-aucun-tickets" hidden>Aucun ticket ne correspond à cette recherche.</p>
+<ul class="liste-tickets" id="liste-tickets">
   
-    <li class="carte-ticket urgent">
+    <li class="carte-ticket urgent" data-recherche="fuite sous l&#39;évier de la cuisine goutte à goutte depuis ce matin, le siphon fuit.">
       <a href="/tickets/1">
         <div class="ligne1">
           <strong>Fuite sous l&#39;évier de la cuisine</strong>
           <span class="tag-urgent">URGENT</span>
         </div>
-        <div class="ligne2">En consultation · Plomberie · villa 1</div>
+        <div class="ligne2">
+          <span class="ligne2-gauche">
+            <span class="mini-metro" aria-hidden="true">
+              
+                <span class="mini-puce faite"></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce etape-consultation"></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                
+              
+            </span>
+            <span class="tag-etape etape-consultation">En consultation</span>
+          </span>
+          <span class="ligne2-unites">villa 1</span>
+        </div>
       </a>
     </li>
   
-    <li class="carte-ticket urgent">
+    <li class="carte-ticket urgent" data-recherche="infiltration plafond salon — villa 20 et 21 tache d&#39;humidité commune aux deux villas mitoyennes.">
       <a href="/tickets/5">
         <div class="ligne1">
           <strong>Infiltration plafond salon — villa 20 et 21</strong>
           <span class="tag-urgent">URGENT</span>
         </div>
-        <div class="ligne2">Créé · Toiture · villa 20, villa 21</div>
+        <div class="ligne2">
+          <span class="ligne2-gauche">
+            <span class="mini-metro" aria-hidden="true">
+              
+                <span class="mini-puce etape-cree"></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                
+              
+            </span>
+            <span class="tag-etape etape-cree">Créé</span>
+          </span>
+          <span class="ligne2-unites">villa 20, villa 21</span>
+        </div>
       </a>
     </li>
   
-    <li class="carte-ticket ">
+    <li class="carte-ticket " data-recherche="volet roulant bloqué le volet de la chambre ne remonte plus.">
       <a href="/tickets/2">
         <div class="ligne1">
           <strong>Volet roulant bloqué</strong>
           
         </div>
-        <div class="ligne2">Validé par le conseil syndical · Menuiserie · villa 5</div>
+        <div class="ligne2">
+          <span class="ligne2-gauche">
+            <span class="mini-metro" aria-hidden="true">
+              
+                <span class="mini-puce etape-cree"></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                
+              
+            </span>
+            <span class="tag-etape etape-cree">Créé</span>
+          </span>
+          <span class="ligne2-unites">villa 5</span>
+        </div>
       </a>
     </li>
   
-    <li class="carte-ticket ">
+    <li class="carte-ticket " data-recherche="fissure sur le mur du garage fissure verticale apparue après les pluies.">
       <a href="/tickets/3">
         <div class="ligne1">
           <strong>Fissure sur le mur du garage</strong>
           
         </div>
-        <div class="ligne2">Intervention planifiée · Humidité / Infiltration · garage 12</div>
+        <div class="ligne2">
+          <span class="ligne2-gauche">
+            <span class="mini-metro" aria-hidden="true">
+              
+                <span class="mini-puce faite"></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce faite"></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce etape-intervention_planifiee"></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                
+              
+            </span>
+            <span class="tag-etape etape-intervention_planifiee">Travaux planifiés</span>
+          </span>
+          <span class="ligne2-unites">garage 12</span>
+        </div>
       </a>
     </li>
   
-    <li class="carte-ticket ">
+    <li class="carte-ticket " data-recherche="porte d&#39;entrée qui ferme mal la serrure accroche, il faut forcer.">
       <a href="/tickets/4">
         <div class="ligne1">
           <strong>Porte d&#39;entrée qui ferme mal</strong>
           
         </div>
-        <div class="ligne2">Travaux acceptés · Serrurerie · villa 10</div>
-      </a>
-    </li>
-  
-    <li class="carte-ticket ">
-      <a href="/tickets/6">
-        <div class="ligne1">
-          <strong>Éclairage des parties communes en panne</strong>
-          
+        <div class="ligne2">
+          <span class="ligne2-gauche">
+            <span class="mini-metro" aria-hidden="true">
+              
+                <span class="mini-puce faite"></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce faite"></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce faite"></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce etape-travaux_acceptes"></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                
+              
+            </span>
+            <span class="tag-etape etape-travaux_acceptes">Travaux acceptés</span>
+          </span>
+          <span class="ligne2-unites">villa 10</span>
         </div>
-        <div class="ligne2">Archivé · Électricité · </div>
       </a>
     </li>
   
-    <li class="carte-ticket ">
+    <li class="carte-ticket " data-recherche="chaudière en panne plus d&#39;eau chaude depuis hier soir.">
       <a href="/tickets/7">
         <div class="ligne1">
           <strong>Chaudière en panne</strong>
           
         </div>
-        <div class="ligne2">Créé · Chauffage · villa 30</div>
+        <div class="ligne2">
+          <span class="ligne2-gauche">
+            <span class="mini-metro" aria-hidden="true">
+              
+                <span class="mini-puce etape-cree"></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                
+              
+            </span>
+            <span class="tag-etape etape-cree">Créé</span>
+          </span>
+          <span class="ligne2-unites">villa 30</span>
+        </div>
       </a>
     </li>
   
 </ul>
 </main>
+<div id="modale" class="modale-fond" hidden>
+  <div class="modale" role="dialog" aria-modal="true" aria-labelledby="modale-titre">
+    <h2 id="modale-titre"></h2>
+    <p id="modale-texte"></p>
+    <div class="modale-actions">
+      <button type="button" id="modale-annuler" class="bouton-secondaire">Annuler</button>
+      <button type="button" id="modale-confirmer" class="bouton">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<div id="overlay-chargement" class="overlay-chargement" hidden><div class="serpent" role="status" aria-label="Chargement…"></div></div>
 
 </body>
 </html>

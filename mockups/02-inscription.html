@@ -3,10 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#1a5fb4">
+  <meta name="theme-color" content="#9C4A2F">
   <title>Inscription — Copro La Pinède de Notre Dame</title>
   <link rel="stylesheet" href="style.css">
   
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Copro">
+  <link rel="apple-touch-icon" href="/icon-192.png">
 </head>
 <body>
 
@@ -291,6 +297,18 @@
 </form>
 <p><a href="/connexion">Déjà un compte ? Se connecter</a></p>
 </main>
+<div id="modale" class="modale-fond" hidden>
+  <div class="modale" role="dialog" aria-modal="true" aria-labelledby="modale-titre">
+    <h2 id="modale-titre"></h2>
+    <p id="modale-texte"></p>
+    <div class="modale-actions">
+      <button type="button" id="modale-annuler" class="bouton-secondaire">Annuler</button>
+      <button type="button" id="modale-confirmer" class="bouton">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<div id="overlay-chargement" class="overlay-chargement" hidden><div class="serpent" role="status" aria-label="Chargement…"></div></div>
 
 </body>
 </html>

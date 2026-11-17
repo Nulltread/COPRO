@@ -14,7 +14,7 @@ async function main() {
   require('../src/db/seed').seed();
   const { getDb } = require('../src/db');
   const { listeTickets, detailTicket } = require('../src/routes/tickets');
-  const { ETAPES, ETIQUETTES_ETAPES, categoriesTicket } = require('../src/droits');
+  const { ETAPES, ETIQUETTES_ETAPES } = require('../src/droits');
   const db = getDb();
 
   const cs = db.prepare("SELECT * FROM users WHERE email='conseil1@copro.local'").get();
@@ -26,19 +26,23 @@ async function main() {
   const idsResident = db.prepare('SELECT unit_id FROM unit_residents WHERE user_id = ?').all(resident.id).map(r => r.unit_id);
   const idsCS = db.prepare('SELECT unit_id FROM unit_residents WHERE user_id = ?').all(cs.id).map(r => r.unit_id);
   const unitesNonCommunes = db.prepare("SELECT * FROM units WHERE type != 'communes' ORDER BY type DESC, numero").all();
-  const { unitsDeUser, peutEditerTicket, peutSupprimerTicket, peutReouvrir, estResidentConcerne, isGestionnaire } = require('../src/droits');
+  const unitesOptions = [
+    { value: 'toutes', label: 'Toutes les unités' },
+    ...unites.map(u => ({ value: String(u.id), label: u.label }))
+  ];
+  const { unitsDeUser, peutEditerTicket, peutEditerUnites, peutSupprimerTicket, peutReouvrir, estResidentConcerne, isGestionnaire, peutRedigerCR, peutAccepterRefuser, peutToggleUrgent, peutGererPhotosDescription, peutArchiver, dateArchivageAuto } = require('../src/droits');
 
   const pages = [];
   pages.push(['01-connexion.html', 'connexion', { user: null, erreur: null, suite: '/' }]);
   pages.push(['02-inscription.html', 'inscription', { user: null, units: unitesNonCommunes, erreur: null }]);
   pages.push(['03-liste-tickets-cs.html', 'tickets', {
-    user: cs, tickets: listeTickets(cs, { unite: 'toutes' }), categories: categoriesTicket(),
-    etapes: ETAPES, etiquettes: ETIQUETTES_ETAPES, unitesFiltre: unites,
+    user: cs, tickets: listeTickets(cs, { unite: 'toutes' }),
+    etapes: ETAPES, etiquettes: ETIQUETTES_ETAPES, unitesFiltre: unites, unitesOptions, unitesSelectionnees: ['toutes'],
     filtres: { unite: 'toutes' }, gestionnaire: true, mesUnites: idsCS, nonLues: 3
   }]);
   pages.push(['04-liste-tickets-resident.html', 'tickets', {
-    user: resident, tickets: listeTickets(resident, {}), categories: categoriesTicket(),
-    etapes: ETAPES, etiquettes: ETIQUETTES_ETAPES, unitesFiltre: unites,
+    user: resident, tickets: listeTickets(resident, {}),
+    etapes: ETAPES, etiquettes: ETIQUETTES_ETAPES, unitesFiltre: unites, unitesOptions, unitesSelectionnees: [],
     filtres: {}, gestionnaire: false, mesUnites: idsResident, nonLues: 1
   }]);
   const d = detailTicket(cs, 1);
@@ -46,18 +50,26 @@ async function main() {
     user: cs, ...d, etapes: ETAPES, etiquettes: ETIQUETTES_ETAPES, gestionnaire: true,
     mesUnites: new Set(idsCS),
     peutEditer: peutEditerTicket(cs, d.ticket),
+    peutEditerUnites: peutEditerUnites(cs, d.ticket),
+    peutRedigerCR: peutRedigerCR(cs, d.ticket),
     peutSupprimer: peutSupprimerTicket(cs, d.ticket),
+    peutAccepterRefuser: peutAccepterRefuser(cs, d.ticket),
+    peutToggleUrgent: peutToggleUrgent(cs, d.ticket),
+    peutGererPhotos: peutGererPhotosDescription(cs, d.ticket),
+    peutVoirCR: d.peutVoirCR,
     peutReouvrir: peutReouvrir(cs, d.ticket),
-    estConcerne: true,
-    categoriesFichier: ['photo', 'devis', 'avenant', 'facture', 'decision', 'compte_rendu'],
-    unitesModifiables: unites, nonLues: 3
+    peutArchiver: peutArchiver(cs, d.ticket),
+    dateArchivageAuto: dateArchivageAuto(d.ticket),
+    delaiArchivageJours: 31,
+    estConcerne: estResidentConcerne(cs, d.ticket.id) || true,
+    unitesModifiables: unitesNonCommunes, nonLues: 3
   }]);
   pages.push(['06-nouveau-ticket.html', 'ticket-form', {
-    user: resident, unites: unitesNonCommunes, mesUnites: idsResident, categories: categoriesTicket(), ticket: null, erreur: null, nonLues: 1
+    user: resident, unites: unitesNonCommunes, mesUnites: idsResident, ticket: null, erreur: null, nonLues: 1
   }]);
   pages.push(['07-tableau-de-bord.html', 'tableau', {
     user: cs, ouverts: 5, enConsultation: 2, urgents: 2, coutRetenu: 4200, totalFacture: 3980.5,
-    recents: listeTickets(cs, { unite: 'toutes' }).slice(0, 6), etiquettes: ETIQUETTES_ETAPES
+    recents: listeTickets(cs, { unite: 'toutes' }).slice(0, 6), etapes: ETAPES, etiquettes: ETIQUETTES_ETAPES
   }]);
   const notifs = db.prepare(
     `SELECT n.*, t.titre AS ticket_titre FROM notifications n LEFT JOIN tickets t ON t.id = n.ticket_id

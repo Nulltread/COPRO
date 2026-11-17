@@ -6,6 +6,9 @@ forêt méditerranéenne de chênes bas — Gardanne, 13).
 
 Brief : **moderne et épuré au maximum, mais léché, doux et agréable à l'œil**.
 
+> **Décision (2026-11-17)** : la direction **B — Terre de Gardanne** est retenue et
+> implémentée. Voir [`spécifications/identite-visuelle.md`](../../spécifications/identite-visuelle.md).
+
 > **Sur GitHub**, ouvrir ce README : les moodboards ci-dessous sont des images, elles
 > s'affichent en ligne. Les boards `0X-*.html` affichent leur code source sur GitHub —
 > les ouvrir **en local** (double-clic dans le navigateur) pour le rendu interactif.

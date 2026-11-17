@@ -3,25 +3,32 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#1a5fb4">
+  <meta name="theme-color" content="#9C4A2F">
   <title>Tableau de bord — Copro La Pinède de Notre Dame</title>
   <link rel="stylesheet" href="style.css">
   
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Copro">
+  <link rel="apple-touch-icon" href="/icon-192.png">
 </head>
 <body>
 
 <header class="barre">
-  <a class="marque" href="/tickets">🏠 Copro La Pinède de Notre Dame</a>
+  <a class="marque" href="/tickets"><svg class="marque-icone" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12 L12 4 L21 12" fill="none" stroke="#9C4A2F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 15.5 L12 10 L17.5 15.5" fill="none" stroke="#9C4A2F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/></svg>Copro La Pinède de Notre Dame</a>
   <nav class="nav">
     <a href="/tickets">Tickets</a>
-    <a href="/tickets/nouveau" class="bouton-nav">+ Nouveau</a>
-    <a href="/rattachements">Rattachements</a>
+    <a href="/tickets/nouveau" class="bouton-nav">+ Nouveau ticket</a>
     <a href="/notifications" class="nav-notif">🔔<span class="badge">2</span></a>
     
       <a href="/tableau-de-bord">Tableau de bord</a>
     
     
       <a href="/admin/comptes">Comptes</a>
+      <a href="/entreprises">Entreprises</a>
+    
     
     <a href="/profil">👤 Marie <span class="tag-cs">CS</span></a>
   </nav>
@@ -43,47 +50,197 @@
     <li class="carte-ticket urgent">
       <a href="/tickets/1">
         <div class="ligne1"><strong>Fuite sous l&#39;évier de la cuisine</strong> <span class="tag-urgent">URGENT</span></div>
-        <div class="ligne2">En consultation · Plomberie · villa 1</div>
+        <div class="ligne2">
+          <span class="ligne2-gauche">
+            <span class="mini-metro" aria-hidden="true">
+              
+                <span class="mini-puce faite"></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce etape-consultation"></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                
+              
+            </span>
+            <span class="tag-etape etape-consultation">En consultation</span>
+          </span>
+          <span class="ligne2-unites">villa 1</span>
+        </div>
       </a>
     </li>
   
     <li class="carte-ticket urgent">
       <a href="/tickets/5">
         <div class="ligne1"><strong>Infiltration plafond salon — villa 20 et 21</strong> <span class="tag-urgent">URGENT</span></div>
-        <div class="ligne2">Créé · Toiture · villa 20, villa 21</div>
+        <div class="ligne2">
+          <span class="ligne2-gauche">
+            <span class="mini-metro" aria-hidden="true">
+              
+                <span class="mini-puce etape-cree"></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                
+              
+            </span>
+            <span class="tag-etape etape-cree">Créé</span>
+          </span>
+          <span class="ligne2-unites">villa 20, villa 21</span>
+        </div>
       </a>
     </li>
   
     <li class="carte-ticket ">
       <a href="/tickets/2">
         <div class="ligne1"><strong>Volet roulant bloqué</strong> </div>
-        <div class="ligne2">Validé par le conseil syndical · Menuiserie · villa 5</div>
+        <div class="ligne2">
+          <span class="ligne2-gauche">
+            <span class="mini-metro" aria-hidden="true">
+              
+                <span class="mini-puce etape-cree"></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                
+              
+            </span>
+            <span class="tag-etape etape-cree">Créé</span>
+          </span>
+          <span class="ligne2-unites">villa 5</span>
+        </div>
       </a>
     </li>
   
     <li class="carte-ticket ">
       <a href="/tickets/3">
         <div class="ligne1"><strong>Fissure sur le mur du garage</strong> </div>
-        <div class="ligne2">Intervention planifiée · Humidité / Infiltration · garage 12</div>
+        <div class="ligne2">
+          <span class="ligne2-gauche">
+            <span class="mini-metro" aria-hidden="true">
+              
+                <span class="mini-puce faite"></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce faite"></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce etape-intervention_planifiee"></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                
+              
+            </span>
+            <span class="tag-etape etape-intervention_planifiee">Travaux planifiés</span>
+          </span>
+          <span class="ligne2-unites">garage 12</span>
+        </div>
       </a>
     </li>
   
     <li class="carte-ticket ">
       <a href="/tickets/4">
         <div class="ligne1"><strong>Porte d&#39;entrée qui ferme mal</strong> </div>
-        <div class="ligne2">Travaux acceptés · Serrurerie · villa 10</div>
+        <div class="ligne2">
+          <span class="ligne2-gauche">
+            <span class="mini-metro" aria-hidden="true">
+              
+                <span class="mini-puce faite"></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce faite"></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce faite"></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce etape-travaux_acceptes"></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                
+              
+            </span>
+            <span class="tag-etape etape-travaux_acceptes">Travaux acceptés</span>
+          </span>
+          <span class="ligne2-unites">villa 10</span>
+        </div>
       </a>
     </li>
   
     <li class="carte-ticket ">
-      <a href="/tickets/6">
-        <div class="ligne1"><strong>Éclairage des parties communes en panne</strong> </div>
-        <div class="ligne2">Archivé · Électricité · </div>
+      <a href="/tickets/7">
+        <div class="ligne1"><strong>Chaudière en panne</strong> </div>
+        <div class="ligne2">
+          <span class="ligne2-gauche">
+            <span class="mini-metro" aria-hidden="true">
+              
+                <span class="mini-puce etape-cree"></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                <span class="mini-lien"></span>
+              
+                <span class="mini-puce "></span>
+                
+              
+            </span>
+            <span class="tag-etape etape-cree">Créé</span>
+          </span>
+          <span class="ligne2-unites">villa 30</span>
+        </div>
       </a>
     </li>
   
 </ul>
 </main>
+<div id="modale" class="modale-fond" hidden>
+  <div class="modale" role="dialog" aria-modal="true" aria-labelledby="modale-titre">
+    <h2 id="modale-titre"></h2>
+    <p id="modale-texte"></p>
+    <div class="modale-actions">
+      <button type="button" id="modale-annuler" class="bouton-secondaire">Annuler</button>
+      <button type="button" id="modale-confirmer" class="bouton">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<div id="overlay-chargement" class="overlay-chargement" hidden><div class="serpent" role="status" aria-label="Chargement…"></div></div>
 
 </body>
 </html>
