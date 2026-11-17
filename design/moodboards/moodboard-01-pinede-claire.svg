@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1200" height="1700" viewBox="0 0 1200 1700" font-family="DejaVu Sans, sans-serif">
+  <defs>
+    <clipPath id="scene"><rect x="40" y="40" width="1120" height="520" rx="20"/></clipPath>
+    <clipPath id="card"><rect x="40" y="1125" width="1120" height="520" rx="16"/></clipPath>
+  </defs>
+  <rect width="1200" height="1700" fill="#FBFAF7"/>
+  <image href="scene-01-pinede-claire.jpg" xlink:href="scene-01-pinede-claire.jpg" x="40" y="40" width="1120" height="520" preserveAspectRatio="xMidYMid slice" clip-path="url(#scene)"/>
+  <text x="40" y="640" font-family="Georgia, 'DejaVu Serif', serif" font-size="46" font-weight="bold" fill="#1F2B24">Direction A — « Pinède claire »</text>
+  <text x="40" y="678" font-size="21" fill="#5A6660">La lumière diffuse sous les pins : header clair, vert pin profond</text>
+  <text x="40" y="706" font-size="21" fill="#5A6660">comme seule couleur vive, ombres douces en deux couches.</text>
+  <text x="40" y="744" font-size="24" font-weight="bold" fill="#1F2B24">Palette</text>
+  <g>
+    <circle cx="133" cy="800" r="44" fill="#2E5941"/><text x="133" y="874" text-anchor="middle" font-size="20" font-weight="bold" fill="#1F2B24">pin</text><text x="133" y="900" text-anchor="middle" font-size="17" font-family="DejaVu Sans Mono, monospace" fill="#5A6660">#2E5941</text>
+    <circle cx="320" cy="800" r="44" fill="#E9F0EA" stroke="#E3E0D8"/><text x="320" y="874" text-anchor="middle" font-size="20" font-weight="bold" fill="#1F2B24">pin-clair</text><text x="320" y="900" text-anchor="middle" font-size="17" font-family="DejaVu Sans Mono, monospace" fill="#5A6660">#E9F0EA</text>
+    <circle cx="507" cy="800" r="44" fill="#1F2B24"/><text x="507" y="874" text-anchor="middle" font-size="20" font-weight="bold" fill="#1F2B24">encre</text><text x="507" y="900" text-anchor="middle" font-size="17" font-family="DejaVu Sans Mono, monospace" fill="#5A6660">#1F2B24</text>
+    <circle cx="693" cy="800" r="44" fill="#FBFAF7" stroke="#E3E0D8"/><text x="693" y="874" text-anchor="middle" font-size="20" font-weight="bold" fill="#1F2B24">sable</text><text x="693" y="900" text-anchor="middle" font-size="17" font-family="DejaVu Sans Mono, monospace" fill="#5A6660">#FBFAF7</text>
+    <circle cx="880" cy="800" r="44" fill="#7A8450"/><text x="880" y="874" text-anchor="middle" font-size="20" font-weight="bold" fill="#1F2B24">chêne</text><text x="880" y="900" text-anchor="middle" font-size="17" font-family="DejaVu Sans Mono, monospace" fill="#5A6660">#7A8450</text>
+    <circle cx="1067" cy="800" r="44" fill="#C01C28"/><text x="1067" y="874" text-anchor="middle" font-size="20" font-weight="bold" fill="#1F2B24">urgent</text><text x="1067" y="900" text-anchor="middle" font-size="17" font-family="DejaVu Sans Mono, monospace" fill="#5A6660">#C01C28</text>
+  </g>
+  <text x="40" y="964" font-size="24" font-weight="bold" fill="#1F2B24">Typographie</text>
+  <text x="40" y="1010" font-family="Georgia, 'DejaVu Serif', serif" font-size="36" font-weight="bold" fill="#1F2B24">Copro La Pinède de Notre Dame</text>
+  <text x="40" y="1046" font-size="21" fill="#5A6660">Marque et titres en serif ; interface en sans système — 17 px, interligne 1,45, graisses 400 / 600 / 700.</text>
+  <text x="40" y="1102" font-size="24" font-weight="bold" fill="#1F2B24">Composants (maquette)</text>
+  <rect x="40" y="1125" width="1120" height="520" rx="16" fill="#FFFFFF" stroke="#E3E0D8"/>
+  <g clip-path="url(#card)">
+    <rect x="40" y="1125" width="1120" height="64" fill="#FBFAF7"/>
+    <line x1="40" y1="1189" x2="1160" y2="1189" stroke="#E3E0D8" stroke-width="1"/>
+    <polygon points="64,1163 76,1141 88,1163" fill="#2E5941"/><rect x="73" y="1163" width="6" height="10" fill="#1F2B24"/>
+    <text x="102" y="1166" font-family="Georgia, 'DejaVu Serif', serif" font-size="24" font-weight="bold" fill="#1F2B24">Copro La Pinède de Notre Dame</text>
+    <text x="900" y="1166" text-anchor="end" font-size="20" fill="#1F2B24">Tickets</text>
+    <rect x="922" y="1137" width="164" height="38" rx="10" fill="none" stroke="#2E5941" stroke-width="1.5"/>
+    <text x="1004" y="1162" text-anchor="middle" font-size="18" font-weight="bold" fill="#2E5941">+ Nouveau ticket</text>
+    <text x="1140" y="1166" text-anchor="end" font-size="20" fill="#1F2B24">Profil</text>
+  </g>
+  <rect x="64" y="1220" width="270" height="54" rx="12" fill="#2E5941"/>
+  <text x="199" y="1255" text-anchor="middle" font-size="20" font-weight="bold" fill="#FFFFFF">Déclarer le ticket</text>
+  <rect x="350" y="1220" width="150" height="54" rx="12" fill="#E9F0EA" stroke="#E3E0D8"/>
+  <text x="425" y="1255" text-anchor="middle" font-size="19" fill="#1F2B24">Annuler</text>
+  <rect x="64" y="1310" width="1072" height="310" rx="14" fill="#FFFFFF" stroke="#E3E0D8"/>
+  <text x="88" y="1358" font-size="25" font-weight="bold" fill="#1F2B24">Fuite dans la salle de bains</text>
+  <rect x="500" y="1330" width="92" height="32" rx="6" fill="#C01C28"/>
+  <text x="546" y="1352" text-anchor="middle" font-size="15" font-weight="bold" fill="#FFFFFF">URGENT</text>
+  <rect x="88" y="1382" width="200" height="34" rx="17" fill="#2E5941"/>
+  <text x="188" y="1405" text-anchor="middle" font-size="16" font-weight="bold" fill="#FFFFFF">En consultation</text>
+  <g stroke="#DFE3E8" stroke-width="2"><line x1="107" y1="1452" x2="149" y2="1452"/><line x1="163" y1="1452" x2="205" y2="1452"/><line x1="219" y1="1452" x2="261" y2="1452"/><line x1="275" y1="1452" x2="317" y2="1452"/></g>
+  <circle cx="100" cy="1452" r="7" fill="#B9BFC9"/><circle cx="156" cy="1452" r="7" fill="#B9BFC9"/><circle cx="212" cy="1452" r="7" fill="#2E5941"/><circle cx="268" cy="1452" r="7" fill="#DFE3E8"/><circle cx="324" cy="1452" r="7" fill="#DFE3E8"/>
+  <text x="88" y="1502" font-size="18" font-weight="bold" fill="#5A6660">Photos</text>
+  <rect x="88" y="1516" width="84" height="84" rx="10" fill="#7A8450"/>
+  <rect x="180" y="1516" width="84" height="84" rx="10" fill="#E9F0EA" stroke="#E3E0D8"/>
+  <rect x="272" y="1516" width="84" height="84" rx="10" fill="#FBFAF7" stroke="#B9BFC9" stroke-dasharray="6 4"/>
+  <text x="314" y="1570" text-anchor="middle" font-size="28" fill="#2E5941">+</text>
+  <text x="40" y="1685" font-size="17" fill="#5A6660">Contraste ≥ AA · focus visible · cibles ≥ 44 px · états textuels · zéro dégradé — voir board HTML.</text>
+</svg>
