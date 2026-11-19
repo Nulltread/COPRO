@@ -5,7 +5,7 @@ Ces règles d'interface s'appliquent à **tous les rôles** (résident, conseil 
 ## Organisation de la fiche ticket (par sections, dans l'ordre)
 
 1. **Description** : champ description (édition à la volée ou lecture seule), **unités concernées** et **photos** de la section (photos de création) regroupées dans cette même section ;
-2. **Consultation** : affichée si le ticket est à l'état « consultation » **ou l'a déjà été** (états ultérieurs, archivé compris) — voir `consultations-entreprises-factures.md` ;
+2. **Consultation** : affichée si le ticket est à l'état « consultation » **ou l'a déjà été** (états ultérieurs, archivé compris) — voir `consultations-entreprises-factures.md` ; à l'état « consultation », le gestionnaire voit aussi les boutons de **sollicitation par email** (globale et par consultation) et, une fois des consultations sélectionnées, le bouton **« Passer en « Travaux planifiés » »** — voir `sollicitations-relances.md` ;
 3. **Bilan de l'intervention** : affichée si le ticket est à l'état « travaux planifiés » **ou l'a déjà été**, visibilité restreinte aux personnes concernées — voir `bilans-de-intervention.md` ;
 4. **Factures** : affichée à l'état « travaux acceptés », ou en « archivé » si le ticket a déjà connu cet état — voir `consultations-entreprises-factures.md`.
 

@@ -7,14 +7,15 @@ const {
   isGestionnaire, isAdmin, isCS, unitsDeUser, peutVoirTicket, peutChoisirUnites,
   estResidentConcerne, peutEditerTicket, peutEditerUnites, peutSupprimerTicket,
   infosValidation, peutAccepterRefuser, peutReouvrir, dateArchivageAuto,
-  nbFactures, peutArchiver, consultationComplete,
+  nbFactures, peutArchiver, consultationComplete, consultationSelectionnable, peutValiderDate,
   personnesConcerneesCR, peutRedigerCR, crVisibles, peutVoirCR, sectionsVisibles,
   peutToggleUrgent, peutGererPhotosDescription,
   ETAPES, ETIQUETTES_ETAPES
 } = require('../droits');
 const { getParametreJours } = require('../parametres');
-const { notifierTicket } = require('../notifications');
+const { notifierTicket, notifierCS } = require('../notifications');
 const { upload, enregistrerFichiers, UPLOAD_DIR } = require('../upload');
+const { solliciterConsultation, envoyerMailDatesSelection, notifierDateRetenue } = require('../sollicitations');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -131,9 +132,29 @@ function detailTicket(user, id) {
   }
   const personnesCR = personnesConcerneesCR(id);
   const validation = infosValidation(id);
+  // Sollicitations/relances et dates proposees, groupees par consultation.
+  const sollicitations = db.prepare(
+    `SELECT s.*, u.nom AS auteur_nom FROM sollicitations s
+     LEFT JOIN users u ON u.id = s.auteur_id
+     JOIN consultations c ON c.id = s.consultation_id
+     WHERE c.ticket_id = ? ORDER BY s.created_at, s.id`
+  ).all(id);
+  const sollicitationsParConsultation = {};
+  for (const s of sollicitations) { (sollicitationsParConsultation[s.consultation_id] = sollicitationsParConsultation[s.consultation_id] || []).push(s); }
+  const datesProposees = db.prepare(
+    `SELECT d.*, u.nom AS valide_par_nom FROM consultation_dates d
+     LEFT JOIN users u ON u.id = d.valide_par
+     JOIN consultations c ON c.id = d.consultation_id
+     WHERE c.ticket_id = ? ORDER BY d.created_at, d.id`
+  ).all(id);
+  const datesParConsultation = {};
+  for (const d of datesProposees) { (datesParConsultation[d.consultation_id] = datesParConsultation[d.consultation_id] || []).push(d); }
+  const nbSansDevisAvecMail = consultations.filter(c => !c.caduque && !c.validee && !devis.some(x => x.consultation_id === c.id) && (c.ent_mail || '').trim()).length;
+  const nbSelectionnees = consultations.filter(c => c.validee && !c.caduque).length;
   return {
     ticket, unites, evenements, fichiers, photos, photosParContexte, factures, devis, consultations, entreprises,
     unitesIds, validations, residents, comptesRendus, personnesCR, photosCRParCycle,
+    sollicitationsParConsultation, datesParConsultation, nbSansDevisAvecMail, nbSelectionnees,
     infosValidation: validation,
     nbFactures: nbFactures(id),
     crVisibles: crVisibles(ticket),
@@ -261,6 +282,7 @@ router.get('/:id', (req, res) => {
     peutVoirCR: d.peutVoirCR,
     peutReouvrir: peutReouvrir(req.user, d.ticket),
     peutArchiver: peutArchiver(req.user, d.ticket),
+    peutValiderDate: peutValiderDate(req.user, d.ticket),
     dateArchivageAuto: dateArchivageAuto(d.ticket),
     delaiArchivageJours: getParametreJours('archivage_auto_jours', 31),
     estConcerne: estResidentConcerne(req.user, d.ticket.id) || isGestionnaire(req.user),
@@ -371,11 +393,14 @@ router.post('/:id/consultations', (req, res) => {
   });
 });
 
-// Selection globale : une ou plusieurs consultations cochees passent en
-// « sélectionnée » (validee) et le ticket passe en « Travaux planifiés ».
+// Selection globale : une ou plusieurs consultations cochées passent en
+// « sélectionnée » (validee) et un mail de planification des dates est envoyé
+// à chaque entreprise sélectionnée. Le ticket RESTE en « consultation » : le
+// passage en « Travaux planifiés » est une action séparée (POST
+// /travaux-planifies), bloquée tant que les consultations sélectionnées
+// n'ont pas de date acceptée (voir sollicitations-relances.md).
 // Mêmes vérifications pour CHAQUE consultation sélectionnée : fiche entreprise
-// strictement complète, exactement 1 devis (pièce jointe + montant) et date
-// planifiée renseignée.
+// strictement complète + exactement 1 devis (pièce jointe + montant > 0).
 router.post('/:id/consultations/selectionner', (req, res) => {
   const db = getDb();
   const ticket = trouverTicket(req, res);
@@ -396,7 +421,7 @@ router.post('/:id/consultations/selectionner', (req, res) => {
   const retenues = [];
   for (const cid of idsSel) {
     const c = db.prepare('SELECT * FROM consultations WHERE id = ? AND ticket_id = ?').get(cid, ticket.id);
-    if (!c || c.caduque || c.validee || !consultationComplete(db, c)) {
+    if (!c || c.caduque || c.validee || !consultationSelectionnable(db, c)) {
       const e = c && c.entreprise_id ? db.prepare('SELECT raison_sociale FROM entreprises WHERE id = ?').get(c.entreprise_id) : null;
       incompletes.push(e ? e.raison_sociale : `#${cid}`);
       continue;
@@ -406,15 +431,150 @@ router.post('/:id/consultations/selectionner', (req, res) => {
   if (incompletes.length > 0) {
     return res.status(400).render('erreur', {
       user: req.user,
-      message: `Consultation(s) non sélectionnable(s) : ${incompletes.join(', ')} — il faut une fiche entreprise strictement complète (raison sociale, SIREN/SIRET, contact, téléphone, mail), exactement 1 devis (pièce jointe + montant) et une date planifiée.`
+      message: `Consultation(s) non sélectionnable(s) : ${incompletes.join(', ')} — il faut une fiche entreprise strictement complète (raison sociale, SIREN/SIRET, contact, téléphone, mail) et exactement 1 devis (pièce jointe + montant > 0).`
     });
   }
+  const noms = [];
   for (const c of retenues) {
     db.prepare('UPDATE consultations SET validee = 1, updated_at = datetime(\'now\') WHERE id = ?').run(c.id);
+    const e = db.prepare('SELECT * FROM entreprises WHERE id = ?').get(c.entreprise_id);
+    noms.push(e.raison_sociale);
+    envoyerMailDatesSelection(db, ticket, c, req.user);
   }
-  const noms = retenues.map(c => db.prepare('SELECT raison_sociale FROM entreprises WHERE id = ?').get(c.entreprise_id).raison_sociale).join(', ');
-  faireTransition(db, ticket, 'intervention_planifiee', req.user.id, `Consultation(s) sélectionnée(s) (${noms}) — travaux planifiés`);
+  db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'selection', ?, ?)")
+    .run(ticket.id, req.user.id, `${req.user.nom} a sélectionné ${retenues.length} consultation(s) (${noms.join(', ')}) — en attente des dates d'intervention`);
+  notifierCS('selection', `Consultation(s) sélectionnée(s) pour le ticket « ${ticket.titre} » (${noms.join(', ')}) — mails de planification envoyés aux prestataires`, ticket.id, req.user.id);
+  res.redirect('/tickets/' + ticket.id + '#consultations');
+});
+
+// Passage en « Travaux planifiés » : action dédiée du CS/admin à l'étape
+// « consultation ». Impossible si aucune consultation n'est sélectionnée, ou si
+// l'une d'elles n'est pas complète avec une date acceptée (renseignée à la
+// main par le CS, ou proposition du prestataire validée par le CS / un occupant).
+router.post('/:id/travaux-planifies', (req, res) => {
+  const db = getDb();
+  const ticket = trouverTicket(req, res);
+  if (!ticket) return;
+  if (!isGestionnaire(req.user)) {
+    return res.status(403).render('erreur', { user: req.user, message: 'Seul le conseil syndical peut passer un ticket en travaux planifiés.' });
+  }
+  if (ticket.etape !== 'consultation') {
+    return res.status(400).render('erreur', { user: req.user, message: 'Le ticket n\'est plus en consultation.' });
+  }
+  const retenues = db.prepare('SELECT * FROM consultations WHERE ticket_id = ? AND validee = 1 AND caduque = 0 ORDER BY created_at').all(ticket.id);
+  if (retenues.length === 0) {
+    return res.status(400).render('erreur', { user: req.user, message: 'Sélectionnez d’abord au moins une consultation.' });
+  }
+  const incompletes = [];
+  for (const c of retenues) {
+    if (!c.date_planifiee) {
+      // adopte une éventuelle date proposée validée
+      const prop = db.prepare('SELECT date FROM consultation_dates WHERE consultation_id = ? AND validee = 1 ORDER BY created_at LIMIT 1').get(c.id);
+      if (prop) db.prepare("UPDATE consultations SET date_planifiee = ?, updated_at = datetime('now') WHERE id = ?").run(prop.date, c.id);
+    }
+    const maj = db.prepare('SELECT * FROM consultations WHERE id = ?').get(c.id);
+    if (!consultationComplete(db, maj)) {
+      const e = db.prepare('SELECT raison_sociale FROM entreprises WHERE id = ?').get(c.entreprise_id);
+      incompletes.push(e ? e.raison_sociale : `#${c.id}`);
+    }
+  }
+  if (incompletes.length > 0) {
+    return res.status(400).render('erreur', {
+      user: req.user,
+      message: `Impossible de passer en « Travaux planifiés » : ${incompletes.join(', ')} — chaque consultation sélectionnée doit avoir une fiche entreprise strictement complète, 1 devis et une date acceptée (renseignée à la main ou validée parmi les propositions du prestataire).`
+    });
+  }
+  const noms = retenues.map(c => {
+    const e = db.prepare('SELECT raison_sociale FROM entreprises WHERE id = ?').get(c.entreprise_id);
+    const maj = db.prepare('SELECT date_planifiee FROM consultations WHERE id = ?').get(c.id);
+    return `${e.raison_sociale} (date ${maj.date_planifiee})`;
+  }).join(', ');
+  faireTransition(db, ticket, 'intervention_planifiee', req.user.id, `Consultation(s) sélectionnée(s) avec date(s) acceptée(s) (${noms}) — travaux planifiés`);
   res.redirect('/tickets/' + ticket.id);
+});
+
+// Sollicitation individuelle par email d'une consultation active sans devis
+// (sollicitation, ou relance si déjà sollicité — le mail s'adapte).
+router.post('/:id/consultations/:cid/solliciter', (req, res) => {
+  const db = getDb();
+  const ticket = trouverTicket(req, res);
+  if (!ticket) return;
+  if (!isGestionnaire(req.user)) {
+    return res.status(403).render('erreur', { user: req.user, message: 'Seul le conseil syndical sollicite les prestataires.' });
+  }
+  if (ticket.etape !== 'consultation') {
+    return res.status(400).render('erreur', { user: req.user, message: 'Les sollicitations ne se gèrent qu’à l’étape « En consultation ».' });
+  }
+  const c = db.prepare('SELECT * FROM consultations WHERE id = ? AND ticket_id = ?').get(Number(req.params.cid), ticket.id);
+  if (!c || c.caduque || c.validee) {
+    return res.status(400).render('erreur', { user: req.user, message: 'Consultation introuvable ou plus active.' });
+  }
+  const r = solliciterConsultation(db, ticket, c, req.user);
+  if (!r.ok) {
+    const msg = r.raison === 'email_manquant'
+      ? 'La fiche entreprise n’a pas d’email : renseignez-la d’abord.'
+      : 'Un devis a déjà été déposé pour cette consultation.';
+    return res.status(400).render('erreur', { user: req.user, message: msg });
+  }
+  notifierCS('sollicitation', `${r.type === 'relance' ? 'Relance' : 'Sollicitation'} envoyée par email à « ${r.ent.raison_sociale} » pour le ticket « ${ticket.titre} »`, ticket.id, req.user.id);
+  res.redirect('/tickets/' + ticket.id + '#consultations');
+});
+
+// Sollicitation globale en un clic : toutes les consultations actives sans
+// devis dont l'entreprise a un email reçoivent un mail.
+router.post('/:id/solliciter', (req, res) => {
+  const db = getDb();
+  const ticket = trouverTicket(req, res);
+  if (!ticket) return;
+  if (!isGestionnaire(req.user)) {
+    return res.status(403).render('erreur', { user: req.user, message: 'Seul le conseil syndical sollicite les prestataires.' });
+  }
+  if (ticket.etape !== 'consultation') {
+    return res.status(400).render('erreur', { user: req.user, message: 'Les sollicitations ne se gèrent qu’à l’étape « En consultation ».' });
+  }
+  const cibles = db.prepare(
+    `SELECT c.* FROM consultations c JOIN entreprises e ON e.id = c.entreprise_id
+     WHERE c.ticket_id = ? AND c.caduque = 0 AND c.validee = 0 AND TRIM(COALESCE(e.mail,'')) != ''
+     ORDER BY c.created_at`
+  ).all(ticket.id).filter(c => !db.prepare("SELECT 1 FROM fichiers WHERE consultation_id = ? AND categorie = 'devis'").get(c.id));
+  if (cibles.length === 0) {
+    return res.status(400).render('erreur', { user: req.user, message: 'Aucune entreprise à solliciter : devis déjà déposé ou email manquant sur la fiche entreprise.' });
+  }
+  const envoyes = [];
+  for (const c of cibles) {
+    const r = solliciterConsultation(db, ticket, c, req.user);
+    if (r.ok) envoyes.push(r.ent.raison_sociale);
+  }
+  if (envoyes.length > 0) {
+    notifierCS('sollicitation', `Sollicitations envoyées par email pour le ticket « ${ticket.titre} » : ${envoyes.join(', ')}`, ticket.id, req.user.id);
+  }
+  res.redirect('/tickets/' + ticket.id + '#consultations');
+});
+
+// Validation d'une date proposée par le prestataire : membre du CS ou occupant
+// des unités concernées. Elle devient la date d'intervention de la consultation.
+router.post('/:id/consultations/:cid/dates/:did/valider', (req, res) => {
+  const db = getDb();
+  const ticket = trouverTicket(req, res);
+  if (!ticket) return;
+  if (!peutValiderDate(req.user, ticket)) {
+    return res.status(403).render('erreur', { user: req.user, message: 'Seuls un membre du conseil syndical ou un occupant des unités concernées peuvent valider une date proposée.' });
+  }
+  const c = db.prepare('SELECT * FROM consultations WHERE id = ? AND ticket_id = ?').get(Number(req.params.cid), ticket.id);
+  if (!c || c.caduque || !c.validee) {
+    return res.status(400).render('erreur', { user: req.user, message: 'Consultation introuvable, caduque ou non sélectionnée.' });
+  }
+  const d = db.prepare('SELECT * FROM consultation_dates WHERE id = ? AND consultation_id = ?').get(Number(req.params.did), c.id);
+  if (!d || d.validee) {
+    return res.status(400).render('erreur', { user: req.user, message: 'Date introuvable ou déjà validée.' });
+  }
+  db.prepare('UPDATE consultation_dates SET validee = 1, valide_par = ? WHERE id = ?').run(req.user.id, d.id);
+  db.prepare("UPDATE consultations SET date_planifiee = ?, updated_at = datetime('now') WHERE id = ?").run(d.date, c.id);
+  const ent = db.prepare('SELECT * FROM entreprises WHERE id = ?').get(c.entreprise_id);
+  db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'date_validee', ?, ?)")
+    .run(ticket.id, req.user.id, `${req.user.nom} a retenu la date proposée du ${d.date}${d.heure ? ` à ${d.heure}` : ''} pour « ${ent.raison_sociale} »`);
+  notifierDateRetenue(db, ticket, ent, d.date, d.heure, req.user.id);
+  res.redirect('/tickets/' + ticket.id + '#consultations');
 });
 
 // Modification d'une consultation (entreprise, date, remplacement du devis).
@@ -429,12 +589,25 @@ router.post('/:id/consultations/:cid', (req, res) => {
     return res.status(400).render('erreur', { user: req.user, message: 'Les consultations ne se gèrent qu\'à l\'étape « En consultation ».' });
   }
   const c = db.prepare('SELECT * FROM consultations WHERE id = ? AND ticket_id = ?').get(Number(req.params.cid), ticket.id);
-  if (!c || c.caduque || c.validee) {
+  if (!c || c.caduque) {
     return res.status(400).render('erreur', { user: req.user, message: 'Cette consultation n\'est plus modifiable (lecture seule).' });
   }
   upload.array('devis_fichiers', 1)(req, res, (err) => {
     if (err) return res.status(400).render('erreur', { user: req.user, message: err.message });
     const { entreprise_id, date_planifiee } = req.body;
+    if (c.validee) {
+      // Consultation sélectionnée : seule la date d'intervention reste
+      // renseignable à la main (l'échange a eu lieu hors outil) — elle est
+      // considérée comme acceptée.
+      nettoyerFichiers(req.files);
+      if (date_planifiee && date_planifiee.trim()) {
+        db.prepare("UPDATE consultations SET date_planifiee = ?, updated_at = datetime('now') WHERE id = ?").run(date_planifiee.trim(), c.id);
+        const ent = db.prepare('SELECT raison_sociale FROM entreprises WHERE id = ?').get(c.entreprise_id);
+        db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'consultation', ?, ?)")
+          .run(ticket.id, req.user.id, `${req.user.nom} a renseigné la date d'intervention (${date_planifiee.trim()}) pour « ${ent.raison_sociale} »`);
+      }
+      return res.redirect('/tickets/' + ticket.id + '#consultations');
+    }
     if (entreprise_id && entreprise_id !== 'nouvelle') {
       const eid = Number(entreprise_id);
       if (db.prepare('SELECT id FROM entreprises WHERE id = ?').get(eid)) {
@@ -491,15 +664,16 @@ router.post('/:id/consultations/:cid/supprimer', (req, res) => {
   res.redirect('/tickets/' + ticket.id + '#consultations');
 });
 
-// Validation d'une consultation pour passer en "travaux planifies" :
-// la consultation doit etre complete (entreprise strictement complete,
-// au moins un devis piece jointe + montant, date planifiee).
+// Sélection individuelle d'une consultation : elle passe « sélectionnée »
+// (validee) et un mail de planification des dates est envoyé à l'entreprise.
+// Le ticket RESTE en « consultation » : le passage en « Travaux planifiés »
+// se fait ensuite via POST /travaux-planifies, une fois la date acceptée.
 router.post('/:id/consultations/:cid/valider', (req, res) => {
   const db = getDb();
   const ticket = trouverTicket(req, res);
   if (!ticket) return;
   if (!isGestionnaire(req.user)) {
-    return res.status(403).render('erreur', { user: req.user, message: 'Seul le conseil syndical peut valider une consultation.' });
+    return res.status(403).render('erreur', { user: req.user, message: 'Seul le conseil syndical peut sélectionner une consultation.' });
   }
   if (ticket.etape !== 'consultation') {
     return res.status(400).render('erreur', { user: req.user, message: 'Le ticket n\'est plus en consultation.' });
@@ -508,16 +682,20 @@ router.post('/:id/consultations/:cid/valider', (req, res) => {
   if (!c || c.caduque) {
     return res.status(400).render('erreur', { user: req.user, message: 'Consultation introuvable ou caduque.' });
   }
-  if (!consultationComplete(db, c)) {
+  if (c.validee) return res.redirect('/tickets/' + ticket.id + '#consultations');
+  if (!consultationSelectionnable(db, c)) {
     return res.status(400).render('erreur', {
       user: req.user,
-      message: 'La consultation doit être complète : fiche entreprise strictement complète (raison sociale, SIREN/SIRET, contact, téléphone, mail), au moins un devis (pièce jointe + montant) et une date planifiée.'
+      message: 'La consultation doit être complète : fiche entreprise strictement complète (raison sociale, SIREN/SIRET, contact, téléphone, mail) et 1 devis (pièce jointe + montant > 0).'
     });
   }
   db.prepare('UPDATE consultations SET validee = 1, updated_at = datetime(\'now\') WHERE id = ?').run(c.id);
-  const ent = db.prepare('SELECT raison_sociale FROM entreprises WHERE id = ?').get(c.entreprise_id);
-  faireTransition(db, ticket, 'intervention_planifiee', req.user.id, `Consultation validée (${ent.raison_sociale}, date ${c.date_planifiee}) — travaux planifiés`);
-  res.redirect('/tickets/' + ticket.id);
+  const ent = db.prepare('SELECT * FROM entreprises WHERE id = ?').get(c.entreprise_id);
+  envoyerMailDatesSelection(db, ticket, c, req.user);
+  db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'selection', ?, ?)")
+    .run(ticket.id, req.user.id, `${req.user.nom} a sélectionné la consultation « ${ent.raison_sociale} » — en attente de la date d'intervention`);
+  notifierCS('selection', `Consultation « ${ent.raison_sociale} » sélectionnée pour le ticket « ${ticket.titre} » — mail de planification envoyé au prestataire`, ticket.id, req.user.id);
+  res.redirect('/tickets/' + ticket.id + '#consultations');
 });
 
 // Factures (PDF + cout) : CS/admin, tant que le ticket n'est pas archive.

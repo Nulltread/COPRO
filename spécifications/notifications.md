@@ -8,7 +8,8 @@
 
 ## Événements notifiés
 
-- **Seules les transitions (changements d'état) des tickets déclenchent des notifications.** Tous les autres événements du ticket (ajouts de fichiers ou photos, éditions, décisions, bilans) ne notifient plus personne : le **fil de suivi** (log horodaté avec auteur) suffit à les tracer.
+- **Seules les transitions (changements d'état) des tickets déclenchent des notifications** aux destinataires du ticket (ci-dessous). Tous les autres événements du ticket (ajouts de fichiers ou photos, éditions, décisions, bilans) ne notifient plus personne : le **fil de suivi** (log horodaté avec auteur) suffit à les tracer.
+- **Exception — les échanges avec les prestataires** (voir `sollicitations-relances.md`) notifient les **membres du CS** (in-app + email selon préférences, auteur exclu) et les **prestataires par email** (adresse de la fiche entreprise, sans compte) : sollicitation/relance envoyée, devis déposé par le prestataire (**avec un lien direct vers le fichier** dans la notification in-app et dans l'email), dates proposées, date validée, sélection avec envoi des mails de planification.
 - Les événements de **rattachement** continuent de notifier : acceptation/refus au **demandeur** et au **conseil syndical** ; alertes de **péremption à J-3 et J-1** aux **admin et membres du CS** (voir `rattachements.md`) ; alertes d'**archivage automatique à J-3 et J-1** aux **membres du CS et aux occupants concernés** (voir `cycle-de-vie-des-tickets.md`). Chaque alerte est envoyée **une seule fois**.
 
 ## Destinataires d'une transition de ticket

@@ -70,6 +70,60 @@ test('synchro alias sans clé API : ignorée sans erreur', async () => {
   assert.strictEqual(await synchroniserAliasCS(), false);
 });
 
+test('envoi SMTP avec pièce jointe : multipart/mixed, base64, dot-stuffing', async () => {
+  const net = require('net');
+  let dataBuf = '';
+  const serveur = net.createServer((sock) => {
+    let buffer = '';
+    let mode = 'cmd';
+    sock.write('220 test ESMTP\r\n');
+    sock.on('data', (d) => {
+      buffer += d.toString();
+      let i;
+      while ((i = buffer.indexOf('\r\n')) >= 0) {
+        const line = buffer.slice(0, i);
+        buffer = buffer.slice(i + 2);
+        if (mode === 'data') {
+          if (line === '.') { mode = 'cmd'; sock.write('250 ok queued\r\n'); }
+          else dataBuf += line + '\r\n';
+          continue;
+        }
+        if (/^DATA/.test(line)) { mode = 'data'; sock.write('354 go\r\n'); }
+        else if (/^QUIT/.test(line)) sock.write('221 bye\r\n');
+        else sock.write('250 ok\r\n');
+      }
+    });
+  });
+  await new Promise(r => serveur.listen(0, '127.0.0.1', r));
+  const port = serveur.address().port;
+  process.env.SMTP_HOST = '127.0.0.1';
+  process.env.SMTP_PORT = String(port);
+  process.env.MAIL_ENABLED = 'true';
+  try {
+    const { envoyerMail } = require('../src/mail');
+    const ok = await envoyerMail({
+      to: 'prestataire@entreprise.fr',
+      subject: 'Sollicitation de devis — « Test »',
+      text: 'Bonjour,\n\nVoici le ticket.\n.ligne avec point\n\nLien : http://localhost:3000/consultation/abc\n',
+      attachments: [{ filename: 'photo.jpg', contentType: 'image/jpeg', data: Buffer.from('hello') }]
+    });
+    assert.strictEqual(ok, true);
+    assert.ok(dataBuf.includes('Subject: Sollicitation de devis'));
+    assert.ok(dataBuf.includes('multipart/mixed; boundary='));
+    assert.ok(dataBuf.includes('Content-Type: image/jpeg'));
+    assert.ok(dataBuf.includes('Content-Disposition: attachment; filename="photo.jpg"'));
+    assert.ok(dataBuf.includes('aGVsbG8=')); // base64 de 'hello'
+    assert.ok(dataBuf.includes('Content-Type: text/plain; charset=utf-8'));
+    // dot-stuffing : la ligne commençant par un point est envoyée avec deux points
+    assert.ok(dataBuf.includes('\r\n..ligne avec point\r\n'));
+    assert.ok(dataBuf.includes('/consultation/abc'));
+  } finally {
+    process.env.MAIL_ENABLED = 'false';
+    delete process.env.SMTP_PORT;
+    serveur.close();
+  }
+});
+
 test('profil : la case notifications par email met à jour notif_email', async () => {
   const cookies = {};
   const loginRes = await fetch(base + '/connexion', {

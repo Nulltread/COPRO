@@ -3,11 +3,11 @@ const { envoyerMailNotification, config } = require('./mail');
 
 // Envoi du canal email (option utilisateur, email vérifié uniquement),
 // en complément de la notification in-app. Lien direct vers la page concernée.
-function notifierParEmail(userIds, ticketId, message) {
+function notifierParEmail(userIds, ticketId, message, lienOverride) {
   if (!userIds.length) return;
   const db = getDb();
   const baseUrl = config().baseUrl;
-  const lien = ticketId ? `${baseUrl}/tickets/${ticketId}` : `${baseUrl}/notifications`;
+  const lien = lienOverride || (ticketId ? `${baseUrl}/tickets/${ticketId}` : `${baseUrl}/notifications`);
   const destinataires = db.prepare(
     'SELECT id, email, prenom FROM users WHERE id IN (' + userIds.map(() => '?').join(',') + ') AND notif_email = 1 AND email_verifie = 1 AND statut = \'actif\''
   ).all(...userIds);
@@ -36,10 +36,10 @@ function destinatairesTicket(ticketId, auteurId) {
   return [...ids];
 }
 
-function creerNotification(userId, ticketId, type, message) {
+function creerNotification(userId, ticketId, type, message, donnees) {
   const db = getDb();
-  db.prepare('INSERT INTO notifications (user_id, ticket_id, type, message) VALUES (?, ?, ?, ?)')
-    .run(userId, ticketId, type, message);
+  db.prepare('INSERT INTO notifications (user_id, ticket_id, type, message, donnees) VALUES (?, ?, ?, ?, ?)')
+    .run(userId, ticketId, type, message, donnees ? JSON.stringify(donnees) : null);
 }
 
 function notifierTicket(ticket, type, message, auteurId, urgent = false) {
@@ -60,16 +60,19 @@ function notifierUser(userId, ticketId, type, message) {
   notifierParEmail([userId], ticketId, message);
 }
 
-function notifierCS(type, message, ticketId = null, auteurId = null) {
+// donnees = objet JSON stocke avec la notification (ex. { fichier_id } pour un
+// lien direct vers un fichier) ; lienOverride remplace le lien du mail
+// (ex. lien direct vers le fichier concerne).
+function notifierCS(type, message, ticketId = null, auteurId = null, donnees = null, lienOverride = null) {
   const db = getDb();
   const cs = db.prepare("SELECT id FROM users WHERE conseil_syndical = 1 AND statut = 'actif'").all();
   const ids = [];
   for (const u of cs) {
     if (auteurId && u.id === auteurId) continue;
-    creerNotification(u.id, ticketId, type, message);
+    creerNotification(u.id, ticketId, type, message, donnees);
     ids.push(u.id);
   }
-  notifierParEmail(ids, ticketId, message);
+  notifierParEmail(ids, ticketId, message, lienOverride);
 }
 
 // Admin + membres du CS (ex. alertes de peremption des rattachements, spec 19).

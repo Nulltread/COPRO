@@ -258,3 +258,10 @@ fieldset { border: 1px solid var(--bordure-input); border-radius: 2px; }
 .bilans-anciens { margin-top: 14px; border-top: 1px solid var(--bordure); padding-top: 10px; }
 .bilans-anciens summary { cursor: pointer; font-weight: 700; }
 .actions-acceptation { flex-direction: row; flex-wrap: wrap; gap: 10px; }
+
+/* Sollicitations et dates proposees (espace prestataire + fiche ticket) */
+.form-valider-date { display: inline-flex; margin: 0 0 0 8px; }
+.lignes-dates { display: flex; flex-direction: column; gap: 10px; }
+.ligne-date { display: flex; gap: 12px; flex-wrap: wrap; }
+.ligne-date label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; flex: 1; min-width: 140px; }
+.ligne-date input { font-size: 1rem; padding: 12px; border: 1px solid var(--bordure-input); border-radius: 2px; background: #fff; width: 100%; }

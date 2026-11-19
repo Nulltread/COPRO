@@ -276,18 +276,39 @@ function entrepriseComplete(e) {
     && !!(e.mail || '').trim();
 }
 
-// Une consultation est complete (validable pour passer en travaux planifies) :
-// entreprise strictement complete + au moins un devis (piece jointe + montant)
-// + une date planifiee.
-function consultationComplete(db, consultation) {
+// Une consultation est "selectionnable" (marquee retenue a la selection) :
+// entreprise strictement complete + au moins un devis (piece jointe + montant).
+// La date n'est PAS requise a la selection : elle est completee ensuite
+// (saisie a la main par le CS ou proposition du prestataire validee —
+// voir specifications/sollicitations-relances.md).
+function consultationSelectionnable(db, consultation) {
   if (!consultation) return false;
   const e = db.prepare('SELECT * FROM entreprises WHERE id = ?').get(consultation.entreprise_id);
   if (!entrepriseComplete(e)) return false;
-  if (!consultation.date_planifiee) return false;
   const nbDevis = db.prepare(
     "SELECT COUNT(*) AS n FROM fichiers WHERE consultation_id = ? AND categorie = 'devis' AND montant IS NOT NULL"
   ).get(consultation.id).n;
   return nbDevis > 0;
+}
+
+// Une consultation est complete (passage en travaux planifies) :
+// selectionnable + une date planifiee acceptee (renseignee a la main par le
+// CS, ou proposition du prestataire validee — dans ce cas la date est
+// reportee dans consultations.date_planifiee a la validation).
+function consultationComplete(db, consultation) {
+  if (!consultation) return false;
+  if (!consultationSelectionnable(db, consultation)) return false;
+  if (!consultation.date_planifiee) return false;
+  return true;
+}
+
+// Validation d'une date proposee par le prestataire : un membre du CS ou un
+// occupant des unites concernees (l'admin pur est exclu), tant que le ticket
+// est en consultation.
+function peutValiderDate(user, ticket) {
+  if (!estActif(user) || !ticket || ticket.etape !== 'consultation') return false;
+  if (user.role === 'admin' && !isCS(user)) return false;
+  return isCS(user) || estResidentConcerne(user, ticket.id);
 }
 
 const ETAPES = ['cree', 'consultation', 'intervention_planifiee', 'travaux_acceptes', 'archive'];
@@ -312,7 +333,7 @@ module.exports = {
   personnesConcerneesCR, peutRedigerCR, crVisibles, peutVoirCR, aConnuEtape, sectionsVisibles,
   peutToggleUrgent, peutGererPhotosDescription,
   infosValidation, peutAccepterRefuser, peutReouvrir, dansDelaiArchivage, dateArchivageAuto,
-  nbFactures, peutArchiver, entrepriseComplete, consultationComplete,
+  nbFactures, peutArchiver, entrepriseComplete, consultationSelectionnable, consultationComplete, peutValiderDate,
   ETAPES, ETIQUETTES_ETAPES,
   CATEGORIES_FICHIER_CS
 };

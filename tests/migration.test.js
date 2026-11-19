@@ -186,6 +186,23 @@ test('migration : login admin fonctionne après migration', async () => {
   server.close();
 });
 
+test('migration v5 : tables sollicitations/acces_externes/consultation_dates, fichiers.auteur_id nullable + auteur_externe, notifications.donnees', () => {
+  for (const t of ['sollicitations', 'acces_externes', 'consultation_dates']) {
+    const row = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(t);
+    assert.ok(row, `table ${t} presente`);
+  }
+  const fcols = db.prepare('PRAGMA table_info(fichiers)').all();
+  assert.ok(fcols.some(c => c.name === 'auteur_externe'));
+  assert.ok(fcols.find(c => c.name === 'auteur_id').notnull === 0); // nullable : depot prestataire externe
+  const ncols = db.prepare('PRAGMA table_info(notifications)').all().map(c => c.name);
+  assert.ok(ncols.includes('donnees'));
+  // un auteur_id NULL est accepte (devis depose par un prestataire sans compte)
+  db.prepare("INSERT INTO fichiers (ticket_id, categorie, nom_original, nom_stockage, mime, taille, auteur_id, auteur_externe) VALUES (1, 'devis', 'd.pdf', 'd.pdf', 'application/pdf', 1, NULL, 'Plombier SARL')").run();
+  const f = db.prepare("SELECT auteur_externe FROM fichiers WHERE nom_original='d.pdf'").get();
+  assert.strictEqual(f.auteur_externe, 'Plombier SARL');
+  assert.strictEqual(db.pragma('user_version', { simple: true }), 5);
+});
+
 test('migration : une base déjà à jour n\'est pas touchée', () => {
   const { migrate } = require('../src/db/migrate');
   assert.strictEqual(migrate(), false);

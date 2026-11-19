@@ -115,19 +115,58 @@
         <% if (c.validee && !c.caduque) { %><span class="tag-retenu">VALIDÉE</span><% } %>
         <% if (c.caduque) { %><span class="auteur">🗄 caduque (lecture seule)</span><% } %>
       </h3>
+      <% const aDevis = devis.some(x => x.consultation_id === c.id); %>
+      <% if (gestionnaire && ticket.etape === 'consultation' && !c.caduque && !c.validee && !aDevis && (c.ent_mail || '').trim()) { %>
+        <form method="post" action="/tickets/<%= ticket.id %>/consultations/<%= c.id %>/solliciter" class="formulaire-ligne" data-confirm="Envoyer un email de sollicitation à « <%= c.raison_sociale %> » (<%= c.ent_mail %>) ?" data-confirm-titre="Solliciter par email">
+          <button class="bouton-secondaire" type="submit">✉️ Solliciter par email</button>
+        </form>
+      <% } %>
       <p class="aide">
         SIREN/SIRET : <%= c.siren_siret || '—' %> · contact : <%= c.contact_nom || '—' %> · tél : <%= c.ent_telephone || '—' %> · mail : <%= c.ent_mail || '—' %><br>
-        Date d'intervention : <strong><%= c.date_planifiee || '—' %></strong> · ajoutée par <%= c.auteur_nom || 'Compte supprimé' %> le <%= c.created_at %>
+        Date d'intervention : <strong><%= c.date_planifiee || (c.validee && !c.caduque ? 'en attente' : '—') %></strong>
+        <% if (c.validee && c.date_planifiee && !c.caduque) { %><span class="tag-retenu">DATE ACCEPTÉE</span><% } %>
+        · ajoutée par <%= c.auteur_nom || 'Compte supprimé' %> le <%= c.created_at %>
       </p>
+      <% const mesSollicitations = sollicitationsParConsultation[c.id] || []; %>
+      <% if (mesSollicitations.length > 0) { %>
+        <p class="aide">✉️ <%= mesSollicitations.map(s => `${s.type === 'relance' ? 'relance' : 'sollicitation'} le ${s.created_at}`).join(' · ') %></p>
+      <% } %>
       <ul class="liste-docs">
         <% for (const d of devis.filter(x => x.consultation_id === c.id)) { %>
           <li>
             <a href="/fichiers/<%= d.id %>" target="_blank" rel="noopener">📄 <%= d.nom_original %></a>
             <span class="montant"><%= d.montant != null ? d.montant.toFixed(2) + ' €' : '' %></span>
-            <span class="auteur">par <%= d.auteur_nom || 'Compte supprimé' %></span>
+            <span class="auteur"><%= d.auteur_nom ? 'par ' + d.auteur_nom : (d.auteur_externe ? 'déposé par le prestataire « ' + d.auteur_externe + ' »' : 'Compte supprimé') %></span>
           </li>
         <% } %>
       </ul>
+      <% const mesDates = datesParConsultation[c.id] || []; %>
+      <% if (mesDates.length > 0) { %>
+        <ul class="liste-docs">
+          <% for (const d of mesDates) { %>
+            <li>
+              🗓️ <%= d.date %><% if (d.heure) { %> à <%= d.heure %><% } %>
+              <% if (d.validee) { %><span class="tag-retenu">DATE ACCEPTÉE</span>
+              <% } else if (c.validee && !c.caduque && peutValiderDate && ticket.etape === 'consultation') { %>
+                <form method="post" action="/tickets/<%= ticket.id %>/consultations/<%= c.id %>/dates/<%= d.id %>/valider" class="formulaire-ligne form-valider-date" data-confirm="Retenir la date du <%= d.date %><% if (d.heure) { %> à <%= d.heure %><% } %> pour « <%= c.raison_sociale %> » ?" data-confirm-titre="Retenir la date">
+                  <button class="bouton-secondaire" type="submit">Valider cette date</button>
+                </form>
+              <% } %>
+            </li>
+          <% } %>
+        </ul>
+      <% } %>
+      <% if (gestionnaire && ticket.etape === 'consultation' && c.validee && !c.caduque) { %>
+        <details>
+          <summary>Compléter la date à la main</summary>
+          <form method="post" action="/tickets/<%= ticket.id %>/consultations/<%= c.id %>" class="formulaire">
+            <label>Date d'intervention
+              <input type="date" name="date_planifiee" value="<%= c.date_planifiee || '' %>">
+            </label>
+            <button class="bouton-secondaire" type="submit">Enregistrer la date</button>
+          </form>
+        </details>
+      <% } %>
       <% if (gestionnaire && ticket.etape === 'consultation' && !c.caduque && !c.validee) { %>
         <details>
           <summary>Modifier cette consultation</summary>
@@ -154,9 +193,19 @@
   <% } %>
   </ul>
   <% if (gestionnaire && ticket.etape === 'consultation') { %>
-    <form id="form-selectionner" method="post" action="/tickets/<%= ticket.id %>/consultations/selectionner" class="formulaire-ligne" data-confirm="Sélectionner les consultations cochées et passer le ticket en « Travaux planifiés » ?" data-confirm-titre="Sélectionner les consultations">
+    <% if (nbSansDevisAvecMail > 0) { %>
+      <form method="post" action="/tickets/<%= ticket.id %>/solliciter" class="formulaire-ligne" data-confirm="Envoyer un email de sollicitation à toutes les entreprises qui n'ont pas encore de devis ?" data-confirm-titre="Solliciter les entreprises">
+        <button class="bouton-secondaire" type="submit">✉️ Solliciter par email</button>
+      </form>
+    <% } %>
+    <form id="form-selectionner" method="post" action="/tickets/<%= ticket.id %>/consultations/selectionner" class="formulaire-ligne" data-confirm="Sélectionner les consultations cochées ? Un mail de planification des dates sera envoyé à chaque entreprise sélectionnée." data-confirm-titre="Sélectionner les consultations">
       <button class="bouton" type="submit">Sélectionner</button>
     </form>
+    <% if (nbSelectionnees > 0) { %>
+      <form method="post" action="/tickets/<%= ticket.id %>/travaux-planifies" class="formulaire-ligne" data-confirm="Passer le ticket en « Travaux planifiés » ? Toutes les consultations sélectionnées doivent avoir une date acceptée." data-confirm-titre="Passer en travaux planifiés">
+        <button class="bouton" type="submit">Passer en « Travaux planifiés »</button>
+      </form>
+    <% } %>
     <div id="nouvelle-consultation" class="consultation nouvelle">
     <h3>Nouvelle consultation</h3>
     <form method="post" action="/tickets/<%= ticket.id %>/consultations" class="formulaire" enctype="multipart/form-data">

@@ -11,6 +11,14 @@ router.get('/', (req, res) => {
     `SELECT n.*, t.titre AS ticket_titre FROM notifications n LEFT JOIN tickets t ON t.id = n.ticket_id
      WHERE n.user_id = ? ORDER BY n.created_at DESC LIMIT 100`
   ).all(req.user.id);
+  // Lien direct vers un fichier (ex. devis déposé par un prestataire).
+  for (const n of notifs) {
+    n.fichier_id = null;
+    try {
+      const d = n.donnees ? JSON.parse(n.donnees) : null;
+      if (d && d.fichier_id) n.fichier_id = d.fichier_id;
+    } catch (e) {}
+  }
   res.render('notifications', { user: req.user, notifs });
 });
 

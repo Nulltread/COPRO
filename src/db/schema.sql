@@ -168,7 +168,10 @@ CREATE TABLE IF NOT EXISTS fichiers (
   -- Cycle du ticket auquel la photo de bilan est rattachee (contexte
   -- 'compte_rendu') ; NULL pour les autres contextes (spec 28).
   cycle INTEGER,
-  auteur_id INTEGER NOT NULL REFERENCES users(id),
+  -- NULL quand le fichier est depose par un prestataire externe (sans compte)
+  -- via son lien de consultation ; auteur_externe porte alors sa raison sociale.
+  auteur_id INTEGER REFERENCES users(id),
+  auteur_externe TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -179,6 +182,46 @@ CREATE TABLE IF NOT EXISTS notifications (
   type TEXT NOT NULL,
   message TEXT NOT NULL,
   lu INTEGER NOT NULL DEFAULT 0,
+  -- Donnees JSON complementaires (ex. { "fichier_id": 12 } pour un lien
+  -- direct vers un fichier dans la notification).
+  donnees TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Sollicitations et relances des prestataires par email, par consultation
+-- (voir specifications/sollicitations-relances.md) : le systeme se souvient
+-- des envois et adapte le mail (sollicitation vs relance).
+CREATE TABLE IF NOT EXISTS sollicitations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  consultation_id INTEGER NOT NULL REFERENCES consultations(id) ON DELETE CASCADE,
+  auteur_id INTEGER REFERENCES users(id),
+  type TEXT NOT NULL DEFAULT 'sollicitation' CHECK (type IN ('sollicitation','relance')),
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Jetons d'acces externes (prestataires, sans compte) : lien direct vers la
+-- version reduite de la consultation. Duree de vie maximale : 7 jours.
+CREATE TABLE IF NOT EXISTS acces_externes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  consultation_id INTEGER NOT NULL REFERENCES consultations(id) ON DELETE CASCADE,
+  token TEXT NOT NULL UNIQUE,
+  type TEXT NOT NULL DEFAULT 'devis' CHECK (type IN ('devis','dates')),
+  expires_at TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Dates d'intervention proposees pour une consultation (par le prestataire
+-- via son lien, ou saisies a la main par le CS). Une date "acceptee" =
+-- validee = 1 (validation par un membre du CS ou un occupant) ou saisie
+-- directement en date_planifiee de la consultation par le CS.
+CREATE TABLE IF NOT EXISTS consultation_dates (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  consultation_id INTEGER NOT NULL REFERENCES consultations(id) ON DELETE CASCADE,
+  date TEXT NOT NULL,
+  heure TEXT,
+  propose_par TEXT NOT NULL DEFAULT 'prestataire' CHECK (propose_par IN ('prestataire','cs')),
+  validee INTEGER NOT NULL DEFAULT 0,
+  valide_par INTEGER REFERENCES users(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -200,3 +243,7 @@ CREATE INDEX IF NOT EXISTS idx_rattachements_unit ON rattachements(unit_id, stat
 -- Index sur consultations/fichiers.crees dans migrate.js (migration v2) :
 -- une vieille base n'a pas encore ces colonnes au moment de lire ce fichier.
 CREATE INDEX IF NOT EXISTS idx_resolutions_ticket ON resolutions(ticket_id);
+CREATE INDEX IF NOT EXISTS idx_sollicitations_consultation ON sollicitations(consultation_id);
+CREATE INDEX IF NOT EXISTS idx_acces_externes_consultation ON acces_externes(consultation_id);
+CREATE INDEX IF NOT EXISTS idx_acces_externes_token ON acces_externes(token);
+CREATE INDEX IF NOT EXISTS idx_consultation_dates_consultation ON consultation_dates(consultation_id);

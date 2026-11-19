@@ -52,7 +52,94 @@ function migrate() {
     db.pragma('user_version = 4');
     console.log('Migration v4 : tickets.cycle, fichiers.cycle, comptes_rendus par cycle (spec 28).');
   }
+  // v5 (sollicitations/relances) : tables sollicitations, acces_externes et
+  // consultation_dates ; fichiers.auteur_id devient nullable (+ auteur_externe)
+  // pour les devis deposes par un prestataire externe ; notifications.donnees.
+  if (db.pragma('user_version', { simple: true }) < 5) {
+    migrationV5(db);
+    db.pragma('user_version = 5');
+    console.log('Migration v5 : sollicitations, acces externes prestataires, dates proposees, fichiers.auteur_externe.');
+  }
   return sansCat;
+}
+
+function migrationV5(db) {
+  const ncols = db.prepare('PRAGMA table_info(notifications)').all().map(c => c.name);
+  if (!ncols.includes('donnees')) db.prepare('ALTER TABLE notifications ADD COLUMN donnees TEXT').run();
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS sollicitations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      consultation_id INTEGER NOT NULL REFERENCES consultations(id) ON DELETE CASCADE,
+      auteur_id INTEGER REFERENCES users(id),
+      type TEXT NOT NULL DEFAULT 'sollicitation' CHECK (type IN ('sollicitation','relance')),
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS acces_externes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      consultation_id INTEGER NOT NULL REFERENCES consultations(id) ON DELETE CASCADE,
+      token TEXT NOT NULL UNIQUE,
+      type TEXT NOT NULL DEFAULT 'devis' CHECK (type IN ('devis','dates')),
+      expires_at TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS consultation_dates (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      consultation_id INTEGER NOT NULL REFERENCES consultations(id) ON DELETE CASCADE,
+      date TEXT NOT NULL,
+      heure TEXT,
+      propose_par TEXT NOT NULL DEFAULT 'prestataire' CHECK (propose_par IN ('prestataire','cs')),
+      validee INTEGER NOT NULL DEFAULT 0,
+      valide_par INTEGER REFERENCES users(id),
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_sollicitations_consultation ON sollicitations(consultation_id);
+    CREATE INDEX IF NOT EXISTS idx_acces_externes_consultation ON acces_externes(consultation_id);
+    CREATE INDEX IF NOT EXISTS idx_acces_externes_token ON acces_externes(token);
+    CREATE INDEX IF NOT EXISTS idx_consultation_dates_consultation ON consultation_dates(consultation_id);
+  `);
+  const fcols = db.prepare('PRAGMA table_info(fichiers)').all();
+  const auteurCol = fcols.find(c => c.name === 'auteur_id');
+  if (!fcols.some(c => c.name === 'auteur_externe') || (auteurCol && auteurCol.notnull)) {
+    db.pragma('foreign_keys = OFF');
+    db.exec('BEGIN');
+    try {
+      db.exec(`
+        CREATE TABLE fichiers_v5 (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          ticket_id INTEGER NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+          categorie TEXT NOT NULL CHECK (categorie IN ('photo','devis','avenant','facture','decision','compte_rendu')),
+          nom_original TEXT NOT NULL,
+          nom_stockage TEXT NOT NULL,
+          mime TEXT NOT NULL,
+          taille INTEGER NOT NULL,
+          montant REAL,
+          entreprise TEXT,
+          delai TEXT,
+          retenu INTEGER NOT NULL DEFAULT 0,
+          consultation_id INTEGER REFERENCES consultations(id) ON DELETE CASCADE,
+          contexte TEXT NOT NULL DEFAULT 'creation',
+          cycle INTEGER,
+          auteur_id INTEGER REFERENCES users(id),
+          auteur_externe TEXT,
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+      `);
+      db.exec(`
+        INSERT INTO fichiers_v5 (id, ticket_id, categorie, nom_original, nom_stockage, mime, taille, montant, entreprise, delai, retenu, consultation_id, contexte, cycle, auteur_id, auteur_externe, created_at)
+        SELECT id, ticket_id, categorie, nom_original, nom_stockage, mime, taille, montant, entreprise, delai, retenu, consultation_id, contexte, cycle, auteur_id, NULL, created_at FROM fichiers;
+      `);
+      db.exec('DROP TABLE fichiers');
+      db.exec('ALTER TABLE fichiers_v5 RENAME TO fichiers');
+      db.exec('CREATE INDEX IF NOT EXISTS idx_fichiers_ticket ON fichiers(ticket_id)');
+      db.exec('CREATE INDEX IF NOT EXISTS idx_fichiers_consultation ON fichiers(consultation_id)');
+      db.exec('COMMIT');
+    } catch (e) {
+      db.exec('ROLLBACK');
+      db.pragma('foreign_keys = ON');
+      throw e;
+    }
+    db.pragma('foreign_keys = ON');
+  }
 }
 
 function migrationV4(db) {

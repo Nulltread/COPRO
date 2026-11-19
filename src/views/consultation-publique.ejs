@@ -1,0 +1,105 @@
+<%- include('partials/header', { titre: 'Consultation — ' + c.titre }) %>
+<div class="entete-page">
+  <h1><%= c.titre %></h1>
+  <% if (c.ticket_urgent) { %><span class="tag-urgent">URGENT</span><% } %>
+</div>
+<p class="aide"><%= unites.map(u => u.label).join(', ') %> · entreprise consultée : <strong><%= c.raison_sociale %></strong></p>
+
+<% if (ok === 'devis') { %><p class="info">✅ Votre devis a bien été déposé. Merci !</p><% } %>
+<% if (ok === 'dates') { %><p class="info">✅ Vos dates d'intervention ont bien été envoyées. Merci !</p><% } %>
+<% if (erreur) { %><p class="erreur"><%= erreur %></p><% } %>
+
+<%# Version reduite du ticket : titre, description, photos uniquement %>
+<section class="bloc" id="description">
+  <h2>Description</h2>
+  <% if (c.description) { %><p><%= c.description %></p><% } else { %><p class="aide">Aucune description.</p><% } %>
+  <% if (photos.length > 0) { %>
+    <h3>Photos</h3>
+    <div class="mosaic">
+      <% for (const p of photos) { %>
+        <a class="tuile" href="/consultation/<%= token %>/fichiers/<%= p.id %>" target="_blank" rel="noopener">
+          <% if (p.mime.startsWith('image/')) { %>
+            <img src="/consultation/<%= token %>/fichiers/<%= p.id %>" alt="<%= p.nom_original %>">
+          <% } else { %>
+            <span class="miniature-fichier"><span class="miniature-fichier-icone" aria-hidden="true">📄</span><span class="miniature-fichier-nom"><%= p.nom_original %></span></span>
+          <% } %>
+        </a>
+      <% } %>
+    </div>
+  <% } %>
+</section>
+
+<%# Devis deja depose (visible aussi quand le formulaire reste ouvert) %>
+<% if (devis.length > 0) { %>
+<section class="bloc" id="devis-depose">
+  <h2>Votre devis déposé</h2>
+  <ul class="liste-docs">
+    <% for (const d of devis) { %>
+      <li>
+        <a href="/consultation/<%= token %>/fichiers/<%= d.id %>" target="_blank" rel="noopener">📄 <%= d.nom_original %></a>
+        <span class="montant"><%= d.montant != null ? d.montant.toFixed(2) + ' €' : '' %></span>
+      </li>
+    <% } %>
+  </ul>
+</section>
+<% } %>
+<%# Depot du devis par le prestataire : piece jointe + montant + entreprise (modifiable) %>
+<% if (peutDeposerDevis) { %>
+<section class="bloc" id="devis">
+  <h2>Déposer votre devis</h2>
+  <form method="post" action="/consultation/<%= token %>/devis" class="formulaire" enctype="multipart/form-data">
+    <label>Votre entreprise <small>(modifiable si besoin)</small>
+      <input type="text" name="entreprise_raison" value="<%= c.raison_sociale %>">
+    </label>
+    <div class="bloc-photos">
+      <label class="zone-photos zone-devis">
+        <input type="file" name="devis_fichiers" accept="image/jpeg,image/png,image/webp,application/pdf" required class="champ-fichiers-caches" data-montants="montants-devis-pub">
+        <span class="zone-photos-plus" aria-hidden="true">+</span>
+        <span class="zone-photos-icone" aria-hidden="true">📄</span>
+        <span class="zone-photos-texte">Devis<br><small>PDF ou image</small></span>
+      </label>
+      <div class="apercu"></div>
+    </div>
+    <div class="montants-devis" id="montants-devis-pub"></div>
+    <button class="bouton" type="submit">Déposer mon devis</button>
+  </form>
+</section>
+<% } %>
+
+<%# Proposition de dates par le prestataire, une fois la consultation selectionnee %>
+<% if (peutProposerDates) { %>
+<section class="bloc" id="dates">
+  <h2>Proposer vos dates d'intervention</h2>
+  <p class="aide">Votre devis a été retenu. Proposez une ou plusieurs dates (l'heure est facultative) : l'une d'elles sera validée par le conseil syndical ou l'occupant concerné.</p>
+  <form method="post" action="/consultation/<%= token %>/dates" class="formulaire">
+    <div id="lignes-dates" class="lignes-dates">
+      <div class="ligne-date">
+        <label>Date <input type="date" name="dates"></label>
+        <label>Heure <small>(facultative)</small> <input type="time" name="heures"></label>
+      </div>
+    </div>
+    <button type="button" class="bouton-secondaire" id="ajouter-date">+ Ajouter une date</button>
+    <button class="bouton" type="submit">Envoyer mes dates</button>
+  </form>
+  <% if (dates.length > 0) { %>
+    <h3>Dates déjà proposées</h3>
+    <ul class="liste-docs">
+      <% for (const d of dates) { %>
+        <li><%= d.date %><% if (d.heure) { %> à <%= d.heure %><% } %>
+          <% if (d.validee) { %><span class="tag-retenu">DATE RETENUE</span><% } %></li>
+      <% } %>
+    </ul>
+  <% } %>
+</section>
+<% } else if (dates.length > 0) { %>
+<section class="bloc" id="dates">
+  <h2>Dates proposées</h2>
+  <ul class="liste-docs">
+    <% for (const d of dates) { %>
+      <li><%= d.date %><% if (d.heure) { %> à <%= d.heure %><% } %>
+        <% if (d.validee) { %><span class="tag-retenu">DATE RETENUE</span><% } %></li>
+    <% } %>
+  </ul>
+</section>
+<% } %>
+<%- include('partials/footer') %>

@@ -25,6 +25,7 @@ Ce dossier est l'emplacement canonique des spécifications du projet. À chaque 
 | `cycle-de-vie-des-tickets.md` | États, transitions contraintes et droits, archivage, réouverture/refus, édition, urgence, fil de suivi |
 | `fiche-ticket-et-ergonomie.md` | Organisation des sections de la fiche ticket, formulaire de création, photos, composants d'interface |
 | `consultations-entreprises-factures.md` | Consultations et devis, référentiel des entreprises, factures, avenants |
+| `sollicitations-relances.md` | Sollicitations/relances par email des prestataires, espace prestataire à lien 7 jours, dépôt de devis et dates proposées, notifications des échanges |
 | `bilans-de-intervention.md` | Bilan par personne concernée, boutons Accepter/Refuser, cycles et figeage |
 | `liste-tickets-recherche-tableau-de-bord.md` | Liste des tickets, recherche, filtres, tri, tableau de bord |
 | `notifications.md` | Canaux, événements notifiés, destinataires, affichage |

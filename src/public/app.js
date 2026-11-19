@@ -493,6 +493,19 @@
     });
   }
 
+  // --- Espace prestataire : ajout de lignes date/heure dans le formulaire de proposition ---
+  var boutonAjouterDate = document.getElementById('ajouter-date');
+  if (boutonAjouterDate) {
+    boutonAjouterDate.addEventListener('click', function () {
+      var conteneur = document.getElementById('lignes-dates');
+      var modele = conteneur.querySelector('.ligne-date');
+      if (!modele) return;
+      var copie = modele.cloneNode(true);
+      copie.querySelectorAll('input').forEach(function (i) { i.value = ''; });
+      conteneur.appendChild(copie);
+    });
+  }
+
   // --- Étoile rouge sur tous les champs obligatoires, dans toute l'application ---
   function marquerObligatoires(root) {
     (root || document).querySelectorAll('label').forEach(function (label) {

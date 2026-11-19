@@ -15,7 +15,55 @@ function config() {
   };
 }
 
-function smtpSend({ to, subject, text }) {
+// Construit le corps du message : texte seul, ou multipart/mixed avec
+// pieces jointes (attachments = [{ filename, contentType, data (Buffer) }]).
+function construireCorps({ from, to, subject, text, attachments }) {
+  const id = `<${crypto.randomBytes(16).toString('hex')}@copro-pinede-gardanne.fr>`;
+  // normalise les fins de ligne du texte en CRLF (RFC 5322)
+  text = String(text || '').replace(/\r\n|\r|\n/g, '\r\n');
+  const tete = [
+    `From: ${from}`,
+    `To: ${to}`,
+    `Subject: ${subject.replace(/[\r\n]+/g, ' ')}`,
+    `Date: ${new Date().toUTCString()}`,
+    `Message-ID: ${id}`,
+    'MIME-Version: 1.0'
+  ];
+  const liste = (attachments || []).filter(a => a && a.data && a.data.length);
+  if (liste.length === 0) {
+    return tete.concat([
+      'Content-Type: text/plain; charset=utf-8',
+      'Content-Transfer-Encoding: 8bit',
+      '',
+      text
+    ]).join('\r\n');
+  }
+  const limite = '----=_copro_' + crypto.randomBytes(12).toString('hex');
+  const parties = [
+    ...tete,
+    `Content-Type: multipart/mixed; boundary="${limite}"`,
+    '',
+    `--${limite}`,
+    'Content-Type: text/plain; charset=utf-8',
+    'Content-Transfer-Encoding: 8bit',
+    '',
+    text
+  ];
+  for (const a of liste) {
+    parties.push(
+      `--${limite}`,
+      `Content-Type: ${a.contentType || 'application/octet-stream'}`,
+      `Content-Disposition: attachment; filename="${String(a.filename || 'piece-jointe').replace(/[\r\n"]+/g, '_')}"`,
+      'Content-Transfer-Encoding: base64',
+      '',
+      a.data.toString('base64').replace(/(.{76})/g, '$1\r\n')
+    );
+  }
+  parties.push(`--${limite}--`, '');
+  return parties.join('\r\n');
+}
+
+function smtpSend({ to, subject, text, attachments }) {
   const { host, port, from } = config();
   return new Promise((resolve, reject) => {
     const socket = net.connect(port, host);
@@ -47,20 +95,9 @@ function smtpSend({ to, subject, text }) {
       check(await send(`MAIL FROM:<${from}>`), [250]);
       check(await send(`RCPT TO:<${to}>`), [250, 251]);
       check(await send('DATA'), [354]);
-      const id = `<${crypto.randomBytes(16).toString('hex')}@copro-pinede-gardanne.fr>`;
-      const body = [
-        `From: ${from}`,
-        `To: ${to}`,
-        `Subject: ${subject.replace(/[\r\n]+/g, ' ')}`,
-        `Date: ${new Date().toUTCString()}`,
-        `Message-ID: ${id}`,
-        'MIME-Version: 1.0',
-        'Content-Type: text/plain; charset=utf-8',
-        'Content-Transfer-Encoding: 8bit',
-        '',
-        text
-      ].join('\r\n');
-      check(await send(body + '\r\n.'), [250]);
+      const body = construireCorps({ from, to, subject, text, attachments });
+      // dot-stuffing : une ligne commençant par un point est préfixée d'un point.
+      check(await send(body.replace(/(^|\r\n)\./g, '$1..') + '\r\n.'), [250]);
       await send('QUIT').catch(() => {});
       socket.end();
       resolve();
@@ -69,9 +106,9 @@ function smtpSend({ to, subject, text }) {
 }
 
 // Envoi en arrière-plan : un échec ne bloque jamais l'action appelante.
-function envoyerMail({ to, subject, text }) {
+function envoyerMail({ to, subject, text, attachments }) {
   if (!config().enabled) return Promise.resolve(false);
-  return smtpSend({ to, subject, text })
+  return smtpSend({ to, subject, text, attachments })
     .then(() => true)
     .catch((err) => {
       console.error(`Envoi mail vers ${to} echoue :`, err.message);

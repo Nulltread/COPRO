@@ -101,6 +101,16 @@ function ajouterFacture(tid, auteurId, montant = 100) {
     .run(tid, montant, auteurId);
 }
 
+// Nouveau flux : la sélection (/valider ou /selectionner) marque la consultation
+// sans changer l'étape du ticket ; le passage en « Travaux planifiés » se fait
+// ensuite via /travaux-planifies, une fois la date acceptée (ici : renseignée
+// directement en base par ajouterConsultationComplete).
+async function validerEtPlanifier(c, tid, cid) {
+  await c.req('POST', `/tickets/${tid}/consultations/${cid}/valider`);
+  return c.req('POST', `/tickets/${tid}/travaux-planifies`);
+}
+
+
 test('connexion avec mauvais mot de passe échoue', async () => {
   const c = await client();
   const res = await login(c, 'r1@test.local', 'mauvais');
@@ -206,7 +216,7 @@ test('spec 33 : unités modifiables jusqu\'au passage en « Travaux planifiés �
   assert.strictEqual(db().prepare('SELECT COUNT(*) AS n FROM ticket_units WHERE ticket_id = ?').get(tid).n, 2);
   // « Travaux planifiés » (devis validé) : figé — personne ne peut modifier
   const cid = ajouterConsultationComplete(tid, ids.cs);
-  await cs.req('POST', `/tickets/${tid}/consultations/${cid}/valider`);
+  await validerEtPlanifier(cs, tid, cid);
   assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'intervention_planifiee');
   assert.strictEqual((await r1.req('POST', `/tickets/${tid}/unites`, { unite_ids: [String(ids.villa1)] })).status, 403);
   assert.strictEqual((await cs.req('POST', `/tickets/${tid}/unites`, { unite_ids: [String(ids.villa1)] })).status, 403);
@@ -271,7 +281,7 @@ test('travaux planifiés → acceptés : UN SEUL acceptant suffit (occupant ou m
   const { tid } = await creerTicket(r2, [ids.villa2], 'Acceptation un seul');
   await cs.req('POST', `/tickets/${tid}/passer-consultation`);
   const cid = ajouterConsultationComplete(tid, ids.cs);
-  await cs.req('POST', `/tickets/${tid}/consultations/${cid}/valider`);
+  await validerEtPlanifier(cs, tid, cid);
   assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'intervention_planifiee');
   // un résident non concerné ne peut ni accepter ni refuser → 403
   assert.strictEqual((await r1.req('POST', `/tickets/${tid}/accepter`, { commentaire: 'ok' })).status, 403);
@@ -294,7 +304,7 @@ test('travaux planifiés → acceptés : UN SEUL acceptant suffit (occupant ou m
   const { tid: tid2 } = await creerTicket(r2, [ids.villa1, ids.villa2], 'Un seul acceptant au total');
   await cs.req('POST', `/tickets/${tid2}/passer-consultation`);
   const cid2 = ajouterConsultationComplete(tid2, ids.cs);
-  await cs.req('POST', `/tickets/${tid2}/consultations/${cid2}/valider`);
+  await validerEtPlanifier(cs, tid2, cid2);
   await r1.req('POST', `/tickets/${tid2}/accepter`, { commentaire: 'ok pour moi' });
   assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid2).etape, 'travaux_acceptes');
 
@@ -302,7 +312,7 @@ test('travaux planifiés → acceptés : UN SEUL acceptant suffit (occupant ou m
   const { tid: tid3 } = await creerTicket(r2, [ids.villa2], 'Acceptation par le CS');
   await cs.req('POST', `/tickets/${tid3}/passer-consultation`);
   const cid3 = ajouterConsultationComplete(tid3, ids.cs);
-  await cs.req('POST', `/tickets/${tid3}/consultations/${cid3}/valider`);
+  await validerEtPlanifier(cs, tid3, cid3);
   await cs.req('POST', `/tickets/${tid3}/accepter`, { commentaire: 'réception ok' });
   assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid3).etape, 'travaux_acceptes');
 });
@@ -407,7 +417,7 @@ test('bilans : une instance par personne concernée et par cycle ; visibilité =
   await cs.req('POST', `/tickets/${tid}/passer-consultation`);
   assert.strictEqual((await r1.req('POST', `/tickets/${tid}/cr`, { contenu: 'trop tôt' })).status, 403);
   const cid = ajouterConsultationComplete(tid, ids.cs);
-  await cs.req('POST', `/tickets/${tid}/consultations/${cid}/valider`);
+  await validerEtPlanifier(cs, tid, cid);
   // r1 rédige SON bilan, puis le modifie : toujours UNE seule ligne pour le cycle 1
   assert.strictEqual((await r1.req('POST', `/tickets/${tid}/cr`, { contenu: 'Bilan de r1' })).status, 302);
   assert.strictEqual((await r1.req('POST', `/tickets/${tid}/cr`, { contenu: 'Bilan de r1 modifié' })).status, 302);
@@ -594,11 +604,19 @@ test('consultations : création par le CS (entreprise + date + devis), validatio
   // validation d'une consultation incomplète (entreprise non strictement complète) → 400
   assert.strictEqual((await cs.req('POST', `/tickets/${tid}/consultations/${c.id}/valider`)).status, 400);
   assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'consultation');
-  // entreprise complétée → validation OK → travaux planifiés
+  // entreprise complétée → sélection OK (le ticket RESTE en consultation : la date
+  // est complétée ensuite) → puis passage en travaux planifiés via /travaux-planifies
   db().prepare("UPDATE entreprises SET siren_siret='123 456 789 00012', contact_nom='M. Contact', telephone='0600', mail='c@e.fr' WHERE id = ?").run(c.entreprise_id);
   assert.strictEqual((await cs.req('POST', `/tickets/${tid}/consultations/${c.id}/valider`)).status, 302);
-  assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'intervention_planifiee');
+  assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'consultation');
   assert.strictEqual(db().prepare('SELECT validee FROM consultations WHERE id=?').get(c.id).validee, 1);
+  // sans date acceptée, le passage en travaux planifiés est refusé
+  db().prepare('UPDATE consultations SET date_planifiee = NULL WHERE id = ?').run(c.id);
+  assert.strictEqual((await cs.req('POST', `/tickets/${tid}/travaux-planifies`)).status, 400);
+  assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'consultation');
+  db().prepare("UPDATE consultations SET date_planifiee='2026-12-01' WHERE id = ?").run(c.id);
+  assert.strictEqual((await cs.req('POST', `/tickets/${tid}/travaux-planifies`)).status, 302);
+  assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'intervention_planifiee');
   // une fois en planifié, plus de création/modification de consultation
   const resApres = await cs.req('POST', `/tickets/${tid}/consultations`, undefined, formTropTot);
   assert.strictEqual(resApres.status, 400);
@@ -631,17 +649,26 @@ test('consultations : date facultative à la création, 1 seul devis, sélection
   assert.strictEqual(db().prepare('SELECT COUNT(*) AS n FROM consultations WHERE ticket_id=?').get(tid).n, 1);
   // deuxième consultation complète (entreprise complète + date + devis), créée directement en base
   const c2id = ajouterConsultationComplete(tid, ids.cs);
-  // sélection globale des deux : c1 incomplète (pas de date, entreprise incomplète) -> 400, rien n'est sélectionné
+  // sélection globale des deux : c1 incomplète (entreprise non strictement complète) -> 400, rien n'est sélectionné
   const formSel = { consultation_ids: [String(c1.id), String(c2id)] };
   assert.strictEqual((await cs.req('POST', `/tickets/${tid}/consultations/selectionner`, formSel)).status, 400);
   assert.strictEqual(db().prepare('SELECT COUNT(*) AS n FROM consultations WHERE ticket_id=? AND validee=1').get(tid).n, 0);
-  // on complète c1 (date + fiche entreprise strictement complète) -> sélection des deux OK
-  db().prepare("UPDATE consultations SET date_planifiee='2026-12-02' WHERE id=?").run(c1.id);
+  // on complète la fiche entreprise de c1 -> sélection des deux OK (la date n'est
+  // plus requise à la sélection) ; le ticket reste en « consultation » et un mail
+  // de planification est envoyé (jeton 'dates' créé)
   db().prepare("UPDATE entreprises SET siren_siret='123 456 789 00012', contact_nom='M. Contact', telephone='0600', mail='c@e.fr' WHERE id=?").run(c1.entreprise_id);
   const res = await cs.req('POST', `/tickets/${tid}/consultations/selectionner`, formSel);
   assert.strictEqual(res.status, 302);
   assert.strictEqual(db().prepare('SELECT validee FROM consultations WHERE id=?').get(c1.id).validee, 1);
   assert.strictEqual(db().prepare('SELECT validee FROM consultations WHERE id=?').get(c2id).validee, 1);
+  assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'consultation');
+  const jetonsDates = db().prepare("SELECT COUNT(*) AS n FROM acces_externes a JOIN consultations c ON c.id = a.consultation_id WHERE c.ticket_id = ? AND a.type = 'dates'").get(tid).n;
+  assert.ok(jetonsDates >= 2);
+  // sans date acceptée -> passage en travaux planifiés refusé
+  assert.strictEqual((await cs.req('POST', `/tickets/${tid}/travaux-planifies`)).status, 400);
+  // dates acceptées (à la main) -> passage OK
+  db().prepare("UPDATE consultations SET date_planifiee='2026-12-02' WHERE id=?").run(c1.id);
+  assert.strictEqual((await cs.req('POST', `/tickets/${tid}/travaux-planifies`)).status, 302);
   assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'intervention_planifiee');
   // aucune consultation cochée -> 400
   const { tid: tid2 } = await creerTicket(r1, [ids.villa1], 'Ticket select vide');
@@ -699,7 +726,7 @@ test('réouverture d\'un ticket « travaux acceptés » (commentaire + photo obl
   const { tid } = await creerTicket(r2, [ids.villa2], 'Réouverture test');
   await cs.req('POST', `/tickets/${tid}/passer-consultation`);
   const cid = ajouterConsultationComplete(tid, ids.cs);
-  await cs.req('POST', `/tickets/${tid}/consultations/${cid}/valider`);
+  await validerEtPlanifier(cs, tid, cid);
   // bilan du cycle 1 avant acceptation
   await r2.req('POST', `/tickets/${tid}/cr`, { contenu: 'Bilan cycle 1' });
   await r2.req('POST', `/tickets/${tid}/accepter`, { commentaire: 'ok' });
@@ -736,7 +763,7 @@ test('réouverture d\'un ticket « travaux acceptés » (commentaire + photo obl
   assert.strictEqual(db().prepare("SELECT COUNT(*) AS n FROM fichiers WHERE ticket_id=? AND categorie='photo' AND contexte='reouverture'").get(tid).n, 1);
   // nouveau cycle : on valide une NOUVELLE consultation, puis on rédige un NOUVEAU bilan (cycle 2)
   const cid2 = ajouterConsultationComplete(tid, ids.cs);
-  await cs.req('POST', `/tickets/${tid}/consultations/${cid2}/valider`);
+  await validerEtPlanifier(cs, tid, cid2);
   assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'intervention_planifiee');
   assert.strictEqual((await r2.req('POST', `/tickets/${tid}/cr`, { contenu: 'Bilan cycle 2' })).status, 302);
   const crs = db().prepare('SELECT cycle, contenu FROM comptes_rendus WHERE ticket_id=? ORDER BY cycle').all(tid);
@@ -752,7 +779,7 @@ test('refus des travaux (planifiés → consultation) : commentaire OU photo obl
   const { tid } = await creerTicket(r2, [ids.villa2], 'Refus test');
   await cs.req('POST', `/tickets/${tid}/passer-consultation`);
   const cid = ajouterConsultationComplete(tid, ids.cs);
-  await cs.req('POST', `/tickets/${tid}/consultations/${cid}/valider`);
+  await validerEtPlanifier(cs, tid, cid);
   await r2.req('POST', `/tickets/${tid}/cr`, { contenu: 'Bilan avant refus' });
   // spec 31 : refus = au moins un commentaire OU une photo
   // refus sans commentaire NI photo → 400
@@ -778,7 +805,7 @@ test('refus des travaux (planifiés → consultation) : commentaire OU photo obl
   const { tid: tid2 } = await creerTicket(r2, [ids.villa2], 'Refus par le CS');
   await cs.req('POST', `/tickets/${tid2}/passer-consultation`);
   const cid2 = ajouterConsultationComplete(tid2, ids.cs);
-  await cs.req('POST', `/tickets/${tid2}/consultations/${cid2}/valider`);
+  await validerEtPlanifier(cs, tid2, cid2);
   // refus du CS avec une photo SEULE (sans commentaire) → accepté aussi
   const f4 = new FormData();
   f4.append('photos', new Blob(['x'], { type: 'image/png' }), 'p.png');
@@ -989,7 +1016,7 @@ test('spec 29 : fiche ticket réorganisée (sections par état, règle archive),
   assert.ok(page.includes('name="photos" accept="image/jpeg,image/png,image/webp" multiple class="champ-fichiers-caches"'));
 
   // validation -> travaux planifiés : section Bilan visible (personne concernée), toujours pas de factures
-  await cs.req('POST', `/tickets/${t1}/consultations/${cid}/valider`);
+  await validerEtPlanifier(cs, t1, cid);
   page = await (await r1.req('GET', '/tickets/' + t1)).text();
   assert.ok(page.includes('id="cr"'));
   assert.ok(!page.includes('id="factures"'));
@@ -1090,7 +1117,7 @@ test('spec 31 : toggle urgent (Créé seulement, acteurs), libellés description
 
   // --- bilan : une seule zone (texte + photos) + boutons Accepter/Refuser en formaction (spec 31) ---
   const cid = ajouterConsultationComplete(tid, ids.cs);
-  await cs.req('POST', `/tickets/${tid}/consultations/${cid}/valider`);
+  await validerEtPlanifier(cs, tid, cid);
   // début des travaux (« Travaux planifiés ») : les photos de la description sont figées
   assert.strictEqual((await r1.req('POST', `/tickets/${tid}/photos`, undefined, fp)).status, 403);
   page = await (await r1.req('GET', '/tickets/' + tid)).text();
@@ -1127,7 +1154,7 @@ test('spec 32 : mosaïque photos + auto-submit + overlay chargement, bilan sans 
   // passage en « Travaux planifiés » : plus de paragraphe explicatif, boutons en formaction, une seule zone (1 input fichier)
   await cs.req('POST', `/tickets/${tid}/passer-consultation`);
   const cid = ajouterConsultationComplete(tid, ids.cs);
-  await cs.req('POST', `/tickets/${tid}/consultations/${cid}/valider`);
+  await validerEtPlanifier(cs, tid, cid);
   await r1.req('POST', `/tickets/${tid}/cr`, { contenu: 'Bilan cycle 1' });
   page = await (await r1.req('GET', '/tickets/' + tid)).text();
   assert.ok(!page.includes('bilans figés en lecture seule.</p>'));

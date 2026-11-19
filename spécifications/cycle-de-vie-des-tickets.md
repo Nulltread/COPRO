@@ -11,7 +11,7 @@ Il n'y a pas d'autre état (l'ancien état « validé » a été supprimé : un 
 | Transition | Qui | Conditions |
 |---|---|---|
 | créé → consultation | membre du CS ou admin | — |
-| consultation → travaux planifiés | membre du CS ou admin | en **validant au moins une consultation complète** (voir `consultations-entreprises-factures.md`) |
+| consultation → travaux planifiés | membre du CS ou admin | en **sélectionnant au moins une consultation** (fiche entreprise strictement complète + 1 devis) puis en **validant le passage** — exige que **chaque consultation sélectionnée ait une date acceptée** (renseignée à la main par le CS, ou date proposée par le prestataire validée par le CS / un occupant) — voir `consultations-entreprises-factures.md` et `sollicitations-relances.md` |
 | travaux planifiés → travaux acceptés | **un seul acceptant suffit** : un occupant (propriétaire ou locataire) d'une unité concernée, ou un membre du CS (admin exclu) | via le bouton « Accepter » de son bilan ; commentaire et/ou photos facultatifs (voir `bilans-de-intervention.md`) |
 | travaux planifiés → consultation (**refus**) | tout occupant d'une unité du ticket ou membre du CS (admin exclu) | via le bouton « Refuser » ; **commentaire ou au moins une photo obligatoire** (l'un des deux suffit) |
 | → archivé (manuel) | membre du CS ou admin | **à tout moment**, quel que soit l'état courant ; **aucune condition de facture** |

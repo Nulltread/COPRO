@@ -71,6 +71,9 @@ function createApp() {
   });
 
   app.use('/', require('./routes/auth'));
+  // Espace prestataire (sans compte) : monte AVANT le routeur fichiers (qui
+  // exige une session sur '/' ) — le jeton personnel fait foi.
+  app.use('/consultation', require('./routes/consultation-publique'));
   app.use('/tickets', require('./routes/tickets').router);
   app.use('/', require('./routes/fichiers'));
   app.use('/admin', require('./routes/admin'));
