@@ -1,5 +1,5 @@
-const CACHE = 'copro-v4';
-const STATIQUES = ['/style.css', '/app.js', '/icon.svg', '/icon-192.png', '/icon-512.png'];
+const CACHE = 'copro-v5';
+const STATIQUES = ['/style.css', '/app.js', '/icon.svg?v=3', '/icon-192.png?v=3', '/icon-512.png?v=3'];
 
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(STATIQUES); }).then(function () { return self.skipWaiting(); }));

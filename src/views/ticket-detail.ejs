@@ -95,9 +95,6 @@
 <% if (sections.consultation) { %>
 <section class="bloc" id="consultations">
   <h2>Consultations</h2>
-  <% if (gestionnaire && ticket.etape === 'consultation') { %>
-    <button type="button" class="bouton" id="btn-ajouter-consultation">+ Ajouter une consultation</button>
-  <% } %>
   <% if (consultations.length === 0) { %>
     <p class="aide">Aucune consultation pour le moment.</p>
   <% } %>
@@ -155,7 +152,7 @@
   <% } %>
   </ul>
   <% if (gestionnaire && ticket.etape === 'consultation') { %>
-    <div id="nouvelle-consultation" class="consultation nouvelle" hidden>
+    <div id="nouvelle-consultation" class="consultation nouvelle">
     <h3>Nouvelle consultation</h3>
     <form method="post" action="/tickets/<%= ticket.id %>/consultations" class="formulaire" enctype="multipart/form-data">
       <label>Entreprise
@@ -175,7 +172,7 @@
         <input type="tel" name="nouveau_telephone">
         <input type="email" name="nouveau_mail">
       </fieldset>
-      <label>Date d'intervention (obligatoire)
+      <label>Date d'intervention
         <input type="date" name="date_planifiee" required>
       </label>
       <label>Devis (au moins un : pièce jointe + montant)
@@ -184,7 +181,7 @@
       <div class="montants-devis" id="montants-devis-new"></div>
       <p class="aide">Un champ de montant apparaît pour chaque fichier choisi, dans le même ordre.</p>
       <div class="apercu"></div>
-      <button class="bouton" type="submit">Ajouter la consultation</button>
+      <button class="bouton" type="submit">Ajouter</button>
     </form>
     </div>
   <% } %>
@@ -196,7 +193,7 @@
   <div class="modale" role="dialog" aria-modal="true" aria-labelledby="modale-entreprise-titre">
     <h2 id="modale-entreprise-titre">Nouvelle entreprise</h2>
     <form id="form-nouvelle-entreprise" class="formulaire">
-      <label>Raison sociale (obligatoire)
+      <label>Raison sociale
         <input type="text" id="me-raison" required>
       </label>
       <label>SIREN/SIRET
@@ -250,7 +247,7 @@
       <h3>Réouvrir le ticket</h3>
       <p class="aide">Possible pendant <%= delaiArchivageJours %> jours après le passage en « Travaux acceptés ». Un commentaire et au moins une photo sont obligatoires. Le ticket repasse en consultation ; les consultations et validations précédentes deviennent caduques (conservées en lecture seule).</p>
       <form method="post" action="/tickets/<%= ticket.id %>/reouvrir" class="formulaire" enctype="multipart/form-data">
-        <label>Commentaire (obligatoire)
+        <label>Commentaire
           <input type="text" name="commentaire" required placeholder="Pourquoi rouvrir ce ticket ?">
         </label>
         <div class="bloc-photos">
@@ -258,7 +255,7 @@
             <input type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple required class="champ-fichiers-caches">
             <span class="zone-photos-plus" aria-hidden="true">+</span>
             <span class="zone-photos-icone" aria-hidden="true">📷</span>
-            <span class="zone-photos-texte">Au moins une photo (obligatoire)<br><small>compressées automatiquement avant l'envoi</small></span>
+            <span class="zone-photos-texte">Au moins une photo<br><small>compressées automatiquement avant l'envoi</small></span>
           </label>
           <div class="apercu"></div>
         </div>

@@ -2,7 +2,7 @@
 <h1>Modifier « <%= entreprise.raison_sociale %> »</h1>
 <% if (erreur) { %><p class="erreur"><%= erreur %></p><% } %>
 <form method="post" action="/entreprises/<%= entreprise.id %>/modifier" class="formulaire">
-  <label>Raison sociale (obligatoire)
+  <label>Raison sociale
     <input type="text" name="raison_sociale" required value="<%= entreprise.raison_sociale %>">
   </label>
   <label>SIREN/SIRET

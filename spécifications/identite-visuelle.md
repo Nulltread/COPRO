@@ -50,14 +50,19 @@ définies comme alias vers les tokens ci-dessus (compatibilité des vues existan
   `--etat-accepte`**, **archivé = `--gris-etape`** ; le **nom de l'état est toujours affiché
   en texte** (jamais couleur seule). Mini-flow : étape actuelle = couleur de l'état, faites =
   `--puce-faite`, à venir = `--puce-vide`.
-- **Sémantique chaude** : `--rouge` UNIQUEMENT pour urgent / danger / refus (plus de
-  confusion avec une couleur de marque).
+- **Sémantique chaude** : `--rouge` UNIQUEMENT pour urgent / danger / refus **et l'étoile `*`
+  des champs obligatoires** (plus de confusion avec une couleur de marque).
 - **Accessibilité** (skill `design-ergonomie`) : `:focus-visible` global = outline 2 px
   `--accent` ; bordures de champs ≥ 3:1 ; cibles ≥ 44 px ; `prefers-reduced-motion` ;
   contrastes texte ≥ AA.
 - **PWA / favicon** : pictogramme « toit en V imbriqués » blanc sur fond `--accent`
   (`src/public/icon.svg`, `icon-192.png`, `icon-512.png`) ; `theme-color` = `#24466B` ;
   `manifest.webmanifest` : `theme_color` `#24466B`, `background_color` `#FFFFFF`.
+- **Versionnement des icônes** : les URL d'icônes portent `?v=N` (`/icon.svg?v=3`,
+  `/icon-192.png?v=3` dans le header et le manifest) pour forcer le recache navigateur —
+  Chrome conserve sinon l'ancien favicon en cache. Incrémenter `N` à chaque changement
+  d'icône, et versionner en conséquence le cache du service worker (`CACHE = 'copro-v5'`
+  dans `src/public/sw.js`, avec les URL versionnées dans `STATIQUES`).
 - **Zéro dégradé** ; aucun texte en capitales ; microcopy en français courant ; plus d'air
   (padding contenu 24 px, gaps 16 px).
 - **Mockups** : régénérés depuis les vues (`node scripts/render-mockups.js`), le

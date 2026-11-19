@@ -59,4 +59,5 @@ Ordre des champs, de haut en bas :
 - Responsive / **mobile-first**, utilisable sur téléphone.
 - Interface en **français**, vocabulaire courant, aucune notion technique exposée.
 - **Moins de texte explicatif** dans les pages : on ne ré-explique pas le fonctionnement des boutons (ex. : le paragraphe d'explication des boutons Accepter/Refuser est supprimé).
+- Tout **champ obligatoire** est marqué d'une petite **étoile rouge `*`** juste après le titre du champ, dans **toute l'application** (classe `.req`, posée par `app.js` sur chaque `label` contenant un contrôle `required`, y compris les champs de montant créés à la volée) ; le texte « (obligatoire) » n'est plus écrit dans les libellés.
 - Boutons **« Accepter » / « Refuser » côte à côte** (flex row), retour à la ligne en mobile si le responsive l'exige (`flex-wrap`).

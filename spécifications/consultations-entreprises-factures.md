@@ -6,11 +6,11 @@ La section « documents » des tickets n'existe plus : elle est remplacée par l
 
 - Seuls les **membres du CS et l'admin** peuvent **ajouter, modifier ou supprimer** une consultation.
 - Une **consultation** est un tuple composé de :
-  - une **entreprise** (obligatoire) — choisie parmi les entreprises connues ou **créée à la volée** depuis le formulaire (modale contenant les champs de la fiche entreprise ; création effective à l'enregistrement de la consultation) ;
+  - une **entreprise** (obligatoire) — choisie parmi les entreprises connues ou **créée à la volée** depuis le formulaire : la modale « Créer et utiliser » recopie la fiche dans les champs cachés du formulaire et affiche la raison sociale saisie dans l'option du sélecteur (valeur `nouvelle`) ; la **création effective a lieu à la soumission du formulaire** (bouton « Ajouter ») ;
   - **un ou plusieurs devis**, chacun composé d'une **pièce jointe** (fichier) et d'un **montant** ;
   - une **date** (date d'intervention).
 - **Plusieurs consultations en parallèle** sont possibles (mise en concurrence).
-- Affichage : **liste de tuples {Entreprise, devis, prix, date d'intervention, bouton de choix}**, plus un bouton **« ajouter »** qui ajoute une ligne (formulaire de saisie) à la liste. Ordre : d'abord les consultations **actives** (cycle en cours), puis les consultations **caduques** (cycles précédents, en lecture seule).
+- Affichage : **liste de tuples {Entreprise, devis, prix, date d'intervention, bouton de choix}**, puis un **formulaire d'ajout directement visible** (pas de bouton intermédiaire à cliquer) : les champs de saisie sont directement éditables et un **seul bouton « Ajouter »** récupère les champs saisis et les persiste en un seul envoi. Ordre de la liste : d'abord les consultations **actives** (cycle en cours), puis les consultations **caduques** (cycles précédents, en lecture seule).
 - Le **bouton de choix** d'une consultation active **valide** celle-ci et fait passer le ticket en « travaux planifiés ». La validation exige que :
   - la fiche de l'entreprise soit **strictement complète** : raison sociale, SIREN/SIRET, nom du contact, téléphone, mail — **tous** remplis ;
   - la consultation comporte **au moins un devis** (pièce jointe + montant) ;

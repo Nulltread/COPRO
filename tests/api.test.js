@@ -826,6 +826,8 @@ test('UI : recherche comptes/tickets présentes, boutons archiver/supprimer sous
   assert.ok(appjs.includes("getElementById('modale-entreprise')"));
   assert.ok(appjs.includes('data-autosave'));
   assert.ok(appjs.includes("getElementById('unites-edit')"));
+  // étoile rouge sur tous les champs obligatoires, posée dans toute l'app
+  assert.ok(appjs.includes('marquerObligatoires'));
   // fiche ticket en « créé » : boutons sous le titre, pas de section coût / "Modifier le ticket" / commentaire / consultations / CR
   const { tid } = await creerTicket(r1, [ids.villa1], 'Ticket UI');
   const page = await (await r1.req('GET', '/tickets/' + tid)).text();
@@ -848,12 +850,14 @@ test('UI : recherche comptes/tickets présentes, boutons archiver/supprimer sous
   assert.ok(!page.includes('Comptes-rendus d\'intervention'));
   // service worker : réseau d'abord (sinon l'ancien app.js reste servi en cache)
   const sw = await (await r1.req('GET', '/sw.js')).text();
-  assert.ok(sw.includes('copro-v4'));
+  assert.ok(sw.includes('copro-v5'));
+  assert.ok(sw.includes('/icon.svg?v=3'));
   assert.ok(!sw.includes("cache d'abord"));
   // la modale est bien masquée par défaut (sinon overlay vide qui bloque la page)
   assert.ok(page.includes('id="modale" class="modale-fond" hidden'));
   const css = await (await r1.req('GET', '/style.css')).text();
   assert.ok(css.includes('.modale-fond[hidden]'));
+  assert.ok(css.includes('.req'));
 });
 
 test('PWA : manifest, service worker, icônes servis ; page profil propose le raccourci écran d\'accueil', async () => {
@@ -864,6 +868,8 @@ test('PWA : manifest, service worker, icônes servis ; page profil propose le ra
   const m = await manifest.json();
   assert.strictEqual(m.display, 'standalone');
   assert.ok(m.icons.some(i => i.sizes === '512x512'));
+  // icônes versionnées (?v=N) pour forcer le recache du favicon navigateur
+  assert.ok(m.icons.every(i => /\?v=\d+/.test(i.src)));
 
   const sw = await c.req('GET', '/sw.js');
   assert.strictEqual(sw.status, 200);
@@ -876,6 +882,7 @@ test('PWA : manifest, service worker, icônes servis ; page profil propose le ra
   assert.ok(profil.includes('id="install-etat"'));
   assert.ok(profil.includes('/manifest.webmanifest'));
   assert.ok(profil.includes('apple-touch-icon'));
+  assert.ok(profil.includes('/icon.svg?v=3') && profil.includes('/icon-192.png?v=3'));
   // spec 29 : plus de titre « Ajouter à l'écran d'accueil » dans la page de compte
   assert.ok(!profil.includes('Ajouter à l\'écran d\'accueil</h2>'));
 });
@@ -904,12 +911,16 @@ test('spec 29 : fiche ticket réorganisée (sections par état, règle archive),
   assert.ok(!page.includes('Un clic sur une unité'));
   assert.ok(!page.includes('id="consultations"') && !page.includes('id="factures"') && !page.includes('id="cr"'));
 
-  // passage en consultation : section Consultation (liste de tuples + bouton ajouter + modale), PAS de factures
+  // passage en consultation : section Consultation (liste de tuples + formulaire d'ajout
+  // directement visible, un seul bouton « Ajouter » + modale), PAS de factures
   await cs.req('POST', `/tickets/${t1}/passer-consultation`);
   page = await (await cs.req('GET', '/tickets/' + t1)).text();
   assert.ok(page.includes('id="consultations"'));
   assert.ok(page.includes('class="liste-consultations"'));
-  assert.ok(page.includes('id="btn-ajouter-consultation"'));
+  assert.ok(!page.includes('id="btn-ajouter-consultation"'));
+  assert.ok(page.includes('id="nouvelle-consultation"'));
+  assert.ok(!/id="nouvelle-consultation"[^>]*\shidden/.test(page)); // formulaire directement éditable
+  assert.ok(page.includes('>Ajouter</button>')); // un seul bouton qui persiste les champs saisis
   assert.ok(page.includes('id="modale-entreprise"'));
   assert.ok(page.includes('id="fiche-nouvelle-entreprise" hidden'));
   assert.ok(!page.includes('id="factures"'));

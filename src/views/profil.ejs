@@ -71,7 +71,8 @@
 <section class="bloc">
   <h2>Rattacher une autre unité</h2>
   <form method="post" action="/profil/reclamer" class="formulaire-ligne">
-    <select name="unite_id" required>
+    <span class="titre-champ">Villa / garage&nbsp;<span class="req" aria-hidden="true">*</span></span>
+    <select name="unite_id" required aria-label="Villa ou garage">
       <option value="">— Choisir une villa ou un garage —</option>
       <% for (const u of unitesReclamables) { %>
         <option value="<%= u.id %>"><%= u.label %></option>

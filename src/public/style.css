@@ -65,6 +65,8 @@ h3 { font-size: 1rem; margin: 12px 0 4px; }
 .info { background: var(--bande); color: var(--encre); border: 1px solid var(--bordure); padding: 10px 12px; border-radius: 2px; }
 .formulaire { display: flex; flex-direction: column; gap: 14px; margin: 14px 0; }
 .formulaire label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
+.req { color: var(--rouge); font-weight: 700; }
+.titre-champ { font-weight: 600; align-self: center; }
 .formulaire input, .formulaire select, .formulaire textarea, .formulaire-ligne input, .formulaire-ligne select {
   font-size: 1rem; padding: 12px; border: 1px solid var(--bordure-input); border-radius: 2px; background: #fff; width: 100%;
 }

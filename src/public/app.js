@@ -318,6 +318,7 @@
         label.appendChild(input);
         conteneur.appendChild(label);
       });
+      marquerObligatoires(conteneur);
     });
   });
 
@@ -429,26 +430,26 @@
     });
   }
 
-  // --- Section consultations (spec 29) : bouton « ajouter » + modale « nouvelle entreprise » ---
-  var btnAjouter = document.getElementById('btn-ajouter-consultation');
-  var nouvelleConsultation = document.getElementById('nouvelle-consultation');
-  if (btnAjouter && nouvelleConsultation) {
-    btnAjouter.addEventListener('click', function () {
-      nouvelleConsultation.hidden = !nouvelleConsultation.hidden;
-      if (!nouvelleConsultation.hidden) nouvelleConsultation.scrollIntoView({ block: 'nearest' });
-    });
-  }
+  // --- Section consultations : formulaire d'ajout directement visible, un seul
+  //     bouton « Ajouter » persiste les champs saisis (entreprise existante ou créée
+  //     à la volée via la modale) en un seul envoi ---
   var selectEntreprise = document.getElementById('select-entreprise');
   var modaleEntreprise = document.getElementById('modale-entreprise');
   if (selectEntreprise && modaleEntreprise) {
     var ficheNouvelle = document.getElementById('fiche-nouvelle-entreprise');
+    var optionNouvelle = selectEntreprise.querySelector('option[value="nouvelle"]');
+    var texteOptionNouvelle = optionNouvelle ? optionNouvelle.textContent : '';
     function fermerModaleEntreprise() { modaleEntreprise.hidden = true; }
-    document.getElementById('modale-entreprise-annuler').addEventListener('click', function () {
+    function reinitialiserOptionNouvelle() {
       selectEntreprise.value = '';
+      if (optionNouvelle) optionNouvelle.textContent = texteOptionNouvelle;
+    }
+    document.getElementById('modale-entreprise-annuler').addEventListener('click', function () {
+      reinitialiserOptionNouvelle();
       fermerModaleEntreprise();
     });
     modaleEntreprise.addEventListener('click', function (e) {
-      if (e.target === modaleEntreprise) { selectEntreprise.value = ''; fermerModaleEntreprise(); }
+      if (e.target === modaleEntreprise) { reinitialiserOptionNouvelle(); fermerModaleEntreprise(); }
     });
     document.getElementById('modale-entreprise-valider').addEventListener('click', function () {
       var raison = document.getElementById('me-raison');
@@ -465,10 +466,38 @@
         var src = document.getElementById(paire[1]);
         if (dest && src) dest.value = src.value;
       });
+      // retour visuel : l'option du sélecteur affiche la raison sociale saisie ;
+      // la création effective a lieu à la soumission du formulaire (valeur 'nouvelle')
+      if (optionNouvelle) optionNouvelle.textContent = '➕ ' + raison.value.trim() + ' (nouvelle entreprise)';
       fermerModaleEntreprise();
     });
     selectEntreprise.addEventListener('change', function () {
       if (selectEntreprise.value === 'nouvelle') modaleEntreprise.hidden = false;
+      else if (optionNouvelle) optionNouvelle.textContent = texteOptionNouvelle;
     });
   }
+
+  // --- Étoile rouge sur tous les champs obligatoires, dans toute l'application ---
+  function marquerObligatoires(root) {
+    (root || document).querySelectorAll('label').forEach(function (label) {
+      if (label.querySelector('.req') || !label.querySelector('[required]')) return;
+      var etoile = document.createElement('span');
+      etoile.className = 'req';
+      etoile.setAttribute('aria-hidden', 'true');
+      etoile.textContent = ' *';
+      var walker = document.createTreeWalker(label, NodeFilter.SHOW_TEXT, null);
+      var noeud = null, n;
+      while ((n = walker.nextNode())) { if (n.textContent.trim()) { noeud = n; break; } }
+      if (noeud) {
+        var titre = document.createElement('span');
+        titre.className = 'label-titre';
+        noeud.parentNode.insertBefore(titre, noeud);
+        titre.appendChild(noeud);
+        titre.appendChild(etoile);
+      } else {
+        label.insertBefore(etoile, label.firstChild);
+      }
+    });
+  }
+  marquerObligatoires();
 })();
