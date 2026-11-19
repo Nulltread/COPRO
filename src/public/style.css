@@ -66,6 +66,7 @@ h3 { font-size: 1rem; margin: 12px 0 4px; }
 .formulaire { display: flex; flex-direction: column; gap: 14px; margin: 14px 0; }
 .formulaire label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
 .req { color: var(--rouge); font-weight: 700; }
+.formulaire label small { font-weight: 400; color: var(--texte-secondaire); }
 .titre-champ { font-weight: 600; align-self: center; }
 .formulaire input, .formulaire select, .formulaire textarea, .formulaire-ligne input, .formulaire-ligne select {
   font-size: 1rem; padding: 12px; border: 1px solid var(--bordure-input); border-radius: 2px; background: #fff; width: 100%;
@@ -159,15 +160,13 @@ fieldset { border: 1px solid var(--bordure-input); border-radius: 2px; }
 .carte-stat.urgent { background: #FDECEA; border-color: #E5B4B8; }
 .chiffre { font-size: 1.35rem; font-weight: 800; }
 .legende { font-size: 0.82rem; color: var(--texte-secondaire); }
-.apercu { display: flex; flex-wrap: wrap; gap: 8px; }
-.apercu .miniature { position: relative; width: 72px; height: 72px; }
-.apercu img { width: 72px; height: 72px; object-fit: cover; border-radius: 2px; border: 1px solid var(--bordure-input); display: block; }
+.apercu { display: contents; }
+.bloc-photos { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 8px; align-items: start; }
 .apercu .poubelle {
   position: absolute; top: -6px; right: -6px; width: 24px; height: 24px; border-radius: 50%;
   border: none; background: var(--rouge); color: #fff; font-size: 0.8rem; line-height: 1;
   cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0;
 }
-.bloc-photos { display: flex; flex-direction: column; gap: 10px; }
 .champ-fichiers-caches { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
 .zone-photos {
   display: flex; align-items: center; gap: 12px; cursor: pointer;
@@ -202,9 +201,12 @@ fieldset { border: 1px solid var(--bordure-input); border-radius: 2px; }
 .unite-statut.en-attente { color: var(--texte-secondaire); font-weight: 700; }
 .unite-statut.valide { color: var(--vert); font-weight: 700; }
 .unite-statut.refuse { color: var(--rouge); font-weight: 700; }
-.consultation { border: 1px solid var(--bordure); background: var(--carte); border-radius: 2px; padding: 10px 14px; margin: 10px 0; }
+.consultation { position: relative; border: 1px solid var(--bordure); background: var(--carte); border-radius: 2px; padding: 10px 14px; margin: 10px 0; }
 .consultation.validee { border-color: var(--vert); }
 .consultation.caduque { opacity: .7; }
+.form-poubelle-haut { position: absolute; top: 8px; right: 8px; margin: 0; }
+.consultation .poubelle-overlay { position: static; }
+.consultation h3 input[type=checkbox] { margin-right: 6px; }
 .montants-devis { display: flex; flex-direction: column; gap: 10px; }
 .montants-devis label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
 .montants-devis input { font-size: 1rem; padding: 10px; border: 1px solid var(--bordure-input); border-radius: 2px; }
@@ -227,15 +229,22 @@ fieldset { border: 1px solid var(--bordure-input); border-radius: 2px; }
 .liste-consultations .consultation { list-style: none; }
 .consultation.nouvelle { border-style: dashed; }
 
-/* Mosaïque de photos, tuile d'ajout carrée, overlay de chargement (spec 32) */
-.zone-photos { width: 84px; height: 84px; flex-direction: column; justify-content: center; gap: 2px; padding: 6px; text-align: center; }
+/* Mosaïque : carrés carrés répartis équitablement sur toute la largeur (auto-fit, min 84 px),
+   quel que soit l'écran ; la tuile « + » reste en fin de ligne et chaque miniature ajoutée
+   repart au début de la ligne (app.js insère avant la zone d'ajout) */
+.zone-photos { aspect-ratio: 1 / 1; width: auto; height: auto; flex-direction: column; justify-content: center; gap: 2px; padding: 6px; text-align: center; }
 .zone-photos-plus { font-size: 1.4rem; }
 .zone-photos-icone { font-size: 1.1rem; }
 .zone-photos-texte { font-size: 0.68rem; }
 .zone-photos-texte small { display: none; }
-.apercu .miniature, .apercu img { width: 84px; height: 84px; }
-.mosaic { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
-.tuile { position: relative; width: 84px; height: 84px; border-radius: 2px; overflow: hidden; border: 1px solid var(--bordure); }
+.zone-devis .zone-photos-texte small { display: block; }
+.apercu .miniature { position: relative; aspect-ratio: 1 / 1; width: auto; height: auto; border: 1px solid var(--bordure-input); border-radius: 2px; overflow: hidden; }
+.apercu img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.miniature-fichier { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: var(--bande); }
+.miniature-fichier-icone { font-size: 1.6rem; }
+.miniature-fichier-nom { font-size: 0.62rem; font-weight: 600; color: var(--encre); word-break: break-all; padding: 0 4px; text-align: center; }
+.mosaic { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 8px; margin: 8px 0; }
+.tuile { position: relative; aspect-ratio: 1 / 1; width: auto; height: auto; border-radius: 2px; overflow: hidden; border: 1px solid var(--bordure); }
 .tuile img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .form-poubelle { position: absolute; top: 0; right: 0; margin: 0; }
 .poubelle-overlay { position: absolute; top: 4px; right: 4px; width: 28px; height: 28px; border: none; border-radius: 2px; background: rgba(0,0,0,.55); color: #fff; cursor: pointer; font-size: .85rem; line-height: 1; }

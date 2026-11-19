@@ -6,16 +6,20 @@ La section « documents » des tickets n'existe plus : elle est remplacée par l
 
 - Seuls les **membres du CS et l'admin** peuvent **ajouter, modifier ou supprimer** une consultation.
 - Une **consultation** est un tuple composé de :
-  - une **entreprise** (obligatoire) — choisie parmi les entreprises connues ou **créée à la volée** depuis le formulaire : la modale « Créer et utiliser » recopie la fiche dans les champs cachés du formulaire et affiche la raison sociale saisie dans l'option du sélecteur (valeur `nouvelle`) ; la **création effective a lieu à la soumission du formulaire** (bouton « Ajouter ») ;
-  - **un ou plusieurs devis**, chacun composé d'une **pièce jointe** (fichier) et d'un **montant** ;
-  - une **date** (date d'intervention).
+  - une **entreprise** (**obligatoire**, marquée de l'étoile rouge `*`) — choisie parmi les entreprises connues ou **créée à la volée** depuis le formulaire : la modale « Créer et utiliser » recopie la fiche dans les champs cachés du formulaire et affiche la raison sociale saisie dans l'option du sélecteur (valeur `nouvelle`) ; la **création effective a lieu à la soumission du formulaire** (bouton « Ajouter ») ;
+  - **un seul devis** par consultation : **pièce jointe (PDF ou image) + montant** ;
+  - une **date d'intervention facultative à la création** — elle ne devient **obligatoire que lors de la sélection** de la consultation (voir ci-dessous).
 - **Plusieurs consultations en parallèle** sont possibles (mise en concurrence).
-- Affichage : **liste de tuples {Entreprise, devis, prix, date d'intervention, bouton de choix}**, puis un **formulaire d'ajout directement visible** (pas de bouton intermédiaire à cliquer) : les champs de saisie sont directement éditables et un **seul bouton « Ajouter »** récupère les champs saisis et les persiste en un seul envoi. Ordre de la liste : d'abord les consultations **actives** (cycle en cours), puis les consultations **caduques** (cycles précédents, en lecture seule).
-- Le **bouton de choix** d'une consultation active **valide** celle-ci et fait passer le ticket en « travaux planifiés ». La validation exige que :
-  - la fiche de l'entreprise soit **strictement complète** : raison sociale, SIREN/SIRET, nom du contact, téléphone, mail — **tous** remplis ;
-  - la consultation comporte **au moins un devis** (pièce jointe + montant) ;
-  - une **date planifiée** soit renseignée.
-- Les consultations **non validées restent consultables** sur le ticket. Une fois le ticket en « travaux planifiés », **toutes les consultations passent en lecture seule**.
+- Affichage : **liste de tuples {case à cocher, Entreprise, devis, prix, date d'intervention}**, puis un **formulaire d'ajout directement visible** (pas de bouton intermédiaire) : les champs de saisie sont directement éditables et un **seul bouton « Ajouter »** récupère les champs saisis et les persiste en un seul envoi. Ordre de la liste : d'abord les consultations **actives** (cycle en cours), puis les consultations **caduques** (cycles précédents, en lecture seule).
+- **Sélection (validation)** : chaque consultation active porte une **case à cocher** (`form="form-selectionner"`) ; un **bouton global « Sélectionner »**, après la liste, soumet toutes les consultations cochées (POST `/consultations/selectionner`) avec une **modale de confirmation**. Les **mêmes vérifications s'appliquent à chaque consultation sélectionnée**, quel que soit leur nombre : fiche entreprise **strictement complète** (raison sociale, SIREN/SIRET, contact, téléphone, mail), **exactement 1 devis** (pièce jointe + montant > 0) et **date planifiée renseignée**. Si une seule est incomplète, aucune n'est sélectionnée (400 avec le nom des entreprises concernées). Sinon, toutes les cochées passent « VALIDÉE » et le ticket passe en « Travaux planifiés ».
+- La **suppression** d'une consultation active se fait par une **icône poubelle en haut à droite de la carte** (modale de confirmation), comme la suppression des photos — plus de bouton texte.
+- Les consultations **non sélectionnées restent consultables** sur le ticket. Une fois le ticket en « travaux planifiés », **toutes les consultations passent en lecture seule**.
+
+## Devis (1 seul par consultation)
+
+- Le devis s'ajoute comme les photos : un **carré « + » avec un logo fichier 📄** (zone `zone-devis`) ; à la sélection, une **tuile explicite** apparaît (miniature image, ou logo 📄 + nom du fichier pour un PDF), **supprimable** (poubelle sur la tuile) tant que la consultation est ouverte, et **1 seul devis par consultation** (choisir un nouveau fichier remplace l'ancien).
+- Un champ **montant (€), obligatoire** (étoile rouge), apparaît sous la zone.
+- Dans le formulaire « Modifier cette consultation », le champ devis **remplace** l'ancien (fichier + montant).
 
 ## Référentiel des entreprises
 
@@ -25,7 +29,7 @@ La section « documents » des tickets n'existe plus : elle est remplacée par l
 
 ## Avenants
 
-- Plus de catégorie dédiée « avenant » : un avenant se gère en **supprimant un devis précédent et en ajoutant un nouveau devis dans une consultation** — uniquement à l'état « consultation » (ce que rend possible la réouverture, voir `cycle-de-vie-des-tickets.md`).
+- Plus de catégorie dédiée « avenant » : un avenant se gère en **remplaçant le devis** d'une consultation (formulaire « Modifier », à l'état « consultation » — ce que rend possible la réouverture, voir `cycle-de-vie-des-tickets.md`).
 
 ## Factures
 

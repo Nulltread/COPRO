@@ -320,8 +320,9 @@ function nettoyerFichiers(files) {
 }
 
 // Creation d'une consultation (etape 'consultation', CS/admin uniquement) :
-// entreprise (existante ou creee a la volee) + date + au moins un devis
-// (piece jointe + montant).
+// entreprise (existante ou creee a la volee) + UN seul devis (piece jointe +
+// montant). La date planifiee est FACULTATIVE a la creation : elle ne devient
+// obligatoire qu'a la selection de la consultation (voir /selectionner).
 router.post('/:id/consultations', (req, res) => {
   const db = getDb();
   const ticket = trouverTicket(req, res);
@@ -332,7 +333,7 @@ router.post('/:id/consultations', (req, res) => {
   if (ticket.etape !== 'consultation') {
     return res.status(400).render('erreur', { user: req.user, message: 'Les consultations ne se gèrent qu\'à l\'étape « En consultation ».' });
   }
-  upload.array('devis_fichiers', 10)(req, res, (err) => {
+  upload.array('devis_fichiers', 1)(req, res, (err) => {
     if (err) return res.status(400).render('erreur', { user: req.user, message: err.message });
     const { entreprise_id, date_planifiee } = req.body;
     let entrepriseId = null;
@@ -352,18 +353,15 @@ router.post('/:id/consultations', (req, res) => {
       ).run(raison, (req.body.nouveau_siren_siret || '').trim(), (req.body.nouveau_contact_nom || '').trim(),
            (req.body.nouveau_telephone || '').trim(), (req.body.nouveau_mail || '').trim()).lastInsertRowid;
     }
-    const date = (date_planifiee || '').trim();
+    const date = (date_planifiee || '').trim() || null;
     const devis = lireDevis(req);
-    if (!date) {
+    if (devis.length !== 1 || !(Number(devis[0].montant) > 0)) {
       nettoyerFichiers(req.files);
-      return res.status(400).render('erreur', { user: req.user, message: 'La date planifiée est obligatoire pour une consultation.' });
-    }
-    if (devis.length === 0 || devis.some(d => !(Number(d.montant) > 0))) {
-      nettoyerFichiers(req.files);
-      return res.status(400).render('erreur', { user: req.user, message: 'Chaque devis doit avoir une pièce jointe et un montant supérieur à 0.' });
+      return res.status(400).render('erreur', { user: req.user, message: 'Une consultation attend exactement un devis (pièce jointe + montant supérieur à 0).' });
     }
     const info = db.prepare('INSERT INTO consultations (ticket_id, entreprise_id, date_planifiee, auteur_id) VALUES (?, ?, ?, ?)')
       .run(ticket.id, entrepriseId, date, req.user.id);
+    // date peut etre NULL ici (renseignee a la selection)
     const cid = info.lastInsertRowid;
     enregistrerDevis(db, ticket.id, cid, devis.map(d => ({ fichier: d.fichier, montant: Number(d.montant) })), req.user.id);
     const ent = db.prepare('SELECT raison_sociale FROM entreprises WHERE id = ?').get(entrepriseId);
@@ -373,7 +371,53 @@ router.post('/:id/consultations', (req, res) => {
   });
 });
 
-// Modification d'une consultation (entreprise, date, ajout de devis).
+// Selection globale : une ou plusieurs consultations cochees passent en
+// « sélectionnée » (validee) et le ticket passe en « Travaux planifiés ».
+// Mêmes vérifications pour CHAQUE consultation sélectionnée : fiche entreprise
+// strictement complète, exactement 1 devis (pièce jointe + montant) et date
+// planifiée renseignée.
+router.post('/:id/consultations/selectionner', (req, res) => {
+  const db = getDb();
+  const ticket = trouverTicket(req, res);
+  if (!ticket) return;
+  if (!isGestionnaire(req.user)) {
+    return res.status(403).render('erreur', { user: req.user, message: 'Seul le conseil syndical peut sélectionner une consultation.' });
+  }
+  if (ticket.etape !== 'consultation') {
+    return res.status(400).render('erreur', { user: req.user, message: 'Le ticket n\'est plus en consultation.' });
+  }
+  let idsSel = req.body.consultation_ids || [];
+  if (!Array.isArray(idsSel)) idsSel = [idsSel];
+  idsSel = idsSel.map(Number).filter(n => Number.isInteger(n) && n > 0);
+  if (idsSel.length === 0) {
+    return res.status(400).render('erreur', { user: req.user, message: 'Cochez au moins une consultation à sélectionner.' });
+  }
+  const incompletes = [];
+  const retenues = [];
+  for (const cid of idsSel) {
+    const c = db.prepare('SELECT * FROM consultations WHERE id = ? AND ticket_id = ?').get(cid, ticket.id);
+    if (!c || c.caduque || c.validee || !consultationComplete(db, c)) {
+      const e = c && c.entreprise_id ? db.prepare('SELECT raison_sociale FROM entreprises WHERE id = ?').get(c.entreprise_id) : null;
+      incompletes.push(e ? e.raison_sociale : `#${cid}`);
+      continue;
+    }
+    retenues.push(c);
+  }
+  if (incompletes.length > 0) {
+    return res.status(400).render('erreur', {
+      user: req.user,
+      message: `Consultation(s) non sélectionnable(s) : ${incompletes.join(', ')} — il faut une fiche entreprise strictement complète (raison sociale, SIREN/SIRET, contact, téléphone, mail), exactement 1 devis (pièce jointe + montant) et une date planifiée.`
+    });
+  }
+  for (const c of retenues) {
+    db.prepare('UPDATE consultations SET validee = 1, updated_at = datetime(\'now\') WHERE id = ?').run(c.id);
+  }
+  const noms = retenues.map(c => db.prepare('SELECT raison_sociale FROM entreprises WHERE id = ?').get(c.entreprise_id).raison_sociale).join(', ');
+  faireTransition(db, ticket, 'intervention_planifiee', req.user.id, `Consultation(s) sélectionnée(s) (${noms}) — travaux planifiés`);
+  res.redirect('/tickets/' + ticket.id);
+});
+
+// Modification d'une consultation (entreprise, date, remplacement du devis).
 router.post('/:id/consultations/:cid', (req, res) => {
   const db = getDb();
   const ticket = trouverTicket(req, res);
@@ -388,7 +432,7 @@ router.post('/:id/consultations/:cid', (req, res) => {
   if (!c || c.caduque || c.validee) {
     return res.status(400).render('erreur', { user: req.user, message: 'Cette consultation n\'est plus modifiable (lecture seule).' });
   }
-  upload.array('devis_fichiers', 10)(req, res, (err) => {
+  upload.array('devis_fichiers', 1)(req, res, (err) => {
     if (err) return res.status(400).render('erreur', { user: req.user, message: err.message });
     const { entreprise_id, date_planifiee } = req.body;
     if (entreprise_id && entreprise_id !== 'nouvelle') {
@@ -402,13 +446,20 @@ router.post('/:id/consultations/:cid', (req, res) => {
     }
     const devis = lireDevis(req);
     if (devis.length > 0) {
-      if (devis.some(d => !(Number(d.montant) > 0))) {
+      if (!(Number(devis[0].montant) > 0)) {
         nettoyerFichiers(req.files);
-        return res.status(400).render('erreur', { user: req.user, message: 'Chaque nouveau devis doit avoir un montant supérieur à 0.' });
+        return res.status(400).render('erreur', { user: req.user, message: 'Le devis doit avoir un montant supérieur à 0.' });
       }
+      // 1 seul devis par consultation : le nouveau remplace l'ancien (fichier + ligne).
+      const anciens = db.prepare("SELECT nom_stockage FROM fichiers WHERE consultation_id = ? AND categorie = 'devis'").all(c.id);
+      for (const f of anciens) {
+        const chemin = path.join(UPLOAD_DIR, f.nom_stockage);
+        if (fs.existsSync(chemin)) fs.unlinkSync(chemin);
+      }
+      db.prepare("DELETE FROM fichiers WHERE consultation_id = ? AND categorie = 'devis'").run(c.id);
       enregistrerDevis(db, ticket.id, c.id, devis.map(d => ({ fichier: d.fichier, montant: Number(d.montant) })), req.user.id);
       db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'consultation', ?, ?)")
-        .run(ticket.id, req.user.id, `${req.user.nom} a ajouté ${devis.length} devis à une consultation`);
+        .run(ticket.id, req.user.id, `${req.user.nom} a remplacé le devis d'une consultation`);
     }
     res.redirect('/tickets/' + ticket.id + '#consultations');
   });

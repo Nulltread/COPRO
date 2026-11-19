@@ -87,8 +87,12 @@
     });
   }
 
-  document.querySelectorAll('input[type=file][multiple]').forEach(function (champ) {
-    var conteneur = champ.closest('form').querySelector('.apercu');
+  // Mosaïque d'ajout (photos ET devis) : tout input fichier dans un .bloc-photos.
+  // Chaque miniature s'insère au début de la ligne, le carré « + » se déplace à droite ;
+  // les carrés sont répartis équitablement sur la largeur (voir style.css).
+  document.querySelectorAll('.bloc-photos input[type=file]').forEach(function (champ) {
+    var bloc = champ.closest('.bloc-photos');
+    var zone = bloc ? bloc.querySelector('label') : null;
 
     function retirerFichier(index) {
       var dt = new DataTransfer();
@@ -100,24 +104,36 @@
     }
 
     function afficherApercu() {
-      if (!conteneur) return;
-      conteneur.innerHTML = '';
+      if (!bloc) return;
+      bloc.querySelectorAll('.miniature').forEach(function (m) { m.remove(); });
       Array.prototype.forEach.call(champ.files, function (f, i) {
-        if (!f.type.startsWith('image/')) return;
         var miniature = document.createElement('div');
-        miniature.className = 'miniature';
-        var img = document.createElement('img');
-        img.src = URL.createObjectURL(f);
-        img.alt = f.name;
+        miniature.className = 'miniature' + (f.type.startsWith('image/') ? '' : ' miniature-fichier');
+        if (f.type.startsWith('image/')) {
+          var img = document.createElement('img');
+          img.src = URL.createObjectURL(f);
+          img.alt = f.name;
+          miniature.appendChild(img);
+        } else {
+          // fichier non image (ex. PDF) : tuile explicite avec logo fichier + nom
+          var icone = document.createElement('span');
+          icone.className = 'miniature-fichier-icone';
+          icone.setAttribute('aria-hidden', 'true');
+          icone.textContent = '📄';
+          var nom = document.createElement('span');
+          nom.className = 'miniature-fichier-nom';
+          nom.textContent = f.name;
+          miniature.appendChild(icone);
+          miniature.appendChild(nom);
+        }
         var poubelle = document.createElement('button');
         poubelle.type = 'button';
         poubelle.className = 'poubelle';
         poubelle.textContent = '🗑';
-        poubelle.title = 'Supprimer cette photo';
+        poubelle.title = 'Supprimer ce fichier';
         poubelle.addEventListener('click', function () { retirerFichier(i); });
-        miniature.appendChild(img);
         miniature.appendChild(poubelle);
-        conteneur.appendChild(miniature);
+        bloc.insertBefore(miniature, zone || bloc.firstChild);
       });
     }
 

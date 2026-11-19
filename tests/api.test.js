@@ -604,6 +604,51 @@ test('consultations : création par le CS (entreprise + date + devis), validatio
   assert.strictEqual(resApres.status, 400);
 });
 
+test('consultations : date facultative à la création, 1 seul devis, sélection globale multi-consultations', async () => {
+  const cs = await client(); await login(cs, 'cs@test.local', 'motdepasse1');
+  const r1 = await client(); await login(r1, 'r1@test.local', 'motdepasse1');
+  const { tid } = await creerTicket(r1, [ids.villa1], 'Ticket select');
+  await cs.req('POST', `/tickets/${tid}/passer-consultation`);
+  // création SANS date planifiée -> autorisée (date NULL en base)
+  const f1 = new FormData();
+  f1.append('entreprise_id', 'nouvelle');
+  f1.append('nouvelle_raison_sociale', 'Sans Date SARL');
+  f1.append('devis_fichiers', new Blob(['%PDF-1.4 x'], { type: 'application/pdf' }), 'd.pdf');
+  f1.append('devis_montant', '100');
+  assert.strictEqual((await cs.req('POST', `/tickets/${tid}/consultations`, undefined, f1)).status, 302);
+  const c1 = db().prepare('SELECT * FROM consultations WHERE ticket_id=?').get(tid);
+  assert.ok(c1);
+  assert.strictEqual(c1.date_planifiee, null);
+  // 2 devis dans une même consultation -> refusé (1 seul devis par consultation)
+  const f2 = new FormData();
+  f2.append('entreprise_id', 'nouvelle');
+  f2.append('nouvelle_raison_sociale', 'Deux Devis SARL');
+  f2.append('devis_fichiers', new Blob(['%PDF-1.4 a'], { type: 'application/pdf' }), 'a.pdf');
+  f2.append('devis_fichiers', new Blob(['%PDF-1.4 b'], { type: 'application/pdf' }), 'b.pdf');
+  f2.append('devis_montant', '100');
+  f2.append('devis_montant', '200');
+  assert.strictEqual((await cs.req('POST', `/tickets/${tid}/consultations`, undefined, f2)).status, 400);
+  assert.strictEqual(db().prepare('SELECT COUNT(*) AS n FROM consultations WHERE ticket_id=?').get(tid).n, 1);
+  // deuxième consultation complète (entreprise complète + date + devis), créée directement en base
+  const c2id = ajouterConsultationComplete(tid, ids.cs);
+  // sélection globale des deux : c1 incomplète (pas de date, entreprise incomplète) -> 400, rien n'est sélectionné
+  const formSel = { consultation_ids: [String(c1.id), String(c2id)] };
+  assert.strictEqual((await cs.req('POST', `/tickets/${tid}/consultations/selectionner`, formSel)).status, 400);
+  assert.strictEqual(db().prepare('SELECT COUNT(*) AS n FROM consultations WHERE ticket_id=? AND validee=1').get(tid).n, 0);
+  // on complète c1 (date + fiche entreprise strictement complète) -> sélection des deux OK
+  db().prepare("UPDATE consultations SET date_planifiee='2026-12-02' WHERE id=?").run(c1.id);
+  db().prepare("UPDATE entreprises SET siren_siret='123 456 789 00012', contact_nom='M. Contact', telephone='0600', mail='c@e.fr' WHERE id=?").run(c1.entreprise_id);
+  const res = await cs.req('POST', `/tickets/${tid}/consultations/selectionner`, formSel);
+  assert.strictEqual(res.status, 302);
+  assert.strictEqual(db().prepare('SELECT validee FROM consultations WHERE id=?').get(c1.id).validee, 1);
+  assert.strictEqual(db().prepare('SELECT validee FROM consultations WHERE id=?').get(c2id).validee, 1);
+  assert.strictEqual(db().prepare('SELECT etape FROM tickets WHERE id=?').get(tid).etape, 'intervention_planifiee');
+  // aucune consultation cochée -> 400
+  const { tid: tid2 } = await creerTicket(r1, [ids.villa1], 'Ticket select vide');
+  await cs.req('POST', `/tickets/${tid2}/passer-consultation`);
+  assert.strictEqual((await cs.req('POST', `/tickets/${tid2}/consultations/selectionner`, {})).status, 400);
+});
+
 test('entreprises : CRUD réservé au CS/admin, non supprimable si utilisée dans une consultation', async () => {
   const cs = await client(); await login(cs, 'cs@test.local', 'motdepasse1');
   const r1 = await client(); await login(r1, 'r1@test.local', 'motdepasse1');
@@ -931,7 +976,17 @@ test('spec 29 : fiche ticket réorganisée (sections par état, règle archive),
   const cid = ajouterConsultationComplete(t1, ids.cs);
   page = await (await cs.req('GET', '/tickets/' + t1)).text();
   assert.ok(page.includes('Entreprise Test SARL') && page.includes('500.00 €') && page.includes('2026-12-01'));
-  assert.ok(page.includes(`/tickets/${t1}/consultations/${cid}/valider`));
+  assert.ok(page.includes(`/tickets/${t1}/consultations/selectionner`));
+  assert.ok(page.includes('name="consultation_ids" value="' + cid + '"'));
+  assert.ok(page.includes('>Sélectionner</button>'));
+  assert.ok(page.includes('form-poubelle-haut'));
+  assert.ok(!page.includes('/valider'));
+  // entreprise obligatoire (étoile rouge via required) + zone devis façon photo + date facultative
+  assert.ok(page.includes('id="select-entreprise" required'));
+  assert.ok(page.includes('zone-devis'));
+  assert.ok(page.includes('name="date_planifiee"') && !/name="date_planifiee" required/.test(page));
+  // photos de la section Description non obligatoires
+  assert.ok(page.includes('name="photos" accept="image/jpeg,image/png,image/webp" multiple class="champ-fichiers-caches"'));
 
   // validation -> travaux planifiés : section Bilan visible (personne concernée), toujours pas de factures
   await cs.req('POST', `/tickets/${t1}/consultations/${cid}/valider`);
