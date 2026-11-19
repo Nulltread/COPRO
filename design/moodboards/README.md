@@ -6,8 +6,27 @@ forêt méditerranéenne de chênes bas — Gardanne, 13).
 
 Brief : **moderne et épuré au maximum, mais léché, doux et agréable à l'œil**.
 
-> **Décision (2026-11-17)** : la direction **B — Terre de Gardanne** est retenue et
-> implémentée. Voir [`spécifications/identite-visuelle.md`](../../spécifications/identite-visuelle.md).
+> **Décision (2026-11-17, révisée même jour)** : la direction **v2 — Neutre éditorial**
+> est retenue et implémentée (la B « Terre de Gardanne » était jugée vieillissante : ocre
+> proche du rouge, fond sable, boutons trop arrondis). Voir
+> [`spécifications/identite-visuelle.md`](../../spécifications/identite-visuelle.md).
+
+## Direction v2 — Neutre éditorial (retenue)
+
+![Moodboard v2 — Neutre éditorial](moodboard-04-neutre-editorial.jpg)
+
+| Token | Hex | Rôle |
+|---|---|---|
+| `accent` | `#24466B` | bleu ardoise : boutons primaires, liens, étape en cours, focus |
+| `bande` | `#F4F5F7` | bandes pleine largeur : header + blocs de section |
+| `encre` | `#1F2328` | texte principal |
+| `bordure` | `#E4E6EA` | séparateurs nets 1 px |
+| `fond` | `#FFFFFF` | fond de page (blanc pur) |
+| `rouge` | `#C01C28` | **seule couleur chaude** : urgent / danger / refus |
+
+Règles v2 : coins vifs 2 px partout, `.bloc` = section en bloc teinté bien délimité, cartes
+sans ombre (bordure seule), typo 100 % sans avec h1 1,6 rem, plus d'air (padding 24 px).
+Master éditable : `moodboard-04-neutre-editorial.svg` · scène IA : `scene-04-neutre-editorial.jpg`
 
 > **Sur GitHub**, ouvrir ce README : les moodboards ci-dessous sont des images, elles
 > s'affichent en ligne. Les boards `0X-*.html` affichent leur code source sur GitHub —

@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1200" height="1700" viewBox="0 0 1200 1700" font-family="DejaVu Sans, sans-serif">
+  <defs>
+    <clipPath id="scene"><rect x="40" y="40" width="1120" height="520" rx="2"/></clipPath>
+    <clipPath id="card"><rect x="40" y="1125" width="1120" height="520" rx="2"/></clipPath>
+  </defs>
+  <rect width="1200" height="1700" fill="#FFFFFF"/>
+  <image href="scene-04-neutre-editorial.jpg" xlink:href="scene-04-neutre-editorial.jpg" x="40" y="40" width="1120" height="520" preserveAspectRatio="xMidYMid slice" clip-path="url(#scene)"/>
+  <text x="40" y="640" font-size="46" font-weight="bold" fill="#1F2328" letter-spacing="-1">Direction v2 — « Neutre éditorial » (retenue)</text>
+  <text x="40" y="678" font-size="21" fill="#5C6470">Fond blanc pur, bandes pleine largeur gris clair, coins vifs 2 px, blocs de section</text>
+  <text x="40" y="706" font-size="21" fill="#5C6470">bien délimités — et une seule couleur chaude : le rouge, réservé à l'urgent.</text>
+  <text x="40" y="744" font-size="24" font-weight="bold" fill="#1F2328">Palette</text>
+  <g>
+    <circle cx="133" cy="800" r="44" fill="#24466B"/><text x="133" y="874" text-anchor="middle" font-size="20" font-weight="bold" fill="#1F2328">accent</text><text x="133" y="900" text-anchor="middle" font-size="17" font-family="DejaVu Sans Mono, monospace" fill="#5C6470">#24466B</text>
+    <circle cx="320" cy="800" r="44" fill="#F4F5F7" stroke="#E4E6EA"/><text x="320" y="874" text-anchor="middle" font-size="20" font-weight="bold" fill="#1F2328">bande</text><text x="320" y="900" text-anchor="middle" font-size="17" font-family="DejaVu Sans Mono, monospace" fill="#5C6470">#F4F5F7</text>
+    <circle cx="507" cy="800" r="44" fill="#1F2328"/><text x="507" y="874" text-anchor="middle" font-size="20" font-weight="bold" fill="#1F2328">encre</text><text x="507" y="900" text-anchor="middle" font-size="17" font-family="DejaVu Sans Mono, monospace" fill="#5C6470">#1F2328</text>
+    <circle cx="693" cy="800" r="44" fill="#E4E6EA" stroke="#D0D4DA"/><text x="693" y="874" text-anchor="middle" font-size="20" font-weight="bold" fill="#1F2328">bordure</text><text x="693" y="900" text-anchor="middle" font-size="17" font-family="DejaVu Sans Mono, monospace" fill="#5C6470">#E4E6EA</text>
+    <circle cx="880" cy="800" r="44" fill="#FFFFFF" stroke="#E4E6EA"/><text x="880" y="874" text-anchor="middle" font-size="20" font-weight="bold" fill="#1F2328">fond</text><text x="880" y="900" text-anchor="middle" font-size="17" font-family="DejaVu Sans Mono, monospace" fill="#5C6470">#FFFFFF</text>
+    <circle cx="1067" cy="800" r="44" fill="#C01C28"/><text x="1067" y="874" text-anchor="middle" font-size="20" font-weight="bold" fill="#1F2328">rouge</text><text x="1067" y="900" text-anchor="middle" font-size="17" font-family="DejaVu Sans Mono, monospace" fill="#5C6470">#C01C28</text>
+  </g>
+  <text x="40" y="964" font-size="24" font-weight="bold" fill="#1F2328">Typographie</text>
+  <text x="40" y="1010" font-size="34" font-weight="bold" fill="#1F2328" letter-spacing="-1">Copro La Pinède de Notre Dame</text>
+  <text x="40" y="1046" font-size="21" fill="#5C6470">100 % sans système, 17 px ; h1 1,6 rem / 700 / letter-spacing -0,01em ; marque en 700 + pictogramme toit.</text>
+  <text x="40" y="1102" font-size="24" font-weight="bold" fill="#1F2328">Composants (maquette)</text>
+  <rect x="40" y="1125" width="1120" height="520" rx="2" fill="#FFFFFF" stroke="#E4E6EA"/>
+  <g clip-path="url(#card)">
+    <rect x="40" y="1125" width="1120" height="64" fill="#F4F5F7"/>
+    <line x1="40" y1="1189" x2="1160" y2="1189" stroke="#E4E6EA" stroke-width="1"/>
+    <path d="M64,1158 L76,1143 L88,1158" fill="none" stroke="#24466B" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M70,1168 L76,1158 L82,1168" fill="none" stroke="#24466B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+    <text x="102" y="1166" font-size="24" font-weight="bold" fill="#1F2328" letter-spacing="-0.5">Copro La Pinède de Notre Dame</text>
+    <text x="900" y="1166" text-anchor="end" font-size="20" fill="#1F2328">Tickets</text>
+    <rect x="922" y="1137" width="164" height="38" rx="2" fill="none" stroke="#24466B" stroke-width="1.5"/>
+    <text x="1004" y="1162" text-anchor="middle" font-size="18" font-weight="bold" fill="#24466B">+ Nouveau ticket</text>
+    <text x="1140" y="1166" text-anchor="end" font-size="20" fill="#1F2328">Profil</text>
+  </g>
+  <rect x="64" y="1220" width="270" height="54" rx="2" fill="#24466B"/>
+  <text x="199" y="1255" text-anchor="middle" font-size="20" font-weight="bold" fill="#FFFFFF">Déclarer le ticket</text>
+  <rect x="350" y="1220" width="150" height="54" rx="2" fill="#FFFFFF" stroke="#8A9099"/>
+  <text x="425" y="1255" text-anchor="middle" font-size="19" fill="#1F2328">Annuler</text>
+  <rect x="64" y="1310" width="1072" height="310" rx="2" fill="#FFFFFF" stroke="#E4E6EA"/>
+  <text x="88" y="1358" font-size="25" font-weight="bold" fill="#1F2328">Fuite dans la salle de bains</text>
+  <rect x="500" y="1330" width="92" height="32" rx="2" fill="#C01C28"/>
+  <text x="546" y="1352" text-anchor="middle" font-size="15" font-weight="bold" fill="#FFFFFF">URGENT</text>
+  <rect x="88" y="1382" width="200" height="34" rx="2" fill="#24466B"/>
+  <text x="188" y="1405" text-anchor="middle" font-size="16" font-weight="bold" fill="#FFFFFF">En consultation</text>
+  <g stroke="#E4E6EA" stroke-width="2"><line x1="107" y1="1452" x2="149" y2="1452"/><line x1="163" y1="1452" x2="205" y2="1452"/><line x1="219" y1="1452" x2="261" y2="1452"/><line x1="275" y1="1452" x2="317" y2="1452"/></g>
+  <circle cx="100" cy="1452" r="7" fill="#C9CDD4"/><circle cx="156" cy="1452" r="7" fill="#C9CDD4"/><circle cx="212" cy="1452" r="7" fill="#24466B"/><circle cx="268" cy="1452" r="7" fill="#E4E6EA"/><circle cx="324" cy="1452" r="7" fill="#E4E6EA"/>
+  <text x="88" y="1502" font-size="18" font-weight="bold" fill="#5C6470">Photos</text>
+  <rect x="88" y="1516" width="84" height="84" rx="2" fill="#F4F5F7" stroke="#E4E6EA"/>
+  <rect x="180" y="1516" width="84" height="84" rx="2" fill="#DDE3EC" stroke="#E4E6EA"/>
+  <rect x="272" y="1516" width="84" height="84" rx="2" fill="#FFFFFF" stroke="#8A9099" stroke-dasharray="6 4"/>
+  <text x="314" y="1570" text-anchor="middle" font-size="28" fill="#24466B">+</text>
+  <text x="40" y="1685" font-size="17" fill="#5C6470">Contraste ≥ AA (blanc/accent ≈ 8:1) · focus 2 px accent · bordures champs ≥ 3:1 · cibles ≥ 44 px · rouge = urgent seul — voir spécifications/identite-visuelle.md.</text>
+</svg>

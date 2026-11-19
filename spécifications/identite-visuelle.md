@@ -1,59 +1,68 @@
-# Identité visuelle — direction « Terre de Gardanne » (retenue le 2026-11-17)
+# Identité visuelle — direction v2 « neutre éditorial » (retenue le 2026-11-17)
 
-Décision : parmi les trois moodboards de `design/moodboards/`, la **direction B — Terre de
-Gardanne** est retenue. Ambiance : toits de tuiles et chênes-lièges, fond sable chaud,
-cartes blanc pur en relief doux, brique sourde comme seule couleur vive. Moderne, épuré,
-doux.
+Décision : après la direction B « Terre de Gardanne » (ocres/sable jugés vieillissants et
+trop proches du rouge sémantique), l'identité retenue est la **v2 « neutre éditorial »** :
+fond blanc pur, bandes pleine largeur gris clair, coins quasi vifs, blocs de section bien
+délimités, une seule accentuation froide (bleu ardoise), et le **rouge réservé à l'urgent /
+danger / refus**. Le jeu de couleur est volontairement sobre ; l'essentiel du travail porte
+sur les espaces, les formes et la lisibilité. Moodboard : `design/moodboards/` (v2).
 
 ## Tokens (source unique : `:root` de `src/public/style.css`)
 
 | Token | Hex | Rôle |
 |---|---|---|
-| `--brique` | `#9C4A2F` | primaire (boutons, marque, étape en cours, focus) |
-| `--brique-fonce` | `#7E3B24` | état actif des boutons primaires |
-| `--sable` | `#F7F3EB` | fond de page |
-| `--sable-fonce` | `#EFE8DB` | blocs, fonds de section, bouton secondaire |
-| `--encre` | `#2A2118` | texte principal (brun-noir) |
-| `--olive` | `#6B7A3F` | secondaire : travaux acceptés, validé |
-| `--bordure` | `#E0D8C8` | bordures de cartes |
-| `--bordure-input` | `#8F8266` | bordures de champs (contraste ≥ 3:1, WCAG 1.4.11) |
-| `--carte` | `#FFFFFF` | fond des cartes |
-| `--texte-secondaire` | `#6B5C48` | textes secondaires (contraste AA sur sable ≈ 5,5:1) |
-| `--rouge` | `#C01C28` | sémantique urgence/danger (inchangé) |
-| `--gris-etape` | `#6B7280` | état archivé |
-| `--puce-faite` / `--puce-vide` | `#CFC4AE` / `#E6DDCD` | mini-flow : étapes faites / à venir |
+| `--accent` | `#24466B` | bleu ardoise profond : boutons primaires, liens, étape en cours, focus (blanc/dessus ≈ 8:1) |
+| `--accent-fonce` | `#1B3554` | état actif des boutons primaires |
+| `--fond` | `#FFFFFF` | fond de page (blanc pur) |
+| `--bande` | `#F4F5F7` | bandes pleine largeur : header + blocs de section |
+| `--carte` | `#FFFFFF` | cartes (liste des tickets…) |
+| `--encre` | `#1F2328` | texte principal (quasi-noir) |
+| `--bordure` | `#E4E6EA` | séparateurs nets (1 px) |
+| `--bordure-input` | `#8A9099` | bordures de champs (contraste ≥ 3:1, WCAG 1.4.11) |
+| `--texte-secondaire` | `#5C6470` | textes secondaires (≈ 6:1 sur blanc, AA) |
+| `--rouge` | `#C01C28` | **seule couleur chaude** : URGENT, danger, refus |
+| `--etat-accepte` | `#3E4C59` | gris ardoise foncé : travaux acceptés, validé |
+| `--gris-etape` | `#9AA0A8` | archivé, puces |
+| `--puce-faite` / `--puce-vide` | `#C9CDD4` / `#E4E6EA` | mini-flow : étapes faites / à venir |
 
 Les anciennes variables `--bleu`, `--bleu-fonce`, `--vert`, `--gris`, `--texte` restent
 définies comme alias vers les tokens ci-dessus (compatibilité des vues existantes).
 
 ## Règles d'application
 
-- **Fond** : page en `--sable` ; cartes, listes, bulles de fil en `--carte` avec bordure
-  `--bordure`, ombre douce en deux couches, radius 16 px (cartes) / 12 px (boutons) /
-  10 px (champs).
-- **Header** : clair — fond `--sable`, bordure basse `--bordure`, texte `--encre`. Marque
-  en **serif Georgia** accompagnée du pictogramme « toit en V imbriqués » (SVG inline dans
-  `header.ejs`), **pas d'emoji**. Bouton « + Nouveau ticket » : encadré brique, texte brique.
-- **Typographie** : serif Georgia réservé à la marque et aux `h1` ; `h2`/`h3` et toute
-  l'interface en sans système, 17 px, interligne 1,45.
-- **Boutons** : primaire = fond `--brique`, texte blanc, radius 12 px ; secondaire = fond
-  `--sable-fonce`, bordure `--bordure-input`. Noms d'action en sentence case (« Déclarer
-  le ticket »).
-- **États des tickets** : pilule d'étape **en cours = brique**, **travaux acceptés = olive**,
-  **archivé = gris** ; le **nom de l'état est toujours affiché en texte** (jamais couleur
-  seule). Mini-flow des cartes : étape actuelle = couleur de l'état, étapes faites =
+- **Fond** : blanc pur. **Header** : bande pleine largeur `--bande`, bordure basse 1 px
+  `--bordure`, texte `--encre`.
+- **Sections** : chaque section (`.bloc` : description, consultation, bilans, factures, fil
+  de suivi…) est un **bloc bien délimité** : fond `--bande`, bordure 1 px `--bordure`,
+  radius 2 px, padding 16 px, marge haute 24 px — les espaces sont clairement identifiables,
+  sans filets flous.
+- **Formes** : coins quasi vifs **2 px** partout (boutons, champs, cartes, tags, modale,
+  tuiles) ; seuls les compteurs/points restent ronds (badge de notifications, puces du
+  mini-flow, pastille du toggle). Boutons primaires pleine hauteur (~48 px).
+- **Cartes** (liste des tickets) : fond `--carte`, bordure 1 px `--bordure`, radius 2 px,
+  **pas d'ombre** — la bordure nette porte la séparation.
+- **Typographie** : 100 % sans système, 17 px, interligne 1,45 ; `h1` 1,6 rem graisse 700
+  letter-spacing -0,01em ; marque en 700 avec le pictogramme « toit » (SVG inline), sans serif.
+- **Boutons** : primaire = fond `--accent`, texte blanc, radius 2 px ; secondaire = fond
+  blanc, bordure `--bordure-input` ; « + Nouveau ticket » = encadré `--accent`. Noms
+  d'action en sentence case (« Déclarer le ticket »).
+- **États des tickets** : pilule d'étape **en cours = `--accent`**, **travaux acceptés =
+  `--etat-accepte`**, **archivé = `--gris-etape`** ; le **nom de l'état est toujours affiché
+  en texte** (jamais couleur seule). Mini-flow : étape actuelle = couleur de l'état, faites =
   `--puce-faite`, à venir = `--puce-vide`.
-- **Urgence / danger** : `--rouge` sémantique, inchangé.
-- **Accessibilité** (règles vendored du skill `design-ergonomie`) : `:focus-visible` global
-  = outline 2 px `--brique` ; bordures de champs ≥ 3:1 ; cibles ≥ 44 px ;
-  `prefers-reduced-motion` respecté ; contrastes texte ≥ AA (blanc sur brique ≈ 6:1, sur
-  olive ≈ 4,7:1, encre sur sable ≈ 12:1).
-- **PWA / favicon** : pictogramme « toit en V imbriqués » blanc sur fond `--brique`
-  (`src/public/icon.svg`, `icon-192.png`, `icon-512.png`) ; `theme-color` = `#9C4A2F` ;
-  `manifest.webmanifest` : `theme_color` `#9C4A2F`, `background_color` `#F7F3EB`.
-- **Zéro dégradé** ; aucun texte en capitales ; microcopy en français courant.
+- **Sémantique chaude** : `--rouge` UNIQUEMENT pour urgent / danger / refus (plus de
+  confusion avec une couleur de marque).
+- **Accessibilité** (skill `design-ergonomie`) : `:focus-visible` global = outline 2 px
+  `--accent` ; bordures de champs ≥ 3:1 ; cibles ≥ 44 px ; `prefers-reduced-motion` ;
+  contrastes texte ≥ AA.
+- **PWA / favicon** : pictogramme « toit en V imbriqués » blanc sur fond `--accent`
+  (`src/public/icon.svg`, `icon-192.png`, `icon-512.png`) ; `theme-color` = `#24466B` ;
+  `manifest.webmanifest` : `theme_color` `#24466B`, `background_color` `#FFFFFF`.
+- **Zéro dégradé** ; aucun texte en capitales ; microcopy en français courant ; plus d'air
+  (padding contenu 24 px, gaps 16 px).
 - **Mockups** : régénérés depuis les vues (`node scripts/render-mockups.js`), le
   `style.css` des mockups est copié depuis `src/public/style.css`.
 
 Toute évolution ultérieure de l'identité passe par ce fichier (ou un nouveau fichier de
-`spécifications/` si le sujet est neuf).
+`spécifications/` si le sujet est neuf). **Aucun changement fonctionnel** n'est couvert par
+ce fichier : UI uniquement.
