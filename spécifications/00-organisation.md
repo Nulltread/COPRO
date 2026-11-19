@@ -32,3 +32,6 @@ Ce dossier est l'emplacement canonique des spécifications du projet. À chaque 
 | `administration.md` | Panneau d'administration (délais de péremption et d'archivage automatique) |
 | `mail-et-domaine.md` | Serveur mail auto-hébergé, domaine `copro-pinede-gardanne.fr`, liste de diffusion du CS, envoi des emails |
 | `stockage-securite-deploiement.md` | Stockage des fichiers, stack, sécurité, RGPD, sauvegarde, déploiement |
+| `socle-reglementaire.md` | Socle réglementaire minimal (nécessaire et suffisant) : les 7 blocs, hors-app, v2+ |
+| `ag-et-pv.md` | Assemblées générales : convocation, ODJ, feuille de présence, votes, PV, registre des délibérations |
+| `tantiemes.md` | Page dédiée des tantièmes par unité (référentiel pur, non liée à la facturation) |

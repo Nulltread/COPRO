@@ -8,3 +8,4 @@ L'unité d'œuvre est la **villa, le garage ou les parties communes**.
 - Un **ticket est rattaché à une ou plusieurs unités** (pavillons imbriqués), **jamais à une personne**.
 - Un résident peut être rattaché à **plusieurs villas/garages** (multi-unités).
 - Une unité peut avoir un **propriétaire et un locataire** rattachés : les deux sont notifiés et peuvent agir (voir `rattachements.md`).
+- Les **tantièmes** (généraux et spéciaux) de chaque unité sont précisés sur la page dédiée « Tantièmes » — voir `tantiemes.md`.

@@ -6,7 +6,7 @@
 2. **Confirmation de compte par email** à l'inscription (vérification de l'adresse email — voir `comptes-et-roles.md`).
 3. **Liste de diffusion du conseil syndical** : une adresse unique (`conseil-syndical@copro-pinede-gardanne.fr`) qui redirige vers les adresses email personnelles **vérifiées** des membres du CS.
 
-**Hors périmètre v1** (noté pour plus tard, non traité) : envois automatiques depuis le serveur pour des sujets futurs (convocations aux AG, appels de fonds, etc.).
+**Hors périmètre v1** (noté pour plus tard, non traité) : tout envoi automatique non prévu par les modules du socle réglementaire (`socle-reglementaire.md`) — les **convocations aux AG** sont traitées par `ag-et-pv.md`, les **appels de fonds** par le module charges.
 
 ## Domaine
 
