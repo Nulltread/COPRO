@@ -9,6 +9,9 @@
     "seed": "node src/db/seed.js",
     "comptes-test": "node src/db/comptes-test.js creer",
     "comptes-test:supprimer": "node src/db/comptes-test.js supprimer",
+    "provisionner": "node src/db/provisionner-comptes.js",
+    "demo:creer": "node src/db/donnees-demo.js",
+    "demo:supprimer": "node src/db/donnees-demo.js --reset",
     "test": "node --test tests/*.test.js"
   },
   "dependencies": {

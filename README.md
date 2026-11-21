@@ -89,6 +89,21 @@ Configuration :
 
 Le workflow exécute `scripts/deploy.sh` sur le serveur (git pull + `docker compose -f docker-compose.prod.yml up -d --build`).
 
+### Première mise en production (version de test pour le conseil syndical)
+
+Objectif : déployer sur `https://copro-pinede-gardanne.fr` avec les comptes du conseil syndical déjà créés et quelques données de test. Voir `spécifications/mise-en-production.md`, la checklist `mise-en-prod/checklist.md` et le brouillon de mail `mise-en-prod/mail-annonce.md`.
+
+```bash
+# 1. Sur le serveur, comptes pré-créés depuis un JSON passé par stdin (jamais versionné, .gitignore) :
+cat comptes-prod.json | docker compose -f docker-compose.prod.yml exec -T copro npm run provisionner -- -
+
+# 2. Données de test (5 tickets marqués « [Démo] », supprimables ensuite) :
+docker compose -f docker-compose.prod.yml exec copro npm run demo:creer
+docker compose -f docker-compose.prod.yml exec copro npm run demo:supprimer   # après la démo
+```
+
+Format de `comptes-prod.json` : `{ "admin": {...}, "comptes": [ { "email", "nom", "prenom", "telephone", "mot_de_passe" (facultatif, généré sinon), "conseil_syndical": true, "unites": [ { "type": "villa"|"garage"|"communes", "numero", "qualite": "proprietaire"|"locataire" } ] } ] }`. Les emails sont considérés comme vérifiés et les rattachements acceptés d'office. En local : `npm run provisionner -- comptes-prod.json` puis `npm run demo:creer`.
+
 ## Schéma de données
 
 Tables : `units` (villas/garages 1–61 + parties communes), `users` (rôles resident/admin + statut `conseil_syndical`), `rattachements` (réclamé par le résident, accepté par un résident de l'unité ou le CS), `unit_residents` (unités validées), `tickets`, `ticket_units`, `ticket_events` (fil de suivi + décisions + éditions), `resolutions` (acceptations des travaux), `comptes_rendus` (une instance par personne concernée et par cycle — voir `tickets.cycle` et `fichiers.cycle`), `fichiers` (métadonnées des documents), `notifications` (in-app), `sessions`. Voir `src/db/schema.sql`.

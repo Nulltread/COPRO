@@ -36,3 +36,4 @@ Ce dossier est l'emplacement canonique des spécifications du projet. À chaque 
 | `socle-reglementaire.md` | Socle réglementaire minimal (nécessaire et suffisant) : les 7 blocs, hors-app, v2+ |
 | `ag-et-pv.md` | Assemblées générales : convocation, ODJ, feuille de présence, votes, PV, registre des délibérations |
 | `tantiemes.md` | Page dédiée des tantièmes par unité (référentiel pur, non liée à la facturation) |
+| `mise-en-production.md` | Première mise en prod : comptes CS pré-créés, données de test, mail d'annonce, checklist |
