@@ -67,6 +67,10 @@ function provisionnerDepuisObjet(obj, options = {}) {
     }
     const cs = c.conseil_syndical ? 1 : 0;
     let user = findUser.get(email);
+    if (user && user.role === 'admin' && role !== 'admin') {
+      rapport.erreurs.push(`${email} : c'est le compte admin — ne le listez pas dans "comptes" (le statut CS ne s'applique qu'aux comptes non-admin, et l'admin n'est jamais rattaché à une unité).`);
+      return null;
+    }
     let genere = null;
     if (!user) {
       let mdp = c.mot_de_passe && String(c.mot_de_passe).length >= 8 ? String(c.mot_de_passe) : null;
@@ -89,8 +93,11 @@ function provisionnerDepuisObjet(obj, options = {}) {
     if (role === 'admin' && cs) {
       rapport.erreurs.push(email + ' : un compte admin ne peut pas être membre du conseil syndical (statut ignoré).');
     }
+    if (role === 'admin' && (c.unites || []).length) {
+      rapport.erreurs.push(email + ' : unités ignorées — le compte admin n\'est jamais rattaché à une unité (il voit tous les tickets sans condition d\'unité).');
+    }
     const validePar = adminExistant ? adminExistant.id : user.id;
-    for (const u of c.unites || []) {
+    for (const u of role === 'admin' ? [] : (c.unites || [])) {
       const unit = trouverUnit(db, u.type, u.numero);
       if (!unit) {
         rapport.erreurs.push(`${email} : unité introuvable type=${u.type} numero=${u.numero}`);

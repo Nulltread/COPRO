@@ -46,7 +46,10 @@ résidents.
   (booléen), `unites` : liste de `{ type: villa|garage|communes, numero, qualite:
   proprietaire|locataire }`.
 - Champ `admin` (objet unique) : déclare **le** compte admin (un seul autorisé ;
-  un second admin distinct est refusé).
+  un second admin distinct est refusé). **L'admin n'est jamais rattaché à une
+  unité** (il voit tous les tickets sans condition d'unité, voir
+  `comptes-et-roles.md`) : le script ignore les unités déclarées pour l'admin,
+  refuse le statut CS sur l'admin, et refuse de lister l'admin dans `comptes`.
 - Les comptes créés ont leur **email considéré comme vérifié** (`email_verifie=1`)
   et leurs **rattachements acceptés d'office** (`rattachements` + `unit_residents`),
   validés par l'admin — ils sont immédiatement utilisables, sans attendre de

@@ -109,3 +109,19 @@ test('données de démo : 5 tickets marqués, idempotentes, supprimables', () =>
   assert.strictEqual(db.prepare("SELECT COUNT(*) AS n FROM tickets WHERE titre LIKE '[Démo]%'").get().n, 0);
   assert.strictEqual(db.prepare('SELECT COUNT(*) AS n FROM fichiers').get().n, 0);
 });
+
+test('admin : jamais rattaché à une unité, jamais statut CS, protégé contre la liste comptes', () => {
+  const r = provisionnerDepuisObjet({
+    admin: { email: 'syndic@exemple.fr', nom: 'Syndic', prenom: 'Sylvie', telephone: '0600000000', mot_de_passe: 'motdepasseadmin1', conseil_syndical: true, unites: [{ type: 'villa', numero: 1, qualite: 'proprietaire' }] },
+    comptes: [{ email: 'syndic@exemple.fr', nom: 'Syndic', prenom: 'Sylvie', conseil_syndical: true, unites: [{ type: 'villa', numero: 2, qualite: 'proprietaire' }] }]
+  });
+  const admin = db.prepare('SELECT * FROM users WHERE email = ?').get('syndic@exemple.fr');
+  assert.strictEqual(admin.role, 'admin');
+  assert.strictEqual(admin.conseil_syndical, 0);
+  assert.strictEqual(db.prepare('SELECT COUNT(*) AS n FROM rattachements WHERE user_id = ?').get(admin.id).n, 0);
+  assert.strictEqual(db.prepare('SELECT COUNT(*) AS n FROM unit_residents WHERE user_id = ?').get(admin.id).n, 0);
+  assert.ok(verifyPassword('motdepasseadmin1', admin.password_hash));
+  assert.ok(r.erreurs.some(e => e.includes('jamais rattaché')));
+  assert.ok(r.erreurs.some(e => e.includes('compte admin')));
+  assert.ok(r.erreurs.some(e => e.includes('statut ignoré')));
+});

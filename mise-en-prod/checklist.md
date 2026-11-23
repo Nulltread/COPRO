@@ -46,6 +46,7 @@
   ```
 
   `type` : `villa` | `garage` | `communes` ; `qualite` : `proprietaire` | `locataire` (défaut `proprietaire`).
+  **Règle absolue** : le compte `admin` n'est **jamais** rattaché à une unité — ne mets aucune `unites` dans le bloc `admin`, et ne le liste pas dans `comptes` (le script le refuse de toute façon).
 
 - [ ] Transmettre à chaque membre son mot de passe par un canal individuel (jamais dans le mail de groupe).
 
