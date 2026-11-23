@@ -50,6 +50,8 @@ Ordre des champs, de haut en bas :
 - Bouton de création de ticket : **bouton encadré à bords arrondis, flat** (bordure, pas de fond plein), avec le texte visible **« + Nouveau ticket »**.
 - Lien **« Entreprises »** visible uniquement pour le gestionnaire (CS/admin) — voir `consultations-entreprises-factures.md`.
 - **Plus de lien « Rattachements »** dans la barre de navigation (voir `rattachements.md`).
+- Lien **« Documents »** visible par **tout utilisateur connecté** (page : voir `34-documents-copropriete.md`).
+- **Menu responsive** (mobile-first) : sur **petit écran (< 900 px)**, la barre n'affiche que la marque, la cloche de notifications et un **bouton « menu » (burger)** ; le bouton **« + Nouveau ticket »** et tous les liens sont dans un **panneau déroulant pleine largeur** sous la barre (ouvert/fermé par le burger, fermé au clic sur un lien, au clic à l'extérieur ou à Échap ; cibles ≥ 44 px, `aria-expanded`/`aria-controls`). Sur **grand écran (≥ 900 px)**, les liens sont **en ligne** dans la barre et le burger est masqué.
 
 ## Cartes de la liste des tickets (et tableau de bord)
 

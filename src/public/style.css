@@ -43,9 +43,28 @@ body {
   border-bottom: 1px solid var(--bordure);
 }
 .barre a { color: var(--encre); text-decoration: none; }
-.marque { font-weight: 700; font-size: 1.05rem; letter-spacing: -0.01em; margin-right: auto; display: inline-flex; align-items: center; gap: 8px; }
+.marque { font-weight: 700; font-size: 1.05rem; letter-spacing: -0.01em; display: inline-flex; align-items: center; gap: 8px; }
 .marque-icone { flex: none; }
 .nav { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 0.92rem; }
+/* Menu responsive (spec 34 / fiche-ticket-et-ergonomie.md) : mobile-first,
+   burger + panneau sous la barre en dessous de 900 px, liens en ligne au-dessus. */
+.barre-droite { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.nav-desktop { display: none; }
+.menu-burger {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; border: 1px solid var(--bordure-input); border-radius: 2px;
+  background: #fff; color: var(--encre); cursor: pointer;
+}
+.menu-panneau { display: flex; flex-direction: column; gap: 2px; flex-basis: 100%; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--bordure); }
+.menu-panneau[hidden] { display: none; }
+.menu-panneau a { padding: 12px 10px; text-decoration: none; color: var(--encre); border-radius: 2px; font-weight: 600; }
+.menu-panneau a:hover { background: #fff; }
+.menu-panneau a.bouton-nav { align-self: flex-start; margin-bottom: 6px; }
+@media (max-width: 899px) { .nav-creation { display: none; } }
+@media (min-width: 900px) {
+  .nav-desktop { display: flex; }
+  .menu-burger, .menu-panneau { display: none !important; }
+}
 .bouton-nav {
   border: 1.5px solid var(--accent); color: var(--accent); border-radius: 2px;
   padding: 6px 12px; font-weight: 600; white-space: nowrap;
@@ -217,6 +236,17 @@ fieldset { border: 1px solid var(--bordure-input); border-radius: 2px; }
   .nav { font-size: 0.85rem; gap: 8px; }
   .ligne2-unites { width: 100%; text-align: left; }
 }
+
+/* Page Documents (spec 34) */
+.liste-documents li { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.liste-documents li > a { color: var(--encre); }
+.tag-cat { background: var(--bande); border: 1px solid var(--bordure); border-radius: 2px; padding: 2px 8px; font-size: 0.78rem; font-weight: 600; color: var(--texte-secondaire); white-space: nowrap; }
+.tag-cat a { color: var(--texte-secondaire); }
+.tag-niveau { border-radius: 2px; padding: 2px 8px; font-size: 0.78rem; font-weight: 700; color: #fff; white-space: nowrap; }
+.tag-niveau-commun { background: var(--accent); }
+.tag-niveau-controle { background: var(--etat-accepte); }
+.tag-niveau-prive { background: var(--gris-etape); }
+.tag-chip { background: var(--bande); border: 1px solid var(--bordure-input); border-radius: 2px; padding: 2px 8px; font-size: 0.78rem; font-weight: 600; }
 
 /* Multiselect « search » du filtre unités (spec 29) */
 .multiselect { position: relative; }

@@ -18,14 +18,32 @@
 <% if (user) { %>
 <header class="barre">
   <a class="marque" href="/tickets"><svg class="marque-icone" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12 L12 4 L21 12" fill="none" stroke="#24466B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 15.5 L12 10 L17.5 15.5" fill="none" stroke="#24466B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/></svg>Copro La Pinède de Notre Dame</a>
-  <nav class="nav">
+  <nav class="nav nav-desktop" aria-label="Navigation principale">
     <a href="/tickets">Tickets</a>
-    <a href="/tickets/nouveau" class="bouton-nav">+ Nouveau ticket</a>
-    <a href="/notifications" class="nav-notif">🔔<% if (nonLues > 0) { %><span class="badge"><%= nonLues %></span><% } %></a>
+    <a href="/documents">Documents</a>
     <% if (user.conseil_syndical === 1 || user.role === 'admin') { %>
       <a href="/tableau-de-bord">Tableau de bord</a>
+      <a href="/admin/comptes">Comptes</a>
+      <a href="/entreprises">Entreprises</a>
     <% } %>
+    <% if (user.role === 'admin') { %>
+      <a href="/admin">Administration</a>
+    <% } %>
+    <a href="/profil">👤 <%= user.prenom || user.nom %><% if (user.conseil_syndical === 1) { %> <span class="tag-cs">CS</span><% } %></a>
+  </nav>
+  <div class="barre-droite">
+    <a href="/notifications" class="nav-notif" aria-label="Notifications">🔔<% if (nonLues > 0) { %><span class="badge"><%= nonLues %></span><% } %></a>
+    <a href="/tickets/nouveau" class="bouton-nav nav-creation">+ Nouveau ticket</a>
+    <button type="button" id="menu-burger" class="menu-burger" aria-expanded="false" aria-controls="menu-panneau" aria-label="Ouvrir le menu">
+      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+    </button>
+  </div>
+  <nav id="menu-panneau" class="menu-panneau" hidden aria-label="Menu">
+    <a href="/tickets/nouveau" class="bouton-nav">+ Nouveau ticket</a>
+    <a href="/tickets">Tickets</a>
+    <a href="/documents">Documents</a>
     <% if (user.conseil_syndical === 1 || user.role === 'admin') { %>
+      <a href="/tableau-de-bord">Tableau de bord</a>
       <a href="/admin/comptes">Comptes</a>
       <a href="/entreprises">Entreprises</a>
     <% } %>

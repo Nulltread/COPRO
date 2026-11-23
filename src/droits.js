@@ -325,6 +325,34 @@ const ETIQUETTES_ETAPES = {
 // factures) — la section documents libre disparait (spec 20).
 const CATEGORIES_FICHIER_CS = ['devis', 'facture'];
 
+// Documents de la copropriete (spec 34) : 4 categories thematiques et
+// 3 niveaux d'acces (loi : commun / controle / prive).
+const CATEGORIES_DOCUMENT = ['juridique', 'instances', 'technique', 'comptable'];
+const ETIQUETTES_CATEGORIES_DOCUMENT = {
+  juridique: 'Documents juridiques et administratifs',
+  instances: 'Instances et décisions (AG)',
+  technique: "Documents techniques et d'entretien",
+  comptable: 'Documents comptables et financiers'
+};
+const NIVEAUX_ACCES = ['commun', 'controle', 'prive'];
+const ETIQUETTES_NIVEAUX = {
+  commun: 'Tous les copropriétaires',
+  controle: 'Conseil syndical uniquement',
+  prive: 'Unité destinataire uniquement'
+};
+
+// Visibilite d'un document depose (spec 34) : admin voit tout ; commun =
+// tout compte avec au moins une unite validee ; controle = membres du CS ;
+// prive = residents de l'unite destinataire uniquement.
+function peutVoirDocument(user, doc) {
+  if (!estActif(user) || !doc) return false;
+  if (isAdmin(user)) return true;
+  if (doc.niveau === 'commun') return unitsDeUser(user.id).length > 0;
+  if (doc.niveau === 'controle') return isCS(user);
+  if (doc.niveau === 'prive') return doc.unit_id != null && unitsDeUser(user.id).includes(Number(doc.unit_id));
+  return false;
+}
+
 module.exports = {
   isCS, isGestionnaire, isAdmin, estActif,
   unitsDeUser, qualiteDeUnit, estUniteCommune, unitesDuTicket,
@@ -335,5 +363,7 @@ module.exports = {
   infosValidation, peutAccepterRefuser, peutReouvrir, dansDelaiArchivage, dateArchivageAuto,
   nbFactures, peutArchiver, entrepriseComplete, consultationSelectionnable, consultationComplete, peutValiderDate,
   ETAPES, ETIQUETTES_ETAPES,
-  CATEGORIES_FICHIER_CS
+  CATEGORIES_FICHIER_CS,
+  CATEGORIES_DOCUMENT, ETIQUETTES_CATEGORIES_DOCUMENT, NIVEAUX_ACCES, ETIQUETTES_NIVEAUX,
+  peutVoirDocument
 };

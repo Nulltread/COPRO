@@ -37,3 +37,5 @@ Ce dossier est l'emplacement canonique des spécifications du projet. À chaque 
 | `ag-et-pv.md` | Assemblées générales : convocation, ODJ, feuille de présence, votes, PV, registre des délibérations |
 | `tantiemes.md` | Page dédiée des tantièmes par unité (référentiel pur, non liée à la facturation) |
 | `mise-en-production.md` | Première mise en prod : comptes CS pré-créés, données de test, mail d'annonce, checklist |
+| `33-unites-modifiables-jusqua-travaux-planifies.md` | Unités d'un ticket modifiables jusqu'au passage en « Travaux planifiés » |
+| `34-documents-copropriete.md` | Page « Documents » : dépôt CS/admin, 4 catégories thématiques et 3 niveaux d'accès obligatoires, limite 2 Mo (images compressées), tags custom, recherche/filtres, devis et factures des tickets listés |

@@ -87,6 +87,39 @@
     });
   }
 
+  // Compression d'une image jusqu'a passer sous maxBytes (qualite puis
+  // dimensions decroissantes, sortie JPEG) — utilisée pour les documents
+  // (limite 2 Mo, spec 34) ; le serveur recompresse en garantie (sharp).
+  function compresserImagePoids(file, maxBytes) {
+    return new Promise(function (resolve) {
+      if (!file.type.startsWith('image/')) return resolve(file);
+      var img = new Image();
+      var url = URL.createObjectURL(file);
+      img.onload = function () {
+        URL.revokeObjectURL(url);
+        var w = img.width, h = img.height;
+        var etapes = [[1, 0.8], [1, 0.6], [0.75, 0.65], [0.75, 0.45], [0.55, 0.55], [0.55, 0.35], [0.4, 0.45]];
+        var i = 0;
+        (function suivant() {
+          if (i >= etapes.length) { resolve(file); return; }
+          var s = etapes[i][0], q = etapes[i][1];
+          i++;
+          var canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(w * s));
+          canvas.height = Math.max(1, Math.round(h * s));
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob(function (blob) {
+            if (blob && blob.size <= maxBytes) {
+              resolve(new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' }));
+            } else suivant();
+          }, 'image/jpeg', q);
+        })();
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); resolve(file); };
+      img.src = url;
+    });
+  }
+
   // Mosaïque d'ajout (photos ET devis) : tout input fichier dans un .bloc-photos.
   // Chaque miniature s'insère au début de la ligne, le carré « + » se déplace à droite ;
   // les carrés sont répartis équitablement sur la largeur (voir style.css).
@@ -138,8 +171,12 @@
     }
 
     champ.addEventListener('change', function () {
+      var maxPoids = Number(champ.dataset.compressMax || 0);
       Promise.all(Array.prototype.map.call(champ.files, function (f) {
-        return compresserImage(f, 1600, 0.8);
+        return compresserImage(f, 1600, 0.8).then(function (f2) {
+          if (maxPoids && f2.size > maxPoids && f2.type.startsWith('image/')) return compresserImagePoids(f2, maxPoids);
+          return f2;
+        });
       })).then(function (compresses) {
         var dt = new DataTransfer();
         compresses.forEach(function (f) { dt.items.add(f); });
@@ -235,17 +272,14 @@
     });
   }
 
-  // --- Filtres des tickets : dropdowns custom (ouverture instantanée, 0 latence)
-  //     + case « Urgents » qui soumet dès le clic. Au choix d'une option : submit. ---
-  var filtres = document.getElementById('filtres-tickets');
+  // --- Filtres (tickets et documents) : dropdowns custom (ouverture instantanée,
+  //     0 latence). Au choix d'une option : submit du formulaire concerné. ---
   function fermerDropdowns() {
     document.querySelectorAll('.dropdown-liste').forEach(function (l) { l.hidden = true; });
     document.querySelectorAll('.dropdown-bouton').forEach(function (b) { b.setAttribute('aria-expanded', 'false'); });
   }
-  if (filtres) {
-    var urgent = filtres.querySelector('input[type=checkbox]');
-    if (urgent) urgent.addEventListener('change', function () { filtres.submit(); });
-    filtres.querySelectorAll('.dropdown').forEach(function (dd) {
+  function brancherDropdowns(formEl) {
+    formEl.querySelectorAll('.dropdown').forEach(function (dd) {
       var bouton = dd.querySelector('.dropdown-bouton');
       var liste = dd.querySelector('.dropdown-liste');
       var input = dd.querySelector('input[type=hidden]');
@@ -263,11 +297,37 @@
           valeur.textContent = opt.textContent;
           dd.querySelectorAll('.dropdown-option').forEach(function (o) { o.classList.toggle('selectionne', o === opt); });
           fermerDropdowns();
-          filtres.submit();
+          formEl.submit();
         });
       });
     });
-    document.addEventListener('click', fermerDropdowns);
+  }
+  document.addEventListener('click', fermerDropdowns);
+  var filtres = document.getElementById('filtres-tickets');
+  if (filtres) {
+    var urgent = filtres.querySelector('input[type=checkbox]');
+    if (urgent) urgent.addEventListener('change', function () { filtres.submit(); });
+    brancherDropdowns(filtres);
+  }
+  // --- Filtres de la page Documents (spec 34) : catégorie (dropdown) + tags (multiselect) ---
+  var filtresDocs = document.getElementById('filtres-documents');
+  if (filtresDocs) {
+    brancherDropdowns(filtresDocs);
+    var filtreTags = document.getElementById('filtre-tags');
+    if (filtreTags) {
+      var tagsHidden = document.getElementById('tags-hidden');
+      initMultiselect(filtreTags, function (vals) {
+        tagsHidden.innerHTML = '';
+        vals.forEach(function (v) {
+          var h = document.createElement('input');
+          h.type = 'hidden';
+          h.name = 'tag';
+          h.value = v;
+          tagsHidden.appendChild(h);
+        });
+        filtresDocs.submit();
+      });
+    }
   }
 
   // --- Recherche plaintext des tickets : filtrage à la volée côté client ---
@@ -285,6 +345,23 @@
         if (ok) visibles++;
       });
       if (aucunTickets) aucunTickets.hidden = visibles > 0 || cartes.length === 0;
+    });
+  }
+
+  // --- Recherche plaintext des documents (spec 34) : sur le titre, à la volée ---
+  var rechercheDocs = document.getElementById('recherche-documents');
+  if (rechercheDocs) {
+    var lisDocs = Array.prototype.slice.call(document.querySelectorAll('#liste-documents li'));
+    var aucunDocs = document.getElementById('recherche-aucun-documents');
+    rechercheDocs.addEventListener('input', function () {
+      var q = rechercheDocs.value.trim().toLowerCase();
+      var visibles = 0;
+      lisDocs.forEach(function (li) {
+        var ok = !q || (li.dataset.recherche || '').indexOf(q) !== -1;
+        li.style.display = ok ? '' : 'none';
+        if (ok) visibles++;
+      });
+      if (aucunDocs) aucunDocs.hidden = visibles > 0 || lisDocs.length === 0;
     });
   }
 
@@ -504,6 +581,135 @@
       copie.querySelectorAll('input').forEach(function (i) { i.value = ''; });
       conteneur.appendChild(copie);
     });
+  }
+
+  // --- Menu burger responsive (spec nav) : panneau sous la barre en < 900 px ---
+  var burger = document.getElementById('menu-burger');
+  var panneau = document.getElementById('menu-panneau');
+  if (burger && panneau) {
+    function fermerMenu() { panneau.hidden = true; burger.setAttribute('aria-expanded', 'false'); burger.setAttribute('aria-label', 'Ouvrir le menu'); }
+    burger.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var ouvrir = panneau.hidden;
+      panneau.hidden = !ouvrir;
+      burger.setAttribute('aria-expanded', String(ouvrir));
+      burger.setAttribute('aria-label', ouvrir ? 'Fermer le menu' : 'Ouvrir le menu');
+    });
+    panneau.addEventListener('click', function (e) { if (e.target.closest('a')) fermerMenu(); });
+    document.addEventListener('click', function (e) {
+      if (!panneau.hidden && !panneau.contains(e.target) && !burger.contains(e.target)) fermerMenu();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !panneau.hidden) { fermerMenu(); burger.focus(); }
+    });
+  }
+
+  // --- Multiselect de tags AVEC création (spec 34) : champ texte + dropdown des
+  //     tags existants affinés à la saisie ; si aucun ne correspond, une option
+  //     « Créer « … » » ajoute un tag à la volée. Utilisé à l'upload et sur la
+  //     fiche du document (édition réservée au gestionnaire, gérée côté serveur). ---
+  function initTags(root) {
+    var options = JSON.parse(root.dataset.options || '[]');
+    var preselectionnes = JSON.parse(root.dataset.selected || '[]');
+    var chips = root.querySelector('.multiselect-chips');
+    var input = root.querySelector('input[type=search]');
+    var liste = root.querySelector('.multiselect-liste');
+    var hidden = root.querySelector('.multiselect-hidden');
+    function valeurs() {
+      return Array.prototype.map.call(chips.querySelectorAll('.chip'), function (c) { return c.dataset.value; });
+    }
+    function synchroniser() {
+      hidden.innerHTML = '';
+      valeurs().forEach(function (v) {
+        var h = document.createElement('input');
+        h.type = 'hidden';
+        h.name = 'tags';
+        h.value = v;
+        hidden.appendChild(h);
+      });
+    }
+    function ajouter(o) {
+      var chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.dataset.value = o.value;
+      chip.appendChild(document.createTextNode(o.label));
+      var x = document.createElement('button');
+      x.type = 'button';
+      x.className = 'chip-x';
+      x.dataset.value = o.value;
+      x.textContent = '×';
+      x.setAttribute('aria-label', 'Retirer ' + o.label);
+      chip.appendChild(x);
+      chips.appendChild(chip);
+      input.value = '';
+      liste.hidden = true;
+      synchroniser();
+    }
+    preselectionnes.forEach(ajouter);
+    synchroniser();
+    chips.addEventListener('click', function (e) {
+      var x = e.target.closest('.chip-x');
+      if (x) { e.stopPropagation(); x.closest('.chip').remove(); synchroniser(); }
+    });
+    function ouvrir() {
+      var q = input.value.trim().toLowerCase();
+      var dispo = options.filter(function (o) {
+        return valeurs().indexOf(o.value) === -1 && (!q || o.label.toLowerCase().indexOf(q) !== -1);
+      }).slice(0, 5);
+      liste.innerHTML = '';
+      dispo.forEach(function (o) {
+        var li = document.createElement('li');
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'dropdown-option';
+        b.textContent = o.label;
+        b.addEventListener('click', function (e) { e.stopPropagation(); ajouter(o); });
+        li.appendChild(b);
+        liste.appendChild(li);
+      });
+      if (q && !options.some(function (o) { return o.label.toLowerCase() === q; })) {
+        var liC = document.createElement('li');
+        var bC = document.createElement('button');
+        bC.type = 'button';
+        bC.className = 'dropdown-option';
+        bC.textContent = '➕ Créer « ' + input.value.trim() + ' »';
+        bC.addEventListener('click', function (e) {
+          e.stopPropagation();
+          ajouter({ value: input.value.trim(), label: input.value.trim() });
+        });
+        liC.appendChild(bC);
+        liste.appendChild(liC);
+      }
+      if (!liste.children.length) {
+        var liVide = document.createElement('li');
+        var bVide = document.createElement('button');
+        bVide.type = 'button';
+        bVide.className = 'dropdown-option';
+        bVide.disabled = true;
+        bVide.textContent = 'Aucun résultat';
+        liVide.appendChild(bVide);
+        liste.appendChild(liVide);
+      }
+      liste.hidden = false;
+    }
+    input.addEventListener('input', ouvrir);
+    input.addEventListener('focus', ouvrir);
+    input.addEventListener('click', function (e) { e.stopPropagation(); ouvrir(); });
+  }
+  document.querySelectorAll('.multiselect[data-creer="1"]').forEach(initTags);
+
+  // --- Formulaire d'upload de documents : niveau « privé » => unité destinataire requise ---
+  var selectNiveau = document.getElementById('niveau-doc');
+  if (selectNiveau) {
+    var labelUnite = document.getElementById('champ-unite-label');
+    var selectUnite = document.getElementById('champ-unite');
+    function majUnite() {
+      var prive = selectNiveau.value === 'prive';
+      if (labelUnite) labelUnite.hidden = !prive;
+      if (selectUnite) selectUnite.required = prive;
+    }
+    selectNiveau.addEventListener('change', majUnite);
+    majUnite();
   }
 
   // --- Étoile rouge sur tous les champs obligatoires, dans toute l'application ---

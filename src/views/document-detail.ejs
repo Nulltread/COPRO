@@ -1,0 +1,42 @@
+<%- include('partials/header', { titre: doc.titre }) %>
+<div class="entete-page">
+  <h1><%= doc.titre %></h1>
+  <span class="actions-titre">
+    <a class="bouton-secondaire" href="/documents">← Documents</a>
+    <% if (gestionnaire) { %>
+      <form method="post" action="/documents/<%= doc.id %>/supprimer" data-confirm="Supprimer définitivement le document « <%= doc.titre %> » ?" data-confirm-titre="Supprimer le document">
+        <button class="bouton-secondaire danger" type="submit">Supprimer</button>
+      </form>
+    <% } %>
+  </span>
+</div>
+<% if (message) { %><p class="info"><%= message %></p><% } %>
+<section class="bloc">
+  <p>
+    <span class="tag-cat"><%= etiquettesCategories[doc.categorie] %></span>
+    <span class="tag-niveau tag-niveau-<%= doc.niveau %>"><%= etiquettesNiveaux[doc.niveau] %><%= doc.niveau === 'prive' && doc.unite_label ? ' — ' + doc.unite_label : '' %></span>
+  </p>
+  <p class="aide"><%= doc.auteur_nom %> — <%= doc.created_at %> — <%= doc.taille_lisible %></p>
+  <p><a class="bouton" href="/documents/<%= doc.id %>/fichier" target="_blank" rel="noopener">Ouvrir le document</a></p>
+</section>
+<section class="bloc">
+  <h2>Tags</h2>
+  <% if (gestionnaire) { %>
+    <form method="post" action="/documents/<%= doc.id %>/tags" class="formulaire">
+      <div class="multiselect" id="tags-edit" data-options="<%= JSON.stringify(tagsOptions) %>" data-creer="1" data-selected="<%= JSON.stringify(doc.tags.map(t => ({ value: String(t.id), label: t.nom }))) %>">
+        <div class="multiselect-zone">
+          <span class="multiselect-chips" id="tags-edit-chips"></span>
+          <input type="search" placeholder="Ajouter un tag… (tapez pour en créer un)" autocomplete="off">
+        </div>
+        <ul class="multiselect-liste dropdown-liste" hidden></ul>
+        <span class="multiselect-hidden" id="tags-edit-hidden"></span>
+      </div>
+      <button class="bouton-secondaire" type="submit">Enregistrer les tags</button>
+    </form>
+  <% } else if (doc.tags.length > 0) { %>
+    <p><% for (const t of doc.tags) { %><span class="tag-chip"><%= t.nom %></span> <% } %></p>
+  <% } else { %>
+    <p class="aide">Aucun tag.</p>
+  <% } %>
+</section>
+<%- include('partials/footer') %>

@@ -1,0 +1,70 @@
+<%- include('partials/header', { titre: 'Documents' }) %>
+<div class="entete-page">
+  <h1>Documents</h1>
+  <% if (gestionnaire) { %><a class="bouton" href="/documents/nouveau">+ Ajouter des documents</a><% } %>
+</div>
+<% if (message) { %><p class="info"><%= message %></p><% } %>
+<% if (!admin && mesUnites.length === 0) { %>
+  <p class="aide">Votre rattachement à une villa ou un garage n'est pas encore accepté : vous ne voyez aucun document pour le moment. <a href="/profil">Voir mes rattachements</a></p>
+<% } %>
+<%# Recherche plaintext à la volée, côté client, sans rechargement (sur le titre) %>
+<input type="search" id="recherche-documents" class="recherche recherche-pleine" placeholder="Rechercher un document (titre)…" autocomplete="off">
+<form method="get" action="/documents" id="filtres-documents">
+  <div class="filtres">
+    <div class="dropdown" data-filtre="categorie">
+      <button type="button" class="dropdown-bouton" aria-expanded="false">
+        <span class="dropdown-valeur"><%= filtres.categorie ? etiquettesFiltre[filtres.categorie] : 'Toutes les catégories' %></span> ▾
+      </button>
+      <ul class="dropdown-liste" hidden>
+        <li><button type="button" class="dropdown-option <%= !filtres.categorie ? 'selectionne' : '' %>" data-value="">Toutes les catégories</button></li>
+        <% for (const c of categories) { %>
+          <li><button type="button" class="dropdown-option <%= filtres.categorie === c ? 'selectionne' : '' %>" data-value="<%= c %>"><%= etiquettesCategories[c] %></button></li>
+        <% } %>
+        <li><button type="button" class="dropdown-option <%= filtres.categorie === 'devis' ? 'selectionne' : '' %>" data-value="devis">Devis (tickets)</button></li>
+        <li><button type="button" class="dropdown-option <%= filtres.categorie === 'facture' ? 'selectionne' : '' %>" data-value="facture">Factures (tickets)</button></li>
+      </ul>
+      <input type="hidden" name="categorie" value="<%= filtres.categorie || '' %>">
+    </div>
+    <%# Multiselect « search » des tags (spec 34) %>
+    <div class="multiselect" id="filtre-tags" data-options="<%= JSON.stringify(tagsOptions) %>">
+      <div class="multiselect-zone">
+        <span class="multiselect-chips" id="tags-chips">
+          <% for (const v of tagsSel) { const opt = tagsOptions.find(o => o.value === String(v)); if (opt) { %>
+            <span class="chip" data-value="<%= opt.value %>"><%= opt.label %><button type="button" class="chip-x" data-value="<%= opt.value %>" aria-label="Retirer <%= opt.label %>">×</button></span>
+          <% } } %>
+        </span>
+        <input type="search" id="recherche-tag" placeholder="Filtrer par tag…" autocomplete="off">
+      </div>
+      <ul class="multiselect-liste dropdown-liste" id="tags-liste" hidden></ul>
+      <span class="multiselect-hidden" id="tags-hidden">
+        <% for (const v of tagsSel) { %><input type="hidden" name="tag" value="<%= v %>"><% } %>
+      </span>
+    </div>
+  </div>
+</form>
+<% if (items.length === 0) { %>
+  <p class="aide">Aucun document pour le moment.</p>
+<% } %>
+<p class="aide" id="recherche-aucun-documents" hidden>Aucun document ne correspond à cette recherche.</p>
+<ul class="liste-simple liste-documents" id="liste-documents">
+  <% for (const it of items) { %>
+    <% if (it.source === 'depot') { %>
+      <li data-recherche="<%= it.titre.toLowerCase() %>">
+        <a href="/documents/<%= it.id %>"><strong><%= it.titre %></strong></a>
+        <span class="tag-cat"><%= etiquettesCategories[it.categorie] %></span>
+        <span class="tag-niveau tag-niveau-<%= it.niveau %>"><%= etiquettesNiveaux[it.niveau] %><%= it.niveau === 'prive' && it.unite_label ? ' — ' + it.unite_label : '' %></span>
+        <% for (const nom of (it.tags_noms || '').split('|').filter(Boolean)) { %><span class="tag-chip"><%= nom %></span><% } %>
+        <span class="auteur"><%= it.auteur_nom %> — <%= it.created_at %> — <%= it.taille_lisible %></span>
+      </li>
+    <% } else { %>
+      <li data-recherche="<%= it.titre.toLowerCase() %>">
+        <a href="/fichiers/<%= it.id %>"><strong><%= it.titre %></strong></a>
+        <span class="tag-cat"><%= it.categorie === 'devis' ? 'Devis' : 'Facture' %> — <a href="/tickets/<%= it.ticket_id %>">ticket #<%= it.ticket_id %></a></span>
+        <% if (it.montant != null) { %><span class="montant"><%= it.montant %> €</span><% } %>
+        <% if (it.entreprise) { %><span class="auteur"><%= it.entreprise %></span><% } %>
+        <span class="auteur"><%= it.created_at %></span>
+      </li>
+    <% } %>
+  <% } %>
+</ul>
+<%- include('partials/footer') %>

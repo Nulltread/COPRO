@@ -1,0 +1,50 @@
+<%- include('partials/header', { titre: 'Ajouter des documents' }) %>
+<h1>Ajouter des documents</h1>
+<% if (erreur) { %><p class="erreur"><%= erreur %></p><% } %>
+<form method="post" action="/documents" class="formulaire" enctype="multipart/form-data">
+  <div class="bloc-photos">
+    <label class="zone-photos">
+      <input type="file" name="fichiers" accept="image/jpeg,image/png,image/webp,application/pdf" multiple id="champ-documents" class="champ-fichiers-caches" data-compress-max="2097152">
+      <span class="zone-photos-plus" aria-hidden="true">+</span>
+      <span class="zone-photos-icone" aria-hidden="true">📄</span>
+      <span class="zone-photos-texte">Ajouter des fichiers<br><small>PDF ou images — 2 Mo max par fichier, les images sont compressées automatiquement</small></span>
+    </label>
+    <div id="apercu-documents" class="apercu"></div>
+  </div>
+  <label>Catégorie
+    <select name="categorie" required>
+      <option value="">Choisir…</option>
+      <% for (const c of categories) { %>
+        <option value="<%= c %>" <%= form.categorie === c ? 'selected' : '' %>><%= etiquettesCategories[c] %></option>
+      <% } %>
+    </select>
+  </label>
+  <label>Niveau d'accès
+    <select name="niveau" id="niveau-doc" required>
+      <option value="">Choisir…</option>
+      <% for (const n of niveaux) { %>
+        <option value="<%= n %>" <%= form.niveau === n ? 'selected' : '' %>><%= etiquettesNiveaux[n] %></option>
+      <% } %>
+    </select>
+    <small>« Unité destinataire uniquement » = visible seulement par les résidents de l'unité choisie ci-dessous.</small>
+  </label>
+  <label id="champ-unite-label" hidden>Unité destinataire
+    <select name="unit_id" id="champ-unite">
+      <option value="">Choisir…</option>
+      <% for (const u of unites) { %><option value="<%= u.id %>"><%= u.label %></option><% } %>
+    </select>
+  </label>
+  <fieldset>
+    <legend>Tags</legend>
+    <div class="multiselect" id="tags-select" data-options="<%= JSON.stringify(tagsOptions) %>" data-creer="1">
+      <div class="multiselect-zone">
+        <span class="multiselect-chips" id="tags-select-chips"></span>
+        <input type="search" id="recherche-tag-nouveau" placeholder="Ajouter un tag… (tapez pour en créer un)" autocomplete="off">
+      </div>
+      <ul class="multiselect-liste dropdown-liste" id="tags-select-liste" hidden></ul>
+      <span class="multiselect-hidden" id="tags-select-hidden"></span>
+    </div>
+  </fieldset>
+  <button type="submit" class="bouton">Ajouter les documents</button>
+</form>
+<%- include('partials/footer') %>

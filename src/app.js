@@ -75,6 +75,7 @@ function createApp() {
   // exige une session sur '/' ) — le jeton personnel fait foi.
   app.use('/consultation', require('./routes/consultation-publique'));
   app.use('/tickets', require('./routes/tickets').router);
+  app.use('/documents', require('./routes/documents'));
   app.use('/', require('./routes/fichiers'));
   app.use('/admin', require('./routes/admin'));
   app.use('/entreprises', require('./routes/entreprises'));

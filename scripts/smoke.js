@@ -87,6 +87,26 @@ async function main() {
   checks.push(['sans unité validée : aucun ticket visible', !listeAttente.includes('Fuite') && !listeAttente.includes('Chaudière')]);
   checks.push(['sans unité validée : détail ticket introuvable', (await req('GET', '/tickets/1')).status === 404]);
 
+  // Page Documents (spec 34) : CS voit la page + le formulaire, le résident la page
+  // mais pas le formulaire, les devis/factures de demo apparaissent, pas les photos.
+  const csDocs = await req('POST', '/connexion', { email: 'conseil1@copro.local', motdepasse: 'demo1234' });
+  checks.push(['login CS (documents)', csDocs.status === 302]);
+  const pageDocs = await (await req('GET', '/documents')).text();
+  checks.push(['page Documents (CS)', pageDocs.includes('id="liste-documents"')]);
+  checks.push(['lien Documents dans la nav + burger', pageDocs.includes('href="/documents"') && pageDocs.includes('id="menu-burger"')]);
+  checks.push(['formulaire ajout documents (CS)', (await req('GET', '/documents/nouveau')).status === 200]);
+  checks.push(['devis de demo listés dans Documents', pageDocs.includes('devis-martin.pdf')]);
+  checks.push(['facture de demo listée dans Documents', pageDocs.includes('facture-porte.pdf')]);
+  const rDocs = await req('POST', '/connexion', { email: 'resident1@copro.local', motdepasse: 'demo1234' });
+  checks.push(['login résident (documents)', rDocs.status === 302]);
+  checks.push(['page Documents (résident)', (await req('GET', '/documents')).status === 200]);
+  checks.push(['formulaire ajout documents interdit au résident', (await req('GET', '/documents/nouveau')).status === 403]);
+  checks.push(['upload documents interdit au résident', (await req('POST', '/documents', {})).status === 403]);
+  const attDocs = await req('POST', '/connexion', { email: 'attente@copro.local', motdepasse: 'demo1234' });
+  checks.push(['login compte sans unité (documents)', attDocs.status === 302]);
+  const pageAttente = await (await req('GET', '/documents')).text();
+  checks.push(['sans unité validée : aucun document visible', !pageAttente.includes('devis-martin.pdf')]);
+
   let ok = true;
   for (const [nom, res] of checks) { console.log((res ? 'OK  ' : 'FAIL') + ' ' + nom); if (!res) ok = false; }
   server.close();

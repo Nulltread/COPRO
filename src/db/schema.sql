@@ -247,3 +247,35 @@ CREATE INDEX IF NOT EXISTS idx_sollicitations_consultation ON sollicitations(con
 CREATE INDEX IF NOT EXISTS idx_acces_externes_consultation ON acces_externes(consultation_id);
 CREATE INDEX IF NOT EXISTS idx_acces_externes_token ON acces_externes(token);
 CREATE INDEX IF NOT EXISTS idx_consultation_dates_consultation ON consultation_dates(consultation_id);
+
+-- Documents de la copropriete (spec 34) : depot gere par le CS/admin, avec
+-- categorie thematique obligatoire, niveau d'acces (loi) et tags custom.
+-- niveau 'prive' : unit_id = unite destinataire (visible par ses residents + admin).
+CREATE TABLE IF NOT EXISTS documents (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  titre TEXT NOT NULL,
+  categorie TEXT NOT NULL CHECK (categorie IN ('juridique','instances','technique','comptable')),
+  niveau TEXT NOT NULL CHECK (niveau IN ('commun','controle','prive')),
+  unit_id INTEGER REFERENCES units(id) ON DELETE SET NULL,
+  nom_original TEXT NOT NULL,
+  nom_stockage TEXT NOT NULL,
+  mime TEXT NOT NULL,
+  taille INTEGER NOT NULL,
+  auteur_id INTEGER NOT NULL REFERENCES users(id),
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS tags (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nom TEXT NOT NULL UNIQUE COLLATE NOCASE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS document_tags (
+  document_id INTEGER NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+  PRIMARY KEY (document_id, tag_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_documents_created ON documents(created_at);
+CREATE INDEX IF NOT EXISTS idx_document_tags_tag ON document_tags(tag_id);
