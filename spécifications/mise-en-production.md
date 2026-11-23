@@ -50,6 +50,12 @@ résidents.
   unité** (il voit tous les tickets sans condition d'unité, voir
   `comptes-et-roles.md`) : le script ignore les unités déclarées pour l'admin,
   refuse le statut CS sur l'admin, et refuse de lister l'admin dans `comptes`.
+- **Le compte admin est un compte technique distinct du compte résident** :
+  un membre du CS qui administre l'application a **deux comptes** — son compte
+  principal, résident classique avec statut CS et rattaché à ses unités
+  (ex. : le président du CS : `sebastien.paletti@gmail.com`, propriétaire
+  villa 10, locataire garage 43), et le compte admin technique
+  (`admin@copro-pinede-gardanne.fr`, sans aucune unité).
 - Les comptes créés ont leur **email considéré comme vérifié** (`email_verifie=1`)
   et leurs **rattachements acceptés d'office** (`rattachements` + `unit_residents`),
   validés par l'admin — ils sont immédiatement utilisables, sans attendre de
