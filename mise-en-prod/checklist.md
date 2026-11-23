@@ -4,7 +4,7 @@
 
 - [ ] Record DNS `A` de `copro-pinede-gardanne.fr` → IP publique de la Dedibox (vérifier la propagation).
 - [ ] `Caddyfile` : le domaine est déjà `copro-pinede-gardanne.fr` (HTTPS automatique Let's Encrypt).
-- [ ] `.env` sur le serveur : `PORT=3000`, `BASE_URL=https://copro-pinede-gardanne.fr`, `MAIL_ENABLED=false` pour la version de test (notifications 100 % in-app) — activer plus tard quand le serveur mail (Mailcow) et les enregistrements MX/SPF/DKIM/DMARC seront en place (voir `spécifications/mail-et-domaine.md`).
+- [ ] `.env` sur le serveur : `PORT=3000`, `BASE_URL=https://copro-pinede-gardanne.fr`, `MAIL_ENABLED=false` pour la version de test (notifications 100 % in-app) — activer plus tard quand le serveur mail (Mailcow) et les enregistrements DNS mail seront en place (voir `spécifications/mail-et-domaine.md`).
 
 ## 2. Déploiement
 
@@ -49,13 +49,8 @@
 
 ## 4. Données de test
 
-- [ ] Créer les tickets de démo (5 tickets à tous les stades, marqués « [Démo] ») :
-
-  ```bash
-  docker compose -f docker-compose.prod.yml exec copro node src/db/donnees-demo.js
-  ```
-
-- [ ] Les retirer après la démo : `docker compose -f docker-compose.prod.yml exec copro node src/db/donnees-demo.js --reset`
+- [ ] **Jeu de démo existant (recommandé pour la v0)** : `docker compose -f docker-compose.prod.yml exec copro npm run seed` — 61 villas, 61 garages, parties communes, comptes de démo (mot de passe commun `demo1234` : `admin@copro.local`, `conseil1@copro.local`, `conseil2@copro.local`, `resident1…61@copro.local`, `locataire1…10@copro.local`) et 7 tickets à différents stades.
+- [ ] Alternative plus légère (tickets ciblés sur les unités des membres du CS) : `docker compose -f docker-compose.prod.yml exec copro npm run demo:creer` — 5 tickets marqués « [Démo] », supprimables ensuite avec `npm run demo:supprimer`.
 
 ## 5. Vérifications avant annonce
 
@@ -63,13 +58,15 @@
 - [ ] Connexion de chaque compte CS de test sur `https://copro-pinede-gardanne.fr` (page de connexion → liste des tickets).
 - [ ] Un ticket créé depuis un compte CS apparaît bien pour tout le monde.
 
-## 6. Envoi du mail d'annonce
+## 6. Kit de communication et envoi du mail
 
-- [ ] Personnaliser `mise-en-prod/mail-annonce.md` (objet, URL, signature) et l'envoyer à la liste du conseil syndical.
-- [ ] Joindre/transmettre les identifiants individuellement.
+- [ ] Kit v0 dans `mise-en-prod/kit-com/` : `doc-presentation.md` (présentation de l'outil, à diffuser à tous les résidents ensuite), `aide-inscription.md` (fiche « créer son compte » en 5 étapes), `mail-proposition.md` (mail de proposition au CS).
+- [ ] Personnaliser `{{URL}}` et la signature dans les 3 documents ; exporter les 2 docs en PDF (ou les copier dans un traitement de texte) pour les joindre au mail.
+- [ ] Envoyer le mail de proposition au conseil syndical, avec `doc-presentation.md` et `aide-inscription.md` en pièce jointe.
+- [ ] Transmettre les identifiants (mot de passe) individuellement — jamais dans le mail de groupe.
 
 ## 7. Après la période de test
 
-- [ ] Retirer les données de démo (`--reset`), révoquer éventuellement les mots de passe de test.
-- [ ] Ouvrir l'inscription à tous les résidents et annoncer à la copropriété.
+- [ ] Retirer les données de démo si besoin (`npm run comptes-test:supprimer`, `npm run demo:supprimer`, ou base vidée), révoquer éventuellement les mots de passe de test.
+- [ ] Ouvrir l'inscription à tous les résidents : diffuser `doc-presentation.md` + `aide-inscription.md` (affichage, mail à la liste de la copro).
 - [ ] Activer l'envoi d'emails (`MAIL_ENABLED=true` + Mailcow + DNS) quand le serveur mail est prêt.

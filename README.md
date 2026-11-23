@@ -91,7 +91,7 @@ Le workflow exécute `scripts/deploy.sh` sur le serveur (git pull + `docker comp
 
 ### Première mise en production (version de test pour le conseil syndical)
 
-Objectif : déployer sur `https://copro-pinede-gardanne.fr` avec les comptes du conseil syndical déjà créés et quelques données de test. Voir `spécifications/mise-en-production.md`, la checklist `mise-en-prod/checklist.md` et le brouillon de mail `mise-en-prod/mail-annonce.md`.
+Objectif : déployer sur `https://copro-pinede-gardanne.fr` avec les comptes du conseil syndical déjà créés et quelques données de test. Voir `spécifications/mise-en-production.md`, la checklist `mise-en-prod/checklist.md` et le kit de communication `mise-en-prod/kit-com/` (mail de proposition, doc de présentation, aide à l'inscription).
 
 ```bash
 # 1. Sur le serveur, comptes pré-créés depuis un JSON passé par stdin (jamais versionné, .gitignore) :

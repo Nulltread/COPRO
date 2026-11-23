@@ -46,20 +46,35 @@ résidents.
 
 ## Données de test
 
-- Script **`npm run demo:creer`** (`src/db/donnees-demo.js`) : crée 5 tickets de
-  démonstration à tous les stades du cycle (créé, consultation avec devis,
-  travaux planifiés, travaux acceptés avec bilan, archivé), un ticket marqué
-  **urgent**, 2 entreprises et des devis (PDF factices), répartis sur les unités
-  des membres du CS. **Idempotent**.
-- Tous les tickets de démo portent le préfixe **« [Démo] »** dans leur titre et
-  sont supprimables en une commande après la période de test :
-  **`npm run demo:supprimer`** (`--reset`, fichiers inclus).
+- **Jeu de démo existant, recommandé pour la v0** : `npm run seed`
+  (`src/db/seed.js`) — 61 villas, 61 garages, parties communes, comptes de démo
+  (mot de passe commun `demo1234` : `admin@copro.local`, `conseil1/2@copro.local`,
+  `resident1…61@copro.local`, `locataire1…10@copro.local`, `attente@copro.local`)
+  et 7 tickets à différents stades du cycle.
+- Alternative plus légère : script **`npm run demo:creer`**
+  (`src/db/donnees-demo.js`) : crée 5 tickets de démonstration à tous les stades
+  (créé, consultation avec devis, travaux planifiés, travaux acceptés avec bilan,
+  archivé), un ticket marqué **urgent**, 2 entreprises et des devis (PDF
+  factices), répartis sur les unités des membres du CS. **Idempotent**. Tous les
+  tickets de démo portent le préfixe **« [Démo] »** et sont supprimables en une
+  commande après la période de test : **`npm run demo:supprimer`** (`--reset`,
+  fichiers inclus).
 
-## Annonce au conseil syndical
+## Kit de communication v0 et annonce au conseil syndical
 
-- Mail d'annonce préparé dans **`mise-en-prod/mail-annonce.md`** (à personnaliser :
-  objet, URL, signature) : présentation simple des fonctionnalités principales,
-  accès, parcours de test suggéré, collecte des retours.
+- **Kit de communication** dans **`mise-en-prod/kit-com/`** (les `{{URL}}` sont à
+  personnaliser avant envoi) :
+  - `doc-presentation.md` : document compréhensif de présentation de l'outil
+    (fonctionnalités, parcours d'un ticket, visibilité, données), destiné à être
+    diffusé à tous les résidents après la période de test ;
+  - `aide-inscription.md` : fiche d'aide à l'inscription en 5 étapes, la plus
+    basique possible (créer son compte, valider son email, réclamer son
+    rattachement villa/garage, déclarer son premier ticket) ;
+  - `mail-proposition.md` : mail de proposition au conseil syndical (comptes
+    déjà créés, données de démo chargées, documents en pièce jointe, période de
+    test et collecte des retours, ouverture à tous les résidents ensuite).
+    **Les identifiants ne partent jamais dans le mail de groupe** : transmission
+    individuelle.
 - **Checklist complète** de la mise en production (DNS, déploiement, secrets
   GitHub Actions, comptes, données de test, vérifications, envoi du mail) dans
   **`mise-en-prod/checklist.md`**.
