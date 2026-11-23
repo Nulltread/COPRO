@@ -2,9 +2,11 @@
 
 ## 1. Serveur et domaine
 
-- [ ] Record DNS `A` de `copro-pinede-gardanne.fr` → IP publique de la Dedibox (vérifier la propagation).
+- [ ] Record DNS `A` de `copro-pinede-gardanne.fr` → IP publique de la Dedibox (vérifier la propagation). L'app est servie à la **racine** du domaine (le serveur mail utilise `mail.copro-pinede-gardanne.fr`, aucun conflit).
 - [ ] `Caddyfile` : le domaine est déjà `copro-pinede-gardanne.fr` (HTTPS automatique Let's Encrypt).
-- [ ] `.env` sur le serveur : `PORT=3000`, `BASE_URL=https://copro-pinede-gardanne.fr`, `MAIL_ENABLED=false` pour la version de test (notifications 100 % in-app) — activer plus tard quand le serveur mail (Mailcow) et les enregistrements DNS mail seront en place (voir `spécifications/mail-et-domaine.md`).
+- [ ] `.env` sur le serveur : `PORT=3000`, `BASE_URL=https://copro-pinede-gardanne.fr`, **`MAIL_ENABLED=true`** (envoi de mail direct actif dès la v0) : `SMTP_HOST=127.0.0.1`, `SMTP_PORT=25`, `MAIL_FROM=noreply@copro-pinede-gardanne.fr`.
+- [ ] DNS mail pour la délivrabilité (sinon spam) : `MX @ → mail.copro-pinede-gardanne.fr`, `A mail → IP`, TXT SPF (`v=spf1 mx -all`), DKIM (`dkim._domainkey`), DMARC (`_dmarc`), et **PTR** de l'IP → `mail.copro-pinede-gardanne.fr.` (voir `spécifications/mail-et-domaine.md`). Port 25 sortant non bloqué sur la Dedibox (vérifié).
+- [ ] (Pour la liste de diffusion `conseil-syndical@`) Installer Mailcow en conteneur dédié sur la Dedibox — voir `spécifications/mail-et-domaine.md`.
 
 ## 2. Déploiement
 
@@ -65,8 +67,8 @@
 - [ ] Envoyer le mail de proposition au conseil syndical, avec `doc-presentation.md` et `aide-inscription.md` en pièce jointe.
 - [ ] Transmettre les identifiants (mot de passe) individuellement — jamais dans le mail de groupe.
 
-## 7. Après la période de test
+## 7. Avant l'ouverture aux vrais résidents (mise en prod réelle)
 
-- [ ] Retirer les données de démo si besoin (`npm run comptes-test:supprimer`, `npm run demo:supprimer`, ou base vidée), révoquer éventuellement les mots de passe de test.
-- [ ] Ouvrir l'inscription à tous les résidents : diffuser `doc-presentation.md` + `aide-inscription.md` (affichage, mail à la liste de la copro).
-- [ ] Activer l'envoi d'emails (`MAIL_ENABLED=true` + Mailcow + DNS) quand le serveur mail est prêt.
+- [ ] Nettoyage sur le serveur : `docker compose -f docker-compose.prod.yml exec copro npm run nettoyer-demo -- --tout` — supprime les comptes fictifs (`@copro.local`), leurs tickets et fichiers, les tickets « [Démo] » et les entreprises orphelines ; **conserve** les unités (fixes : 61 villas, 61 garages, parties communes), ton compte, le compte admin et les comptes réels du CS.
+- [ ] Vérifier : seuls les comptes réels restent, aucun ticket de test.
+- [ ] Ouvrir l'inscription à tous les résidents : diffuser `doc-presentation.md` + `aide-inscription.md` du kit (`mise-en-prod/kit-com/`) — affichage, mail à la liste de la copro.

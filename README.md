@@ -100,6 +100,10 @@ cat comptes-prod.json | docker compose -f docker-compose.prod.yml exec -T copro 
 # 2. Données de test (5 tickets marqués « [Démo] », supprimables ensuite) :
 docker compose -f docker-compose.prod.yml exec copro npm run demo:creer
 docker compose -f docker-compose.prod.yml exec copro npm run demo:supprimer   # après la démo
+
+# 3. Avant l'ouverture aux vrais résidents : nettoyage (comptes fictifs @copro.local,
+#    tickets de démo, entreprises orphelines ; unités et comptes réels conservés) :
+docker compose -f docker-compose.prod.yml exec copro npm run nettoyer-demo -- --tout
 ```
 
 Format de `comptes-prod.json` : `{ "admin": {...}, "comptes": [ { "email", "nom", "prenom", "telephone", "mot_de_passe" (facultatif, généré sinon), "conseil_syndical": true, "unites": [ { "type": "villa"|"garage"|"communes", "numero", "qualite": "proprietaire"|"locataire" } ] } ] }`. Les emails sont considérés comme vérifiés et les rattachements acceptés d'office. En local : `npm run provisionner -- comptes-prod.json` puis `npm run demo:creer`.

@@ -10,11 +10,19 @@ résidents.
 
 ## Environnement
 
-- Même déploiement que la production (`docker-compose.prod.yml` + Caddy), domaine
-  `copro-pinede-gardanne.fr` (racine du domaine, voir `Caddyfile`).
-- `.env` : `BASE_URL=https://copro-pinede-gardanne.fr` ; `MAIL_ENABLED=false` tant
-  que le serveur mail (Mailcow) et les enregistrements DNS mail ne sont pas en
-  place (voir `mail-et-domaine.md`) — les notifications restent 100 % in-app.
+- Même déploiement que la production (`docker-compose.prod.yml` + Caddy), à la
+  **racine du domaine** `https://copro-pinede-gardanne.fr` (décision : pas de
+  sous-domaine dédié — le serveur mail utilise `mail.copro-pinede-gardanne.fr`,
+  aucun conflit ; voir `Caddyfile` et `mail-et-domaine.md`).
+- `.env` : `BASE_URL=https://copro-pinede-gardanne.fr`, **`MAIL_ENABLED=true` dès
+  la v0** (décision : envoi de mail direct actif) : `SMTP_HOST=127.0.0.1`,
+  `SMTP_PORT=25` (envoi direct, sans authentification, port 25 non bloqué sur la
+  Dedibox), `MAIL_FROM=noreply@copro-pinede-gardanne.fr`.
+- Prérequis de délivrabilité (sinon les mails partent en spam) : enregistrements
+  DNS du domaine — MX vers `mail.copro-pinede-gardanne.fr`, SPF, DKIM, DMARC, et
+  PTR IPv4 réglé sur `mail.copro-pinede-gardanne.fr.` (voir `mail-et-domaine.md`).
+  La liste de diffusion `conseil-syndical@` nécessite en plus le serveur mail
+  Mailcow installé sur la Dedibox.
 - Sauvegarde : cron quotidien installé par `scripts/setup-server.sh` (voir
   `stockage-securite-deploiement.md`).
 
@@ -79,8 +87,25 @@ résidents.
   GitHub Actions, comptes, données de test, vérifications, envoi du mail) dans
   **`mise-en-prod/checklist.md`**.
 
+## Nettoyage avant la mise en production réelle
+
+- Le référentiel des unités est **fixe** (61 villas, 61 garages, parties communes,
+  en dur) : il n'est jamais modifié par le nettoyage.
+- Script **`npm run nettoyer-demo`** (`src/db/nettoyer-demo.js`, option `--tout`)
+  à exécuter sur le serveur **avant l'ouverture aux vrais résidents** :
+  - supprime les **comptes fictifs** du seed/comptes-test (`*@copro.local`) avec
+    leurs tickets, fichiers (disque inclus), rattachements, sessions et
+    notifications ;
+  - supprime les tickets de démo marqués **« [Démo] »** (même créés par des
+    comptes réels) et les **entreprises** plus référencées ;
+  - **conserve** les unités, le compte admin et les comptes réels (CS) — ainsi
+    que leurs tickets, sauf avec `--tout` qui vide **tous** les tickets restants
+    pour repartir d'une base vierge.
+- Ordre conseillé : période de test du CS avec les données de démo →
+  `npm run nettoyer-demo -- --tout` (base prête pour la prod) → diffusion du kit
+  de com (`mise-en-prod/kit-com/`) à tous les résidents → auto-inscription ouverte.
+
 ## Après la période de test
 
-- Suppression des données de démo (`npm run demo:supprimer`), ouverture de
-  l'auto-inscription à tous les résidents, activation de l'envoi d'emails une fois
-  le serveur mail en place.
+- Nettoyage (`npm run nettoyer-demo -- --tout`), puis ouverture de
+  l'auto-inscription à tous les résidents et diffusion du kit de communication.

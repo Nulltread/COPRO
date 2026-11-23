@@ -12,6 +12,7 @@
     "provisionner": "node src/db/provisionner-comptes.js",
     "demo:creer": "node src/db/donnees-demo.js",
     "demo:supprimer": "node src/db/donnees-demo.js --reset",
+    "nettoyer-demo": "node src/db/nettoyer-demo.js",
     "test": "node --test tests/*.test.js"
   },
   "dependencies": {
