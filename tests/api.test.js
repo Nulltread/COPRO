@@ -1173,3 +1173,13 @@ test('spec 32 : mosaïque photos + auto-submit + overlay chargement, bilan sans 
   assert.ok(page.includes('Cycle 1 — figé le'));
   assert.ok(page.includes('Bilan cycle 1'));
 });
+
+test('mosaïque : tuiles à taille plafonnée (jamais pleine largeur, 3-4 par ligne sur mobile)', async () => {
+  // /style.css est servi sans authentification (statique)
+  const css = await (await fetch(base + '/style.css')).text();
+  // grilles photos/devis : auto-fill avec max 160 px (plus de 1fr qui étirait les tuiles)
+  assert.ok(css.includes('repeat(auto-fill, minmax(76px, 160px))'));
+  const reglesGrille = css.split('\n').filter(l => /^\.(mosaic|bloc-photos) \{/.test(l));
+  assert.strictEqual(reglesGrille.length, 2);
+  assert.ok(reglesGrille.every(l => l.includes('repeat(auto-fill, minmax(76px, 160px))') && !l.includes('1fr')));
+});

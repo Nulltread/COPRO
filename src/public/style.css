@@ -161,7 +161,10 @@ fieldset { border: 1px solid var(--bordure-input); border-radius: 2px; }
 .chiffre { font-size: 1.35rem; font-weight: 800; }
 .legende { font-size: 0.82rem; color: var(--texte-secondaire); }
 .apercu { display: contents; }
-.bloc-photos { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 8px; align-items: start; }
+/* Grille des tuiles (photos, devis, aperçu avant envoi) : taille PLAFONNÉE —
+   jamais pleine largeur quand il y a peu de tuiles (auto-fill + max, pas de 1fr) ;
+   min 76 px => au moins 3 à 4 tuiles par ligne sur un écran de téléphone. */
+.bloc-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 160px)); gap: 8px; align-items: start; }
 .apercu .poubelle {
   position: absolute; top: -6px; right: -6px; width: 24px; height: 24px; border-radius: 50%;
   border: none; background: var(--rouge); color: #fff; font-size: 0.8rem; line-height: 1;
@@ -229,9 +232,9 @@ fieldset { border: 1px solid var(--bordure-input); border-radius: 2px; }
 .liste-consultations .consultation { list-style: none; }
 .consultation.nouvelle { border-style: dashed; }
 
-/* Mosaïque : carrés carrés répartis équitablement sur toute la largeur (auto-fit, min 84 px),
-   quel que soit l'écran ; la tuile « + » reste en fin de ligne et chaque miniature ajoutée
-   repart au début de la ligne (app.js insère avant la zone d'ajout) */
+/* Mosaïque : petites tuiles carrées à taille plafonnée (auto-fill, min 76 px, max 160 px)
+   — jamais réparties sur toute la largeur ; la tuile « + » reste en fin de ligne et chaque
+   miniature ajoutée repart au début de la ligne (app.js insère avant la zone d'ajout) */
 .zone-photos { aspect-ratio: 1 / 1; width: auto; height: auto; flex-direction: column; justify-content: center; gap: 2px; padding: 6px; text-align: center; }
 .zone-photos-plus { font-size: 1.4rem; }
 .zone-photos-icone { font-size: 1.1rem; }
@@ -243,7 +246,7 @@ fieldset { border: 1px solid var(--bordure-input); border-radius: 2px; }
 .miniature-fichier { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: var(--bande); }
 .miniature-fichier-icone { font-size: 1.6rem; }
 .miniature-fichier-nom { font-size: 0.62rem; font-weight: 600; color: var(--encre); word-break: break-all; padding: 0 4px; text-align: center; }
-.mosaic { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 8px; margin: 8px 0; }
+.mosaic { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 160px)); gap: 8px; margin: 8px 0; }
 .tuile { position: relative; aspect-ratio: 1 / 1; width: auto; height: auto; border-radius: 2px; overflow: hidden; border: 1px solid var(--bordure); }
 .tuile img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .form-poubelle { position: absolute; top: 0; right: 0; margin: 0; }
