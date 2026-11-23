@@ -14,6 +14,10 @@ résidents.
   **racine du domaine** `https://copro-pinede-gardanne.fr` (décision : pas de
   sous-domaine dédié — le serveur mail utilise `mail.copro-pinede-gardanne.fr`,
   aucun conflit ; voir `Caddyfile` et `mail-et-domaine.md`).
+- **Déploiement automatique déjà actif** (constaté) : GitHub Actions déploie à
+  chaque push sur `main` (secrets `DEPLOY_HOST`/`DEPLOY_USER`/`DEPLOY_SSH_KEY`,
+  `scripts/deploy.sh`) ; l'application tourne déjà en ligne à
+  `https://copro-pinede-gardanne.fr`.
 - `.env` : `BASE_URL=https://copro-pinede-gardanne.fr`, **`MAIL_ENABLED=true` dès
   la v0** (décision : envoi de mail direct actif) : `SMTP_HOST=127.0.0.1`,
   `SMTP_PORT=25` (envoi direct, sans authentification, port 25 non bloqué sur la

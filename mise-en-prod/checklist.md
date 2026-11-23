@@ -8,11 +8,11 @@
 - [ ] DNS mail pour la délivrabilité (sinon spam) : `MX @ → mail.copro-pinede-gardanne.fr`, `A mail → IP`, TXT SPF (`v=spf1 mx -all`), DKIM (`dkim._domainkey`), DMARC (`_dmarc`), et **PTR** de l'IP → `mail.copro-pinede-gardanne.fr.` (voir `spécifications/mail-et-domaine.md`). Port 25 sortant non bloqué sur la Dedibox (vérifié).
 - [ ] (Pour la liste de diffusion `conseil-syndical@`) Installer Mailcow en conteneur dédié sur la Dedibox — voir `spécifications/mail-et-domaine.md`.
 
-## 2. Déploiement
+## 2. Déploiement (déjà en place)
 
-- [ ] Premier déploiement manuel : `sudo scripts/setup-server.sh copro-pinede-gardanne.fr` sur la Dedibox (compte `copro` avec sudo), ou vérifier que le déploiement automatique GitHub Actions est actif (secrets `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY` renseignés — chaque push sur `main` déploie).
-- [ ] Vérifier : `https://copro-pinede-gardanne.fr` répond (page de connexion), certificat HTTPS valide.
-- [ ] Cron de sauvegarde installé par `setup-server.sh` (vérifier `crontab -l`) ; complément : snapshots hebdomadaires de la Dedibox.
+- [x] Déploiement automatique GitHub Actions actif : secrets `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY` renseignés — **chaque push sur `main` déploie** (`scripts/deploy.sh` : git pull + rebuild). Vérifié : les derniers runs Deploy/CI sont en `success`.
+- [x] L'application tourne déjà à `https://copro-pinede-gardanne.fr` (page de connexion, HTTPS Let's Encrypt via Caddy).
+- [ ] Sauvegarde quotidienne installée par `setup-server.sh` (vérifier la planification sur la Dedibox) ; complément : snapshots hebdomadaires de la Dedibox.
 
 ## 3. Comptes du conseil syndical (pré-créés par l'admin)
 
