@@ -60,7 +60,96 @@ function migrate() {
     db.pragma('user_version = 5');
     console.log('Migration v5 : sollicitations, acces externes prestataires, dates proposees, fichiers.auteur_externe.');
   }
+  // v6 (specs 35/36) : email facultatif avec unicite uniquement parmi les
+  // comptes actifs (index partiel), statut 'desactive', tables lots /
+  // lot_units / lot_events / password_resets.
+  if (db.pragma('user_version', { simple: true }) < 6) {
+    migrationV6(db);
+    db.pragma('user_version = 6');
+    console.log('Migration v6 : email facultatif (unicite comptes actifs), statut desactive, lots, reinitialisation du mot de passe.');
+  }
   return sansCat;
+}
+
+function migrationV6(db) {
+  const sql = (db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='users'").get() || {}).sql || '';
+  if (!sql.includes('desactive') || /email[^,]*UNIQUE/i.test(sql)) {
+    db.pragma('foreign_keys = OFF');
+    db.exec('BEGIN');
+    try {
+      db.exec(`
+        CREATE TABLE users_v6 (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          email TEXT COLLATE NOCASE,
+          password_hash TEXT NOT NULL,
+          nom TEXT NOT NULL,
+          prenom TEXT NOT NULL DEFAULT '',
+          telephone TEXT NOT NULL DEFAULT '',
+          role TEXT NOT NULL CHECK (role IN ('resident','admin')),
+          conseil_syndical INTEGER NOT NULL DEFAULT 0,
+          statut TEXT NOT NULL DEFAULT 'actif' CHECK (statut IN ('actif','desactive','supprime')),
+          email_verifie INTEGER NOT NULL DEFAULT 0,
+          notif_email INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        INSERT INTO users_v6 (id, email, password_hash, nom, prenom, telephone, role, conseil_syndical, statut, email_verifie, notif_email, created_at)
+        SELECT id, email, password_hash, nom, prenom, telephone, role, conseil_syndical, statut, email_verifie, notif_email, created_at FROM users;
+        DROP TABLE users;
+        ALTER TABLE users_v6 RENAME TO users;
+      `);
+      db.exec('COMMIT');
+    } catch (e) {
+      db.exec('ROLLBACK');
+      db.pragma('foreign_keys = ON');
+      throw e;
+    }
+    db.pragma('foreign_keys = ON');
+  }
+  db.prepare("UPDATE users SET prenom = nom WHERE prenom = '' AND statut = 'actif'").run();
+  db.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_actif
+      ON users(email) WHERE email IS NOT NULL AND statut = 'actif';
+    CREATE TABLE IF NOT EXISTS lots (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      numero INTEGER NOT NULL UNIQUE,
+      designation TEXT NOT NULL DEFAULT '',
+      type_lot TEXT NOT NULL DEFAULT '',
+      tantiemes INTEGER NOT NULL DEFAULT 0,
+      proprietaire_brut TEXT NOT NULL DEFAULT '',
+      user_id INTEGER REFERENCES users(id),
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS lot_units (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      lot_id INTEGER NOT NULL REFERENCES lots(id) ON DELETE CASCADE,
+      unit_id INTEGER NOT NULL REFERENCES units(id) ON DELETE CASCADE,
+      statut TEXT NOT NULL DEFAULT 'en_attente' CHECK (statut IN ('en_attente','accepte','refuse')),
+      demande_par INTEGER REFERENCES users(id),
+      valide_par INTEGER REFERENCES users(id),
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      valide_at TEXT
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_lot_units_unit_actif ON lot_units(unit_id) WHERE statut IN ('en_attente','accepte');
+    CREATE INDEX IF NOT EXISTS idx_lot_units_lot ON lot_units(lot_id);
+    CREATE INDEX IF NOT EXISTS idx_lots_user ON lots(user_id);
+    CREATE TABLE IF NOT EXISTS lot_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      lot_id INTEGER NOT NULL REFERENCES lots(id) ON DELETE CASCADE,
+      type TEXT NOT NULL,
+      auteur_id INTEGER REFERENCES users(id),
+      contenu TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_lot_events_lot ON lot_events(lot_id);
+    CREATE TABLE IF NOT EXISTS password_resets (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token TEXT NOT NULL UNIQUE,
+      expires_at TEXT NOT NULL,
+      used_at TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
 }
 
 function migrationV5(db) {

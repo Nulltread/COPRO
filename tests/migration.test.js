@@ -200,7 +200,48 @@ test('migration v5 : tables sollicitations/acces_externes/consultation_dates, fi
   db.prepare("INSERT INTO fichiers (ticket_id, categorie, nom_original, nom_stockage, mime, taille, auteur_id, auteur_externe) VALUES (1, 'devis', 'd.pdf', 'd.pdf', 'application/pdf', 1, NULL, 'Plombier SARL')").run();
   const f = db.prepare("SELECT auteur_externe FROM fichiers WHERE nom_original='d.pdf'").get();
   assert.strictEqual(f.auteur_externe, 'Plombier SARL');
-  assert.strictEqual(db.pragma('user_version', { simple: true }), 5);
+  assert.strictEqual(db.pragma('user_version', { simple: true }), 6);
+});
+
+test('migration v6 : email facultatif avec unicite parmi les actifs, statut desactive, tables lots/lot_units/lot_events/password_resets', () => {
+  for (const t of ['lots', 'lot_units', 'lot_events', 'password_resets']) {
+    const row = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(t);
+    assert.ok(row, `table ${t} presente`);
+  }
+  const emailCol = db.prepare('PRAGMA table_info(users)').all().find(c => c.name === 'email');
+  assert.strictEqual(emailCol.notnull, 0);
+  assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE type='index' AND name='idx_users_email_actif'").get());
+  // un compte sans email est accepte
+  const sansMail = db.prepare("INSERT INTO users (email, password_hash, nom, prenom, role, statut) VALUES (NULL, 'x', 'SansMail', 'Sam', 'resident', 'actif')").run().lastInsertRowid;
+  assert.ok(db.prepare('SELECT id FROM users WHERE id=?').get(sansMail));
+  // deux comptes actifs ne peuvent pas partager le meme email (index partiel)
+  db.prepare("INSERT INTO users (email, password_hash, nom, prenom, role, statut) VALUES ('doublon@copro.local', 'x', 'Un', 'Anna', 'resident', 'actif')").run();
+  assert.throws(() => {
+    db.prepare("INSERT INTO users (email, password_hash, nom, prenom, role, statut) VALUES ('DOUBLON@copro.local', 'x', 'Deux', 'Bob', 'resident', 'actif')").run();
+  });
+  // un compte desactive ne bloque pas la reutilisation de son email
+  db.prepare("UPDATE users SET statut='desactive' WHERE email='doublon@copro.local'").run();
+  db.prepare("INSERT INTO users (email, password_hash, nom, prenom, role, statut) VALUES ('doublon@copro.local', 'x', 'Trois', 'Chloe', 'resident', 'actif')").run();
+  // le statut desactive est accepte par le CHECK
+  db.prepare("INSERT INTO users (email, password_hash, nom, prenom, role, statut) VALUES (NULL, 'x', 'Desactive', 'Dan', 'resident', 'desactive')").run();
+  assert.throws(() => {
+    db.prepare("INSERT INTO users (email, password_hash, nom, prenom, role, statut) VALUES (NULL, 'x', 'Bidon', 'Eve', 'resident', 'bidon')").run();
+  });
+  // une unite appartient a au plus un lot (index partiel sur les liens actifs)
+  const lot1 = db.prepare("INSERT INTO lots (numero, designation, type_lot, tantiemes, proprietaire_brut, user_id) VALUES (1, 'Appt T4', 'Appartement', 138, 'LABROUSSE .', ?)").run(sansMail).lastInsertRowid;
+  const lot2 = db.prepare("INSERT INTO lots (numero, designation, type_lot, tantiemes, proprietaire_brut, user_id) VALUES (2, 'Garage', 'Garage', 19, 'ERILIA', ?)").run(sansMail).lastInsertRowid;
+  db.prepare("INSERT INTO lot_units (lot_id, unit_id, statut, demande_par) VALUES (?, 1, 'accepte', ?)").run(lot1, sansMail);
+  assert.throws(() => {
+    db.prepare("INSERT INTO lot_units (lot_id, unit_id, statut) VALUES (?, 1, 'en_attente')").run(lot2);
+  });
+  // une unite refusee peut etre redemandee (hors index partiel)
+  db.prepare("UPDATE lot_units SET statut='refuse' WHERE lot_id=? AND unit_id=1").run(lot1);
+  db.prepare("INSERT INTO lot_units (lot_id, unit_id, statut) VALUES (?, 1, 'en_attente')").run(lot2);
+  // password_resets : jeton unique
+  db.prepare("INSERT INTO password_resets (user_id, token, expires_at) VALUES (?, 'tok1', '2030-01-01')").run(sansMail);
+  assert.throws(() => {
+    db.prepare("INSERT INTO password_resets (user_id, token, expires_at) VALUES (?, 'tok1', '2030-01-01')").run(sansMail);
+  });
 });
 
 test('migration : une base déjà à jour n\'est pas touchée', () => {
