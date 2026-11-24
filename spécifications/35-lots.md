@@ -41,5 +41,6 @@
 ## Peuplement depuis la CCG
 
 - **Script dédié** (ex. `src/db/peupler-cle-repartition.js`) avec les données de la CCG embarquées (JSON) : crée les **123 lots** (n°, désignation, type, tantièmes), les **comptes propriétaires** (un par nom de propriétaire distinct, dédupliqué, **sans email**, mot de passe aléatoire — voir `36-comptes-sans-email.md`) et le **lien lot → compte propriétaire**. **Aucun lien lot → unité** n'est créé (mapping inconnu à date).
-- Le script est **idempotent** (ré-exécution = mise à jour sans doublon) et produit un **rapport** (lots/comptes créés, mis à jour, erreurs).
+- **Vieux comptes existants pris en compte** : avant de créer un compte, le script rapproche le propriétaire d'un **compte actif existant portant le même nom + prénom** (normalisé, accents/casse ignorés) — **hors compte admin et hors comptes inactifs** — et rattache le lot à ce compte plutôt que de créer un doublon. Un lot déjà présent mais sans propriétaire est lui aussi rattaché (ré-exécution).
+- Le script est **idempotent** (ré-exécution = mise à jour sans doublon) et produit un **rapport** (lots créés/existants/rattachés, comptes créés/réutilisés, erreurs).
 - Nom / prénom : découpage au mieux de la chaîne du propriétaire (ex. « CLEMENT Francoise » → nom « CLEMENT », prénom « Françoise » ; un couple « CRABOL & GIULIANI Jonathan&Emilie » = **un seul compte** pour le lot). Nom et prénom restent obligatoires pour tous les comptes.
