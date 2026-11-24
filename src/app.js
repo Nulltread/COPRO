@@ -77,6 +77,7 @@ function createApp() {
   app.use('/tickets', require('./routes/tickets').router);
   app.use('/documents', require('./routes/documents'));
   app.use('/', require('./routes/fichiers'));
+  app.use('/admin/lots', require('./routes/lots'));
   app.use('/admin', require('./routes/admin'));
   app.use('/entreprises', require('./routes/entreprises'));
   app.use('/rattachements', require('./routes/rattachements'));

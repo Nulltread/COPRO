@@ -37,6 +37,12 @@ async function main() {
   checks.push(['titre présent', (await t1.text()).includes('Fuite')]);
   checks.push(['tableau de bord CS', (await req('GET', '/tableau-de-bord')).status === 200]);
   checks.push(['page comptes CS', (await req('GET', '/admin/comptes')).status === 200]);
+  checks.push(['formulaire création de compte (CS)', (await (await req('GET', '/admin/comptes')).text()).includes('action="/admin/comptes/creer"')]);
+  checks.push(['page lots CS', (await req('GET', '/admin/lots')).status === 200]);
+  checks.push(['lien Lots dans la nav (CS)', (await (await req('GET', '/tickets')).text()).includes('href="/admin/lots"')]);
+  const pageInscr = await (await req('GET', '/inscription')).text();
+  checks.push(['inscription locataire-only (plus de select qualité)', !pageInscr.includes('name="qualite"')]);
+  checks.push(['page réinitialisation mdp', (await req('GET', '/reinitialiser-mot-de-passe?token=abc')).status === 200]);
   checks.push(['page entreprises CS', (await req('GET', '/entreprises')).status === 200]);
   checks.push(['panneau admin interdit au CS', (await req('GET', '/admin')).status === 403]);
   checks.push(['page rattachements CS', (await req('GET', '/rattachements')).status === 200]);
@@ -50,11 +56,13 @@ async function main() {
   checks.push(['login admin unique', ca.status === 302]);
   checks.push(['admin voit comptes', (await req('GET', '/admin/comptes')).status === 200]);
   checks.push(['panneau admin', (await req('GET', '/admin')).status === 200]);
+  checks.push(['page lots admin', (await req('GET', '/admin/lots')).status === 200]);
   checks.push(['plus de page admin/unites (référentiel en dur)', (await req('GET', '/admin/unites')).status === 404]);
 
   const r = await req('POST', '/connexion', { email: 'resident1@copro.local', motdepasse: 'demo1234' });
   checks.push(['login résident', r.status === 302]);
   const listeDefaut = await (await req('GET', '/tickets')).text();
+  checks.push(['page lots interdite au résident', (await req('GET', '/admin/lots')).status === 403]);
   checks.push(['filtre défaut = ses unités (voit Fuite)', listeDefaut.includes('Fuite')]);
   const t3res = await (await req('GET', '/tickets/3')).text();
   checks.push(['ticket planifié : section Bilans masquée aux non-concernés', !t3res.includes('Bilans de l’intervention')]);

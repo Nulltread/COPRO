@@ -1,0 +1,12 @@
+<%- include('partials/header', { user: user || null, titre: 'Mot de passe' }) %>
+<h1>Choisir un mot de passe</h1>
+<% if (erreur) { %><p class="erreur"><%= erreur %></p><% } %>
+<form method="post" action="/reinitialiser-mot-de-passe" class="formulaire">
+  <input type="hidden" name="token" value="<%= token %>">
+  <label>Nouveau mot de passe (8 caractères minimum)
+    <input type="password" name="motdepasse" required minlength="8" autocomplete="new-password">
+  </label>
+  <button class="bouton" type="submit">Enregistrer</button>
+</form>
+<p><a href="/connexion">Aller à la connexion</a></p>
+<%- include('partials/footer') %>

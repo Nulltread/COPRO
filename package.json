@@ -10,6 +10,7 @@
     "comptes-test": "node src/db/comptes-test.js creer",
     "comptes-test:supprimer": "node src/db/comptes-test.js supprimer",
     "provisionner": "node src/db/provisionner-comptes.js",
+    "peupler": "node src/db/peupler-cle-repartition.js",
     "demo:creer": "node src/db/donnees-demo.js",
     "demo:supprimer": "node src/db/donnees-demo.js --reset",
     "nettoyer-demo": "node src/db/nettoyer-demo.js",

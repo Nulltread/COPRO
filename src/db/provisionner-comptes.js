@@ -47,7 +47,8 @@ function provisionnerDepuisObjet(obj, options = {}) {
     'UPDATE users SET nom = ?, prenom = ?, telephone = ?, conseil_syndical = ?, statut = ? WHERE id = ?'
   );
   const setMdp = db.prepare('UPDATE users SET password_hash = ? WHERE id = ?');
-  const findUser = db.prepare('SELECT * FROM users WHERE email = ?');
+  const findUser = db.prepare("SELECT * FROM users WHERE email = ? AND statut = 'actif'");
+  const findInactif = db.prepare("SELECT id, statut FROM users WHERE email = ? AND statut != 'actif'");
   const upsRat = db.prepare(
     `INSERT INTO rattachements (unit_id, user_id, qualite, statut, valide_par, valide_at)
      VALUES (?, ?, ?, 'accepte', ?, datetime('now'))
@@ -61,8 +62,12 @@ function provisionnerDepuisObjet(obj, options = {}) {
 
   const traiter = (c, role) => {
     const email = normaliserEmail(c.email);
-    if (!email || !c.nom) {
-      rapport.erreurs.push('Entrée invalide (email et nom requis) : ' + JSON.stringify(c).slice(0, 120));
+    if (!email || !c.nom || !c.prenom) {
+      rapport.erreurs.push('Entrée invalide (email, nom et prénom requis) : ' + JSON.stringify(c).slice(0, 120));
+      return null;
+    }
+    if (!findUser.get(email) && findInactif.get(email)) {
+      rapport.erreurs.push(`${email} : un compte inactif (désactivé/supprimé) porte déjà cette adresse ; un compte désactivé est définitif — choisissez une autre adresse.`);
       return null;
     }
     const cs = c.conseil_syndical ? 1 : 0;

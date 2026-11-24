@@ -21,10 +21,17 @@ function estActif(user) {
   return !!user && user.statut === 'actif';
 }
 
-// Unites validees d'un compte (rattachements acceptes).
+// Unites validees d'un compte (rattachements acceptes + unites des lots du
+// compte — les liens lot -> unite acceptes alimentent unit_residents, spec 35).
 function unitsDeUser(userId) {
   const db = getDb();
   return db.prepare('SELECT unit_id FROM unit_residents WHERE user_id = ?').all(userId).map(r => r.unit_id);
+}
+
+// Lots dont le compte est proprietaire (spec 35).
+function lotsDeUser(userId) {
+  const db = getDb();
+  return db.prepare('SELECT * FROM lots WHERE user_id = ? ORDER BY numero').all(userId);
 }
 
 function qualiteDeUnit(userId, unitId) {
@@ -355,7 +362,7 @@ function peutVoirDocument(user, doc) {
 
 module.exports = {
   isCS, isGestionnaire, isAdmin, estActif,
-  unitsDeUser, qualiteDeUnit, estUniteCommune, unitesDuTicket,
+  unitsDeUser, lotsDeUser, qualiteDeUnit, estUniteCommune, unitesDuTicket,
   peutVoirTicket, peutChoisirUnites, estResidentConcerne,
   peutEditerTicket, peutEditerUnites, peutSupprimerTicket,
   personnesConcerneesCR, peutRedigerCR, crVisibles, peutVoirCR, aConnuEtape, sectionsVisibles,

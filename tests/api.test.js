@@ -1048,22 +1048,28 @@ test('spec 29 : fiche ticket réorganisée (sections par état, règle archive),
 
   // --- profil : annulation demande en attente + modales de confirmation (spec 29) ---
   const r2 = await client(); await login(r2, 'r2@test.local', 'motdepasse1');
+  db().prepare('DELETE FROM rattachements WHERE user_id = ? AND unit_id = ?').run(ids.r2, ids.garage1); // nettoyage d'un test anterieur
   await r2.req('POST', '/profil/reclamer', { unite_id: String(ids.garage1), qualite: 'locataire' });
-  const demande = db().prepare('SELECT id FROM rattachements WHERE user_id = ? AND statut = ?').get(ids.r2, 'en_attente');
+  const demande = db().prepare("SELECT id FROM rattachements WHERE user_id = ? AND statut = 'en_attente' AND qualite = 'locataire' ORDER BY id DESC LIMIT 1").get(ids.r2);
   assert.ok(demande);
   let profil = await (await r2.req('GET', '/profil')).text();
   assert.ok(profil.includes(`/profil/rattachements/${demande.id}/annuler`));
   assert.ok(profil.includes('data-confirm="Annuler votre demande de rattachement'));
-  // modale de confirmation aussi sur le retrait d'une unité acceptée
-  assert.ok(profil.includes('data-confirm="Annuler votre rattachement'));
   const resAnnul = await r2.req('POST', `/profil/rattachements/${demande.id}/annuler`);
   assert.strictEqual(resAnnul.status, 302);
   assert.strictEqual(db().prepare('SELECT COUNT(*) AS n FROM rattachements WHERE id = ?').get(demande.id).n, 0);
   // annulation d'une autre demande d'un autre user : refusée (404/redirect sans suppression)
   await r2.req('POST', '/profil/reclamer', { unite_id: String(ids.garage1), qualite: 'locataire' });
-  const demande2 = db().prepare('SELECT id FROM rattachements WHERE user_id = ? AND statut = ?').get(ids.r2, 'en_attente');
+  const demande2 = db().prepare("SELECT id FROM rattachements WHERE user_id = ? AND statut = 'en_attente' AND qualite = 'locataire' ORDER BY id DESC LIMIT 1").get(ids.r2);
   await r1.req('POST', `/profil/rattachements/${demande2.id}/annuler`);
   assert.strictEqual(db().prepare('SELECT COUNT(*) AS n FROM rattachements WHERE id = ?').get(demande2.id).n, 1);
+  // retrait d'unité : modale de confirmation, et UNIQUEMENT pour un rattachement
+  // locataire (spec 35/36 : les unités du propriétaire viennent de son lot)
+  await r1.req('POST', `/rattachements/${demande2.id}/valider`, { action: 'accepter' });
+  profil = await (await r2.req('GET', '/profil')).text();
+  assert.ok(profil.includes('data-confirm="Annuler votre rattachement')); // garage1, en locataire
+  await r2.req('POST', '/profil/retirer-unite', { unit_id: String(ids.villa2) }); // villa2 = propriétaire
+  assert.strictEqual(db().prepare('SELECT COUNT(*) AS n FROM unit_residents WHERE user_id=? AND unit_id=?').get(ids.r2, ids.villa2).n, 1);
 });
 
 test('spec 31 : toggle urgent (Créé seulement, acteurs), libellés description, photos description jusqu\'en consultation, bilan = une seule zone + Accepter/Refuser', async () => {

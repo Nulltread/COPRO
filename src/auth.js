@@ -49,7 +49,8 @@ function requireAuth(req, res, next) {
   if (user.statut !== 'actif') {
     destroySession(req.cookies.sid);
     res.clearCookie('sid');
-    return res.status(403).render('erreur', { user: null, message: 'Ce compte a été supprimé.' });
+    const message = user.statut === 'desactive' ? 'Ce compte a été désactivé.' : 'Ce compte a été supprimé.';
+    return res.status(403).render('erreur', { user: null, message });
   }
   next();
 }

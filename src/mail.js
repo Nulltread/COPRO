@@ -142,4 +142,33 @@ function envoyerMailNotification({ to, prenom, subject, lien }) {
   });
 }
 
-module.exports = { envoyerMail, envoyerMailVerification, envoyerMailNotification, creerJetonVerification, config };
+function creerJetonReset(userId) {
+  const { getDb } = require('./db');
+  const token = crypto.randomBytes(32).toString('hex');
+  const expires = new Date(Date.now() + 24 * 86400000).toISOString();
+  getDb().prepare('INSERT INTO password_resets (user_id, token, expires_at) VALUES (?, ?, ?)').run(userId, token, expires);
+  return token;
+}
+
+function envoyerMailReset(user) {
+  const token = creerJetonReset(user.id);
+  const lien = `${config().baseUrl}/reinitialiser-mot-de-passe?token=${token}`;
+  return envoyerMail({
+    to: user.email,
+    subject: 'Choisissez votre mot de passe — Copro La Pinède de Gardanne',
+    text: `Bonjour ${user.prenom},\n\nUn compte a été créé pour vous sur l'application de la copropriété. Cliquez sur ce lien pour choisir votre mot de passe :\n${lien}\n\nCe lien expire dans 24 heures. Si vous n'êtes pas concerné, ignorez ce message.\n`
+  });
+}
+
+// Envoi avec limite anti-spam (1 mail / minute / compte) ; des qu'un email est
+// renseigne sur un compte, un mail de reinitialisation est envoye automatiquement.
+function envoyerMailResetAvecLimite(user) {
+  if (!user || !user.email) return false;
+  const { getDb } = require('./db');
+  const dernier = getDb().prepare('SELECT created_at FROM password_resets WHERE user_id = ? ORDER BY created_at DESC LIMIT 1').get(user.id);
+  if (dernier && Date.now() - new Date(dernier.created_at.replace(' ', 'T') + 'Z').getTime() < 60000) return false;
+  envoyerMailReset(user);
+  return true;
+}
+
+module.exports = { envoyerMail, envoyerMailVerification, envoyerMailNotification, creerJetonVerification, creerJetonReset, envoyerMailReset, envoyerMailResetAvecLimite, config };

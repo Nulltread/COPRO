@@ -1,0 +1,69 @@
+<%- include('partials/header', { titre: 'Lots' }) %>
+<h1>Lots</h1>
+<% if (message) { %><p class="info"><%= message %></p><% } %>
+<% if (erreur) { %><p class="erreur"><%= erreur %></p><% } %>
+<p class="aide">Lots issus de la clé de répartition (CCG). Le <strong>rachat</strong> d'un lot se gère ici (CS/admin) ; la modification des lots eux-mêmes (tantièmes, désignation, retrait d'unité) est réservée à l'<strong>admin</strong>. Chaque modification est consignée dans le fil de suivi ci-dessous.</p>
+<input type="search" id="recherche-lots" class="recherche" placeholder="Rechercher un lot (n°, désignation, type, propriétaire, unité)…" autocomplete="off">
+<ul class="liste-simple" id="liste-lots">
+  <% for (const l of lots) { %>
+    <% const lus = parLot.get(l.id) || []; %>
+    <% const acceptees = lus.filter(x => x.statut === 'accepte'); %>
+    <% const enAttente = lus.filter(x => x.statut === 'en_attente'); %>
+    <li data-recherche="<%= ('lot ' + l.numero + ' ' + l.designation + ' ' + l.type_lot + ' ' + (l.proprio_prenom || '') + ' ' + (l.proprio_nom || '') + ' ' + acceptees.map(x => x.unite_label).join(' ') + ' ' + enAttente.map(x => x.unite_label).join(' ') + ' tantiemes ' + l.tantiemes).toLowerCase() %>">
+      <strong>Lot <%= l.numero %></strong> — <%= l.designation %> (<%= l.type_lot %>) — <strong>tantièmes : <%= l.tantiemes %></strong><br>
+      Propriétaire : <% if (l.proprio_id) { %><%= l.proprio_prenom %> <%= l.proprio_nom %> (<%= l.proprio_email || 'sans email' %>)<% if (l.proprio_statut !== 'actif') { %> — <span class="auteur">compte <%= l.proprio_statut === 'desactive' ? 'désactivé' : 'supprimé' %></span><% } %><% } else { %><em>aucun compte</em><% } %><br>
+      Unités : <%= acceptees.length ? acceptees.map(x => x.unite_label).join(', ') : 'aucune' %>
+      <% for (const lu of acceptees) { %>
+        <% if (isAdmin) { %>
+          <form method="post" action="/admin/lots/<%= l.id %>/unites/<%= lu.id %>/retirer" class="formulaire-ligne" data-confirm="Retirer « <%= lu.unite_label %> » du lot <%= l.numero %> ?" data-confirm-titre="Retirer l'unité">
+            <button class="bouton-secondaire" type="submit">retirer l'unité</button>
+          </form>
+        <% } %>
+      <% } %>
+      <% for (const lu of enAttente) { %>
+        <div class="formulaire-ligne">
+          ⏳ demande d'ajout de <strong><%= lu.unite_label %></strong> (par <%= lu.demandeur_prenom %> <%= lu.demandeur_nom %>)
+          <form method="post" action="/admin/lots/<%= l.id %>/unites/<%= lu.id %>/valider" class="formulaire-ligne" data-confirm="Accepter l'ajout de « <%= lu.unite_label %> » au lot <%= l.numero %> ?" data-confirm-titre="Accepter l'ajout">
+            <button class="bouton-secondaire" type="submit" name="action" value="accepter">accepter</button>
+          </form>
+          <form method="post" action="/admin/lots/<%= l.id %>/unites/<%= lu.id %>/valider" class="formulaire-ligne" data-confirm="Refuser l'ajout de « <%= lu.unite_label %> » au lot <%= l.numero %> ?" data-confirm-titre="Refuser l'ajout">
+            <button class="bouton-secondaire" type="submit" name="action" value="refuser">refuser</button>
+          </form>
+        </div>
+      <% } %>
+      <% if (isAdmin) { %>
+        <details>
+          <summary>Modifier le lot (admin)</summary>
+          <form method="post" action="/admin/lots/<%= l.id %>/modifier" class="formulaire formulaire-ligne" data-confirm="Enregistrer les modifications du lot <%= l.numero %> ?" data-confirm-titre="Modifier le lot">
+            <label>Désignation <input type="text" name="designation" value="<%= l.designation %>"></label>
+            <label>Type de lot <input type="text" name="type_lot" value="<%= l.type_lot %>"></label>
+            <label>Tantièmes <input type="number" name="tantiemes" min="0" step="1" required value="<%= l.tantiemes %>"></label>
+            <button class="bouton-secondaire" type="submit">Enregistrer</button>
+          </form>
+        </details>
+      <% } %>
+      <details>
+        <summary>Racheter ce lot (CS/admin)</summary>
+        <form method="post" action="/admin/lots/<%= l.id %>/rachat" class="formulaire formulaire-ligne" data-confirm="Confirmer le rachat du lot <%= l.numero %> : créer le compte du nouvel acheteur et céder le lot ? L'ancien propriétaire perd ce lot (et est désactivé s'il n'a plus aucun rattachement)." data-confirm-titre="Rachat du lot">
+          <label>Nom de l'acheteur <input type="text" name="nom" required></label>
+          <label>Prénom de l'acheteur <input type="text" name="prenom" required></label>
+          <label>Téléphone (facultatif) <input type="tel" name="telephone"></label>
+          <label>Email (facultatif — mail de réinitialisation envoyé si renseigné) <input type="email" name="email"></label>
+          <button class="bouton-secondaire" type="submit">Racheter le lot</button>
+        </form>
+      </details>
+    </li>
+  <% } %>
+</ul>
+<p class="aide" id="recherche-aucun-lots" hidden>Aucun lot ne correspond à cette recherche.</p>
+<% if (events.length) { %>
+<section class="bloc">
+  <h2>Fil de suivi</h2>
+  <ul class="liste-simple">
+    <% for (const e of events) { %>
+      <li><small><%= e.created_at %></small> — lot <%= e.lot_numero %> — <%= e.contenu %> <em>(<%= e.auteur_prenom %> <%= e.auteur_nom %>)</em></li>
+    <% } %>
+  </ul>
+</section>
+<% } %>
+<%- include('partials/footer') %>

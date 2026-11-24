@@ -1,6 +1,7 @@
 <%- include('partials/header', { titre: 'Mon profil' }) %>
 <h1>Mon profil</h1>
 <% if (message) { %><p class="info"><%= message %></p><% } %>
+<% if (erreur) { %><p class="erreur"><%= erreur %></p><% } %>
 <p><strong><%= user.prenom %> <%= user.nom %></strong> — <%= user.email %> — <%= user.telephone %>
   <% if (user.conseil_syndical === 1) { %>— <span class="tag-cs">membre du conseil syndical</span><% } %>
   <% if (user.email_verifie === 1) { %> — <span class="tag-cs">email vérifié</span><% } else { %> — <strong>email non vérifié</strong>
@@ -11,7 +12,7 @@
 <% if (mesUnites.length) { %>
 <ul class="liste-simple">
   <% for (const u of mesUnites) { %>
-    <li><%= u.label %> (<%= u.qualite %>)<% if (u.type !== 'communes') { %>
+    <li><%= u.label %> (<%= u.qualite === 'proprietaire' ? 'propriétaire (via mon lot)' : 'locataire' %>)<% if (u.type !== 'communes' && u.qualite === 'locataire') { %>
       <form method="post" action="/profil/retirer-unite" class="formulaire-ligne" data-confirm="Annuler votre rattachement à « <%= u.label %> » ? Vous ne serez plus rattaché à cette unité (sans impact sur les tickets)." data-confirm-titre="Annuler le rattachement">
         <input type="hidden" name="unit_id" value="<%= u.id %>">
         <button class="bouton-secondaire" type="submit" title="Se retirer de cette unité (sans impact sur les tickets)">se retirer</button>
@@ -78,14 +79,53 @@
         <option value="<%= u.id %>"><%= u.label %></option>
       <% } %>
     </select>
-    <select name="qualite">
-      <option value="proprietaire">Propriétaire</option>
-      <option value="locataire">Locataire</option>
-    </select>
-    <button class="bouton-secondaire" type="submit">Réclamer le rattachement</button>
+    <button class="bouton-secondaire" type="submit">Réclamer le rattachement (locataire)</button>
   </form>
-  <p class="aide">La demande sera acceptée par un résident de l'unité ou par le conseil syndical.</p>
+  <p class="aide">La demande (toujours en tant que locataire) sera acceptée par un résident de l'unité ou par le conseil syndical.</p>
 </section>
+<% if (mesLots.length) { %>
+<section class="bloc">
+  <h2>Mes lots</h2>
+  <ul class="liste-simple">
+    <% for (const l of mesLots) { %>
+      <li>
+        <strong>Lot <%= l.numero %></strong> — <%= l.designation %> (<%= l.type_lot %>) — tantièmes : <%= l.tantiemes %> — unités : <%= l.unites || 'aucune' %>
+        <% if (unitesLibres.length) { %>
+          <form method="post" action="/profil/lots/<%= l.id %>/demander-unite" class="formulaire-ligne" data-confirm="Demander l'ajout d'une unité à mon lot <%= l.numero %> ?" data-confirm-titre="Ajouter une unité au lot">
+            <select name="unite_id" required aria-label="Unité à ajouter au lot">
+              <option value="">— Choisir une unité libre —</option>
+              <% for (const u of unitesLibres) { %>
+                <option value="<%= u.id %>"><%= u.label %></option>
+              <% } %>
+            </select>
+            <button class="bouton-secondaire" type="submit">demander l'ajout</button>
+          </form>
+        <% } %>
+      </li>
+    <% } %>
+  </ul>
+  <% if (mesDemandesLot.length) { %>
+    <ul class="liste-rattachements">
+      <% for (const d of mesDemandesLot) { %>
+        <li class="rattachement-pill statut-<%= d.statut %>">
+          Lot <%= d.lot_numero %> — <%= d.unite_label %>
+          <% if (d.statut === 'en_attente') { %>
+            <span class="unite-statut en-attente">⏳ en attente</span>
+            <form method="post" action="/profil/lots-demandes/<%= d.id %>/annuler" class="formulaire-ligne" data-confirm="Annuler cette demande ?" data-confirm-titre="Annuler la demande">
+              <button class="bouton-secondaire" type="submit">annuler la demande</button>
+            </form>
+          <% } else if (d.statut === 'accepte') { %>
+            <span class="unite-statut valide">✅ validé</span>
+          <% } else { %>
+            <span class="unite-statut refuse">❌ refusé</span>
+          <% } %>
+        </li>
+      <% } %>
+    </ul>
+  <% } %>
+  <p class="aide">L'ajout d'une unité à un lot est examiné par le conseil syndical. Le retrait d'une unité d'un lot se fait depuis l'onglet Lots (CS/admin).</p>
+</section>
+<% } %>
 <%# Section raccourci écran d'accueil (spec 15) : sans titre (spec 29) %>
 <section class="bloc" id="install">
   <div id="install-etat"></div>

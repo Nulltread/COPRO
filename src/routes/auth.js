@@ -15,7 +15,7 @@ router.get('/inscription', (req, res) => {
 
 router.post('/inscription', (req, res) => {
   const db = getDb();
-  const { nom, prenom, telephone, email, motdepasse, unite_id, qualite } = req.body;
+  const { nom, prenom, telephone, email, motdepasse, unite_id } = req.body;
   const erreur = !nom || !prenom || !telephone || !email || !motdepasse || motdepasse.length < 8
     ? 'Merci de remplir tous les champs (nom, prénom, téléphone, email ; mot de passe : 8 caractères minimum).'
     : (!unite_id ? 'Merci de choisir la villa ou le garage à laquelle vous souhaitez être rattaché.' : null);
@@ -23,20 +23,24 @@ router.post('/inscription', (req, res) => {
     const units = db.prepare("SELECT * FROM units WHERE type != 'communes' ORDER BY type DESC, numero").all();
     return res.status(400).render('inscription', { user: null, units, erreur });
   }
-  const existe = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+  // Unicite de l'email UNIQUEMENT parmi les comptes actifs (spec 36) : un compte
+  // desactive ou supprime ne bloque pas la reutilisation de son adresse.
+  const mail = email.toLowerCase().trim();
+  const existe = db.prepare("SELECT id FROM users WHERE email = ? AND statut = 'actif'").get(mail);
   if (existe) {
     const units = db.prepare("SELECT * FROM units WHERE type != 'communes' ORDER BY type DESC, numero").all();
-    return res.status(400).render('inscription', { user: null, units, erreur: 'Un compte existe déjà avec cet email.' });
+    return res.status(400).render('inscription', { user: null, units, erreur: 'Un compte actif existe déjà avec cet email.' });
   }
-  // Auto-inscription : le compte est actif tout de suite, mais l'email doit être
-  // validé via le lien envoyé par mail (le rattachement doit aussi être accepté
-  // avant de pouvoir déclarer un ticket).
+  // Auto-inscription : locataires uniquement (spec 36) — les comptes de
+  // proprietaires ne sont crees que par le CS/admin. Le compte est actif tout
+  // de suite, mais l'email doit être validé via le lien envoyé par mail (le
+  // rattachement doit aussi être accepté avant de pouvoir déclarer un ticket).
   const info = db.prepare(
     'INSERT INTO users (email, password_hash, nom, prenom, telephone, role, statut) VALUES (?, ?, ?, ?, ?, ?, ?)'
-  ).run(email.toLowerCase().trim(), hashPassword(motdepasse), nom.trim(), prenom.trim(), telephone.trim(), 'resident', 'actif');
+  ).run(mail, hashPassword(motdepasse), nom.trim(), prenom.trim(), telephone.trim(), 'resident', 'actif');
   const userId = info.lastInsertRowid;
   db.prepare('INSERT INTO rattachements (unit_id, user_id, qualite, statut) VALUES (?, ?, ?, ?)')
-    .run(Number(unite_id), userId, qualite === 'locataire' ? 'locataire' : 'proprietaire', 'en_attente');
+    .run(Number(unite_id), userId, 'locataire', 'en_attente');
   notifierCS('rattachement', `${prenom.trim()} ${nom.trim()} réclame un rattachement à cette unité.`, null, null);
   const nouveau = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
   envoyerMailVerification(nouveau);
@@ -72,7 +76,8 @@ router.post('/connexion', (req, res) => {
     return res.status(401).render('connexion', { user: null, erreur: 'Email ou mot de passe incorrect.', suite: req.body.suite || '/', message: null, pasVerifie: false, email: '' });
   }
   if (user.statut !== 'actif') {
-    return res.status(403).render('connexion', { user: null, erreur: 'Ce compte a été supprimé.', suite: req.body.suite || '/', message: null, pasVerifie: false, email: '' });
+    const msg = user.statut === 'desactive' ? 'Ce compte a été désactivé.' : 'Ce compte a été supprimé.';
+    return res.status(403).render('connexion', { user: null, erreur: msg, suite: req.body.suite || '/', message: null, pasVerifie: false, email: '' });
   }
   // Connexion bloquée tant que l'email n'est pas validé (lien envoyé par mail).
   if (!user.email_verifie) {
@@ -86,6 +91,38 @@ router.post('/connexion', (req, res) => {
   res.cookie('sid', sid, { httpOnly: true, sameSite: 'lax', maxAge: 30 * 86400000 });
   const suite = req.body.suite || '';
   res.redirect(suite.startsWith('/') && suite !== '/' ? suite : '/tickets');
+});
+
+// Réinitialisation du mot de passe : lien unique et expirable envoyé par mail
+// dès qu'un email est renseigné sur un compte (spec 36). L'utilisation du lien
+// vaut aussi vérification de l'adresse email.
+router.get('/reinitialiser-mot-de-passe', (req, res) => {
+  res.render('reinitialiser-mdp', { user: req.user || null, token: req.query.token || '', erreur: null });
+});
+
+router.post('/reinitialiser-mot-de-passe', (req, res) => {
+  const db = getDb();
+  const { token, motdepasse } = req.body;
+  const enregistrement = token
+    ? db.prepare('SELECT * FROM password_resets WHERE token = ? AND used_at IS NULL').get(token)
+    : null;
+  if (!enregistrement || new Date(enregistrement.expires_at) < new Date()) {
+    return res.status(400).render('reinitialiser-mdp', {
+      user: req.user || null, token: '',
+      erreur: 'Ce lien est invalide ou a expiré. Demandez un nouveau mail depuis la page Comptes (réservée au conseil syndical).'
+    });
+  }
+  if (!motdepasse || motdepasse.length < 8) {
+    return res.status(400).render('reinitialiser-mdp', { user: req.user || null, token, erreur: 'Mot de passe : 8 caractères minimum.' });
+  }
+  const u = db.prepare('SELECT * FROM users WHERE id = ?').get(enregistrement.user_id);
+  if (!u || u.statut !== 'actif') {
+    return res.status(403).render('erreur', { user: req.user || null, message: 'Ce compte n\'est plus actif.' });
+  }
+  db.prepare('UPDATE users SET password_hash = ?, email_verifie = 1 WHERE id = ?').run(hashPassword(motdepasse), u.id);
+  db.prepare('UPDATE password_resets SET used_at = ? WHERE id = ?').run(new Date().toISOString(), enregistrement.id);
+  synchroniserAliasCS();
+  res.redirect('/connexion?message=' + encodeURIComponent('Votre mot de passe a été défini. Vous pouvez vous connecter.'));
 });
 
 // Renvoi public du lien de validation (depuis la page de connexion si bloqué).

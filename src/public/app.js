@@ -272,6 +272,23 @@
     });
   }
 
+  // --- Recherche à la volée sur la liste des lots (spec 35) ---
+  var rechercheLots = document.getElementById('recherche-lots');
+  if (rechercheLots) {
+    var lignesLots = Array.prototype.slice.call(document.querySelectorAll('#liste-lots li'));
+    var aucunLots = document.getElementById('recherche-aucun-lots');
+    rechercheLots.addEventListener('input', function () {
+      var q = rechercheLots.value.trim().toLowerCase();
+      var visibles = 0;
+      lignesLots.forEach(function (li) {
+        var ok = !q || (li.dataset.recherche || li.textContent.toLowerCase()).indexOf(q) !== -1;
+        li.style.display = ok ? '' : 'none';
+        if (ok) visibles++;
+      });
+      if (aucunLots) aucunLots.hidden = visibles > 0;
+    });
+  }
+
   // --- Filtres (tickets et documents) : dropdowns custom (ouverture instantanée,
   //     0 latence). Au choix d'une option : submit du formulaire concerné. ---
   function fermerDropdowns() {
