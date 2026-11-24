@@ -2,7 +2,7 @@
 
 ## Principe général : lecture ouverte
 
-- Tout utilisateur connecté ayant **au moins une unité validée** voit **tous les tickets**, même ceux des unités dont il n'est pas résident. Les filtres d'affichage sont par défaut positionnés sur les unités du résident, mais **sans aucune restriction**.
+- Tout utilisateur connecté ayant **au moins une unité validée** voit **tous les tickets**, même ceux des unités dont il n'est pas résident. Les filtres d'affichage sont par défaut positionnés sur les unités du résident, mais **sans aucune restriction**. Pour un **propriétaire**, les unités « siennes » sont les unités de ses lots (liens lot → unité acceptés) — voir `35-lots.md`.
 - Cas particulier du compte **sans aucune unité validée** : il ne voit aucun ticket (voir `rattachements.md`). Le compte **admin** voit tous les tickets sans condition d'unité.
 
 ## Par type de contenu

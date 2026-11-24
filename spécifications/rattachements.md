@@ -2,7 +2,9 @@
 
 ## Réclamation et validation
 
-- À la création du compte (et depuis son profil), le résident **réclame** son rattachement à une villa ou un garage, en précisant sa qualité : **propriétaire** ou **locataire** (seules qualités possibles).
+- **Locataire** : à la création du compte (auto-inscription = locataires uniquement, voir `36-comptes-sans-email.md`) et depuis son profil, le résident **réclame** son rattachement à une villa ou un garage, **toujours en qualité locataire**.
+- **Propriétaire** : le rattachement aux unités se fait **exclusivement via son lot** (voir `35-lots.md`) ; il n'existe pas de rattachement direct unité → propriétaire.
+- **Un compte ne peut être rattaché qu'une seule fois à une unité** : propriétaire (via un lot contenant l'unité) **ou** locataire (via une demande acceptée) — jamais les deux sur la même unité. Un propriétaire peut en revanche être locataire d'une **autre** unité.
 - **Une seule demande par couple (unité, compte)** tant que la demande existe ; une nouvelle réclamation sur une unité déjà demandée est ignorée, même si la précédente a été refusée. Après péremption (ci-dessous), le résident peut à nouveau réclamer la même unité.
 - L'attribution est **acceptée (ou refusée) uniquement par un autre résident de cette même unité ou par un membre du conseil syndical** ; l'acceptation comme le refus notifient **le demandeur et le conseil syndical** (voir `notifications.md`).
 
@@ -23,6 +25,7 @@
 
 ## Cas du compte sans unité validée
 
+- Pour un **propriétaire**, ses unités validées sont les unités de ses lots dont le lien lot → unité est accepté (voir `35-lots.md`).
 - Tant qu'un résident n'est rattaché à **aucune unité validée**, il **ne voit aucun ticket** : ni dans la liste (même avec le filtre « toutes les unités »), ni en détail, ni dans les fichiers joints. Il ne peut pas non plus en créer. Le message affiché sur la liste des tickets invite à suivre l'état de ses rattachements depuis l'écran de compte.
 - Dès qu'un rattachement est accepté, la **lecture ouverte** s'applique (voir `visibilite.md`).
 - **Exception** : le compte **admin** (compte à part, non résident) voit tous les tickets sans condition d'unité.

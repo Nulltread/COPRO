@@ -20,7 +20,7 @@
 
 - Mots de passe **hachés** (scrypt + sel aléatoire 64 octets), comparaison en temps constant. **8 caractères minimum** (voir `comptes-et-roles.md`).
 - **Sessions** en base, identifiant aléatoire de 32 octets, cookie `sid` **HttpOnly, SameSite=Lax**, validité **30 jours**.
-- Un compte supprimé ne peut plus se connecter (403). Les requêtes non authentifiées en GET HTML sont redirigées vers la page de connexion (avec retour après connexion, paramètre `suite`) ; les autres reçoivent un 401 JSON. Page 404 dédiée (« Page introuvable »).
+- Un compte supprimé ou **désactivé** ne peut plus se connecter (403). Les requêtes non authentifiées en GET HTML sont redirigées vers la page de connexion (avec retour après connexion, paramètre `suite`) ; les autres reçoivent un 401 JSON. Page 404 dédiée (« Page introuvable »).
 - **Contrôle d'accès sur chaque route** selon les règles de droits de ce dossier (rôles/statuts).
 
 ## RGPD (simple)

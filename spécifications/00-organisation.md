@@ -39,3 +39,5 @@ Ce dossier est l'emplacement canonique des spécifications du projet. À chaque 
 | `mise-en-production.md` | Première mise en prod : comptes CS pré-créés, données de test, mail d'annonce, checklist |
 | `33-unites-modifiables-jusqua-travaux-planifies.md` | Unités d'un ticket modifiables jusqu'au passage en « Travaux planifiés » |
 | `34-documents-copropriete.md` | Page « Documents » : dépôt CS/admin, 4 catégories thématiques et 3 niveaux d'accès obligatoires, limite 2 Mo (images compressées), tags custom, recherche/filtres, devis et factures des tickets listés |
+| `35-lots.md` | Lots (clé de répartition CCG, seule source), lien lot ↔ unités, onglet « Lots », rachat d'un lot, tantièmes au niveau du lot, peuplement depuis la CCG |
+| `36-comptes-sans-email.md` | Comptes sans email, réinitialisation du mot de passe par mail, statut « désactivé », création des comptes par CS/admin, auto-inscription locataires uniquement, nom/prénom obligatoires |

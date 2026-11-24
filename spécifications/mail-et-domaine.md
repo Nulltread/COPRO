@@ -44,6 +44,12 @@
 
 - À l'inscription, envoi d'un **email contenant un lien de validation unique et expirable** (`/verifier-email?token=...`). Le clic sur le lien marque l'email comme vérifié. Le compte **reste utilisable** tant que l'email n'est pas vérifié, mais il ne reçoit pas les notifications par email et ne figure pas dans la liste de diffusion du CS ; relance possible depuis l'espace compte (« renvoyer l'email de confirmation »).
 
+### Réinitialisation du mot de passe
+
+- **Dès qu'un email est renseigné sur un compte** (création par le gestionnaire ou modification), un **mail de réinitialisation du mot de passe** est envoyé à cette adresse : lien **unique et expirable** (`/reinitialiser-mot-de-passe?token=...`) menant à un formulaire de nouveau mot de passe (**8 caractères minimum**, haché comme à l'inscription). Renvoi manuel possible depuis la page Comptes (voir `comptes-et-roles.md`, `36-comptes-sans-email.md`).
+- Un compte **sans email** reste inaccessible : la connexion se fait uniquement par email.
+- La liste de diffusion du CS ne comporte que les comptes **actifs** à email vérifié (un compte désactivé en est exclu).
+
 ### Liste de diffusion du conseil syndical
 
 - Alias **`conseil-syndical@copro-pinede-gardanne.fr`** géré **côté serveur mail** (alias virtuel à plusieurs destinataires), redirigeant vers les adresses email personnelles **vérifiées** des comptes actifs ayant le statut conseil syndical.

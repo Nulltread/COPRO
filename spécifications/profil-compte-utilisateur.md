@@ -2,7 +2,7 @@
 
 ## Informations du compte
 
-- **Profil modifiable** : nom, prénom, téléphone, mot de passe (laisser le champ vide = inchangé).
+- **Profil modifiable** : nom, prénom (**obligatoires pour tous les comptes**), téléphone, mot de passe (laisser le champ vide = inchangé).
 - Option **« recevoir aussi les notifications par email »** (désactivée par défaut ; réservée aux emails vérifiés — voir `notifications.md`).
 - **« Renvoyer l'email de confirmation »** (vérification de l'adresse email) disponible depuis l'espace compte (voir `comptes-et-roles.md`).
 - **Export RGPD** : téléchargement d'un fichier JSON (`mes-donnees-copro.json`) contenant le compte, les unités, les tickets créés et les notifications.
@@ -10,9 +10,16 @@
 
 ## Section « Mes rattachements »
 
+- La réclamation de rattachement se fait **toujours en qualité locataire** (voir `rattachements.md`, `36-comptes-sans-email.md`).
 - Contrôle custom listant chaque unité demandée ou validée (type, numéro, statut : sablier / check verte / refusé).
 - **Annuler une demande en attente** et **annuler un rattachement accepté** (auto-retrait d'une unité), chacun avec une **modale de confirmation**.
 - La page de gestion des rattachements n'a plus de bouton ici ni dans la barre de navigation : elle reste accessible via les liens des notifications et par son URL directe (voir `rattachements.md`).
+
+## Section « Mes lots » (compte propriétaire)
+
+- Liste des **lots** du compte (n°, désignation, tantièmes en lecture seule, unités liées avec leur statut) — voir `35-lots.md`.
+- **Demander l'ajout d'une unité à un lot** : choix d'une unité **libre** (n'appartenant à aucun lot), avec **modale de confirmation** ; la demande est ensuite **acceptée ou refusée par un membre du CS ou l'admin** (notifications selon `notifications.md`).
+- Le **retrait d'une unité d'un lot** n'est pas possible depuis le profil : réservé au CS/admin.
 
 ## Raccourci sur l'écran d'accueil (PWA minimale)
 
