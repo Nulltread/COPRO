@@ -49,6 +49,15 @@ function provisionnerDepuisObjet(obj, options = {}) {
   const setMdp = db.prepare('UPDATE users SET password_hash = ? WHERE id = ?');
   const findUser = db.prepare("SELECT * FROM users WHERE email = ? AND statut = 'actif'");
   const findInactif = db.prepare("SELECT id, statut FROM users WHERE email = ? AND statut != 'actif'");
+  const normaliserNom = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim().toUpperCase();
+  const parNom = new Map();
+  for (const u of db.prepare("SELECT id, nom, prenom FROM users WHERE statut = 'actif' AND role != 'admin'").all()) {
+    parNom.set(normaliserNom(`${u.nom} ${u.prenom}`), u.id);
+  }
+  const findSansEmail = (c) => {
+    const id = parNom.get(normaliserNom(`${c.nom} ${c.prenom}`));
+    return id ? db.prepare('SELECT * FROM users WHERE id = ?').get(id) : null;
+  };
   const upsRat = db.prepare(
     `INSERT INTO rattachements (unit_id, user_id, qualite, statut, valide_par, valide_at)
      VALUES (?, ?, ?, 'accepte', ?, datetime('now'))
@@ -62,16 +71,16 @@ function provisionnerDepuisObjet(obj, options = {}) {
 
   const traiter = (c, role) => {
     const email = normaliserEmail(c.email);
-    if (!email || !c.nom || !c.prenom) {
-      rapport.erreurs.push('Entrée invalide (email, nom et prénom requis) : ' + JSON.stringify(c).slice(0, 120));
+    if (!c.nom || !c.prenom || (!email && !c.sans_email)) {
+      rapport.erreurs.push('Entrée invalide (email facultatif si "sans_email": true, nom et prénom requis) : ' + JSON.stringify(c).slice(0, 120));
       return null;
     }
-    if (!findUser.get(email) && findInactif.get(email)) {
+    if (email && !findUser.get(email) && findInactif.get(email)) {
       rapport.erreurs.push(`${email} : un compte inactif (désactivé/supprimé) porte déjà cette adresse ; un compte désactivé est définitif — choisissez une autre adresse.`);
       return null;
     }
     const cs = c.conseil_syndical ? 1 : 0;
-    let user = findUser.get(email);
+    let user = email ? findUser.get(email) : findSansEmail(c);
     if (user && user.role === 'admin' && role !== 'admin') {
       rapport.erreurs.push(`${email} : c'est le compte admin — ne le listez pas dans "comptes" (le statut CS ne s'applique qu'aux comptes non-admin, et l'admin n'est jamais rattaché à une unité).`);
       return null;
@@ -83,17 +92,18 @@ function provisionnerDepuisObjet(obj, options = {}) {
         genere = mdpAleatoire();
         mdp = genere;
       }
-      const id = insUser.run(email, hashPassword(mdp), String(c.nom).trim(), String(c.prenom || '').trim(),
+      const id = insUser.run(email || null, hashPassword(mdp), String(c.nom).trim(), String(c.prenom || '').trim(),
         String(c.telephone || '').trim(), role, role === 'admin' ? 0 : cs).lastInsertRowid;
-      user = findUser.get(email);
-      rapport.crees.push(email);
-      if (genere) rapport.mdpGeneres.push({ email, mot_de_passe: genere });
+      user = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+      parNom.set(normaliserNom(`${user.nom} ${user.prenom}`), id);
+      rapport.crees.push(email || `(sans email) ${user.prenom} ${user.nom}`);
+      if (genere) rapport.mdpGeneres.push({ email: email || `(sans email) ${user.prenom} ${user.nom}`, mot_de_passe: genere });
     } else {
       updUser.run(String(c.nom).trim(), String(c.prenom || '').trim(), String(c.telephone || '').trim(), role === 'admin' ? 0 : cs, 'actif', user.id);
       if (user.role !== role && role === 'admin') setMdp.run(user.password_hash, user.id);
-      rapport.misAJour.push(email);
+      rapport.misAJour.push(email || `(sans email) ${user.prenom} ${user.nom}`);
       if (c.mot_de_passe && String(c.mot_de_passe).length >= 8) setMdp.run(hashPassword(String(c.mot_de_passe)), user.id);
-      user = findUser.get(email);
+      user = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
     }
     if (role === 'admin' && cs) {
       rapport.erreurs.push(email + ' : un compte admin ne peut pas être membre du conseil syndical (statut ignoré).');

@@ -125,3 +125,17 @@ test('admin : jamais rattaché à une unité, jamais statut CS, protégé contre
   assert.ok(r.erreurs.some(e => e.includes('compte admin')));
   assert.ok(r.erreurs.some(e => e.includes('statut ignoré')));
 });
+
+test('provisionnement : compte sans email (email facultatif, spec 36) — créé avec email NULL, idempotent par nom', () => {
+  const obj = { comptes: [{ nom: 'MGOMRI', prenom: 'ABOUBAKAR', conseil_syndical: true, sans_email: true }] };
+  const r = provisionnerDepuisObjet(obj);
+  assert.strictEqual(r.erreurs.length, 0, r.erreurs.join('; '));
+  const u = db.prepare("SELECT * FROM users WHERE nom = 'MGOMRI'").get();
+  assert.ok(u);
+  assert.strictEqual(u.email, null);
+  assert.strictEqual(u.conseil_syndical, 1);
+  assert.strictEqual(u.statut, 'actif');
+  const r2 = provisionnerDepuisObjet(obj);
+  assert.strictEqual(db.prepare("SELECT COUNT(*) AS n FROM users WHERE nom = 'MGOMRI'").get().n, 1);
+  assert.strictEqual(r2.crees.length, 0);
+});
