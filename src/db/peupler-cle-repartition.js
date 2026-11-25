@@ -69,7 +69,7 @@ function peuplerDepuisCCG(options = {}) {
   const dataPath = options.fichier || path.join(__dirname, 'cle-repartition-ccg.json');
   const data = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
   const lots = Array.isArray(data) ? data : (data.lots || []);
-  const rapport = { lotsCrees: 0, lotsExistants: 0, lotsMisAJour: 0, comptesCrees: [], comptesReutilises: [], nettoyage: null, erreurs: [] };
+  const rapport = { lotsCrees: 0, lotsExistants: 0, lotsMisAJour: 0, lotsReassignes: 0, placeholdersSupprimes: 0, comptesCrees: [], comptesReutilises: [], nettoyage: null, erreurs: [] };
   if (options.nettoyage !== false) nettoyerComptesTest(db, rapport);
   db.transaction(() => {
     // Comptes déjà liés à des lots (référentiel déjà peuplé) : dédup par propriétaire brut.
@@ -83,6 +83,17 @@ function peuplerDepuisCCG(options = {}) {
     for (const u of db.prepare("SELECT id, nom, prenom FROM users WHERE statut = 'actif' AND role != 'admin'").all()) {
       comptesExistants.set(normaliserCle(`${u.nom} ${u.prenom}`), u.id);
     }
+    // Comptes indexés par email (pour les correspondances propriétaire -> email).
+    const parEmail = new Map();
+    for (const u of db.prepare("SELECT id, email FROM users WHERE statut = 'actif' AND email IS NOT NULL").all()) {
+      parEmail.set(normaliserCle(u.email), u.id);
+    }
+    // Correspondances explicites (ex. représentant ERILIA) : le lot est rattaché
+    // au compte portant cet email, même si le nom ne correspond pas.
+    const correspondances = new Map();
+    for (const c of (data.correspondances || [])) {
+      if (c.proprietaire && c.email) correspondances.set(normaliserCle(c.proprietaire), normaliserCle(c.email));
+    }
     for (const l of lots) {
       if (!l.numero || !l.proprietaire) {
         rapport.erreurs.push(`Entrée invalide (numero/proprietaire manquant) : ${JSON.stringify(l)}`);
@@ -92,8 +103,11 @@ function peuplerDepuisCCG(options = {}) {
       const cle = normaliserCle(brut);
       const { nom, prenom } = decouperNomPrenom(brut);
       const cleNom = normaliserCle(`${nom} ${prenom}`);
-      let userId = mapCle.get(cle) || comptesExistants.get(cleNom) || null;
-      if (userId && !mapCle.has(cle)) rapport.comptesReutilises.push({ nom, prenom, proprietaire: brut, userId });
+      const existant = db.prepare('SELECT * FROM lots WHERE numero = ?').get(l.numero);
+      const emailCorr = correspondances.get(cle);
+      const corrUserId = emailCorr ? (parEmail.get(emailCorr) || null) : null;
+      let userId = corrUserId || (existant && existant.user_id) || mapCle.get(cle) || comptesExistants.get(cleNom) || null;
+      if (userId && !mapCle.has(cle) && !(existant && existant.user_id === userId)) rapport.comptesReutilises.push({ nom, prenom, proprietaire: brut, userId });
       if (!userId) {
         const info = db.prepare(
           "INSERT INTO users (email, password_hash, nom, prenom, telephone, role, statut) VALUES (NULL, ?, ?, ?, '', 'resident', 'actif')"
@@ -103,11 +117,16 @@ function peuplerDepuisCCG(options = {}) {
       }
       mapCle.set(cle, userId);
       comptesExistants.set(cleNom, userId);
-      const existant = db.prepare('SELECT * FROM lots WHERE numero = ?').get(l.numero);
       if (existant) {
         rapport.lotsExistants++;
-        // Lot déjà présent mais sans propriétaire : on rattache le compte trouvé/créé.
-        if (!existant.user_id && userId) {
+        if (userId && existant.user_id !== userId) {
+          // Réassignation (ex. correspondance explicite ERILIA) : le lot passe au compte trouvé.
+          const ancien = db.prepare('SELECT * FROM users WHERE id = ?').get(existant.user_id);
+          db.prepare('UPDATE lots SET user_id = ?, proprietaire_brut = ? WHERE id = ?').run(userId, brut, existant.id);
+          rapport.lotsReassignes++;
+          if (ancien && ancien.email === null) supprimerPlaceholderSiOrphelin(db, ancien.id, rapport);
+        } else if (!existant.user_id && userId) {
+          // Lot déjà présent mais sans propriétaire : on rattache le compte trouvé/créé.
           db.prepare('UPDATE lots SET user_id = ?, proprietaire_brut = ? WHERE id = ?').run(userId, brut, existant.id);
           rapport.lotsMisAJour++;
         }
@@ -124,6 +143,25 @@ function peuplerDepuisCCG(options = {}) {
   return rapport;
 }
 
+// Supprime un compte placeholder auto-créé (email NULL) s'il n'est plus relié à
+// rien (plus de lot, d'unité, de rattachement, de ticket, de document).
+function supprimerPlaceholderSiOrphelin(db, userId, rapport) {
+  const refs = db.prepare(
+    `SELECT (SELECT COUNT(*) FROM lots WHERE user_id = ?)
+          + (SELECT COUNT(*) FROM unit_residents WHERE user_id = ?)
+          + (SELECT COUNT(*) FROM rattachements WHERE user_id = ?)
+          + (SELECT COUNT(*) FROM tickets WHERE auteur_id = ?)
+          + (SELECT COUNT(*) FROM documents WHERE auteur_id = ?)
+          + (SELECT COUNT(*) FROM lot_units WHERE demande_par = ? OR valide_par = ?) AS n`
+  ).get(userId, userId, userId, userId, userId, userId, userId).n;
+  if (refs > 0) return false;
+  db.prepare('UPDATE lot_events SET auteur_id = NULL WHERE auteur_id = ?').run(userId);
+  db.prepare('UPDATE rattachements SET valide_par = NULL WHERE valide_par = ?').run(userId);
+  db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+  rapport.placeholdersSupprimes++;
+  return true;
+}
+
 if (require.main === module) {
   const options = { nettoyage: !process.argv.includes('--sans-nettoyage') };
   const rapport = peuplerDepuisCCG(options);
@@ -131,7 +169,7 @@ if (require.main === module) {
     console.log(`Nettoyage pre-prod : ${rapport.nettoyage.comptesTestSupprimes.length} compte(s) de test supprimé(s) (${rapport.nettoyage.comptesTestSupprimes.join(', ') || 'aucun email'}), ${rapport.nettoyage.ticketsSupprimes} ticket(s) et ${rapport.nettoyage.fichiersSupprimes} fichier(s) supprimés (disque inclus).`);
     console.log('Unités, compte admin et comptes réels (CS) inchangés.');
   }
-  console.log(`Peuplement depuis la clé CCG : ${rapport.lotsCrees} lots créés, ${rapport.lotsExistants} déjà existants${rapport.lotsMisAJour ? `, ${rapport.lotsMisAJour} sans propriétaire rattaché(s)` : ''} (total ${rapport.nbLots}).`);
+  console.log(`Peuplement depuis la clé CCG : ${rapport.lotsCrees} lots créés, ${rapport.lotsExistants} déjà existants${rapport.lotsMisAJour ? `, ${rapport.lotsMisAJour} sans propriétaire rattaché(s)` : ''}${rapport.lotsReassignes ? `, ${rapport.lotsReassignes} réassigné(s) (correspondance)` : ''}${rapport.placeholdersSupprimes ? `, ${rapport.placeholdersSupprimes} compte(s) placeholder supprimé(s)` : ''} (total ${rapport.nbLots}).`);
   console.log(`${rapport.comptesCrees.length} comptes propriétaires créés (${rapport.nbComptesProprietaires} distincts au total, dont ${rapport.comptesReutilises.length} compte(s) existant(s) réutilisé(s) par nom), les nouveaux sans email.`);
   for (const c of rapport.comptesReutilises) console.log(`  ↳ lot de « ${c.proprietaire} » rattaché au compte existant #${c.userId} (${c.prenom} ${c.nom})`);
   if (rapport.comptesCrees.length) {

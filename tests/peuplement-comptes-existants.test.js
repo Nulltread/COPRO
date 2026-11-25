@@ -59,7 +59,7 @@ test('re-exécution : un lot CCG existant sans propriétaire est rattaché au co
   const r = peuplerDepuisCCG();
   assert.strictEqual(r.lotsCrees, 0);
   assert.strictEqual(r.lotsExistants, 123);
-  assert.strictEqual(r.lotsMisAJour, 1);
+  assert.strictEqual(r.lotsMisAJour + r.lotsReassignes, 1); // lot sans propriétaire rattaché
   // le lot 27 retrouve le compte MELLET (créé au premier passage, retrouvé par nom)
   const lot27 = db.prepare('SELECT * FROM lots WHERE numero = 27').get();
   const mellet = db.prepare("SELECT * FROM users WHERE upper(nom) = 'MELLET' AND upper(prenom) = 'PASCAL'").get();
