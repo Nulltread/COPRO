@@ -18,6 +18,8 @@ before(() => {
   ins.run('admin@copro.local', hashPassword('x'), 'Admin', 'Admin', '0', 'admin', 0, 'actif');
   // représentant ERILIA, compte réel pré-créé (provisionner)
   ins.run('julien.debastiani@erilia.fr', hashPassword('x'), 'DE BASTIANI', 'Julien', '0', 'resident', 1, 'actif');
+  // nom entièrement en majuscules dans la CCG ("COLLAS PRELE") : match par nom brut
+  ins.run('prele.collas@exemple.fr', hashPassword('x'), 'COLLAS', 'PRELE', '0', 'resident', 1, 'actif');
 });
 
 after(() => { fs.rmSync(dbDir, { recursive: true, force: true }); });
@@ -32,9 +34,13 @@ test('correspondance ERILIA : tous les lots ERILIA rattachés au compte julien.d
   assert.strictEqual(possedesParJulien, nbErilia);
   // aucun compte "ERILIA-LOGIREM" placeholder créé
   assert.strictEqual(db.prepare("SELECT COUNT(*) AS n FROM users WHERE nom = 'ERILIA-LOGIREM'").get().n, 0);
-  // 38 propriétaires CCG - 1 (ERILIA) = 37 comptes créés
-  assert.strictEqual(r.comptesCrees.length, 37);
-  assert.strictEqual(r.nbComptesProprietaires, 38); // 37 créés + julien
+  // lots 13 et 42 (COLLAS PRELE, nom tout en majuscules) -> compte prele.collas par nom brut
+  const collas = db.prepare("SELECT id FROM users WHERE email = 'prele.collas@exemple.fr'").get();
+  assert.strictEqual(db.prepare('SELECT COUNT(*) AS n FROM lots WHERE numero IN (13,42) AND user_id = ?').get(collas.id).n, 2);
+  assert.strictEqual(db.prepare("SELECT COUNT(*) AS n FROM users WHERE nom LIKE 'COLLAS%'").get().n, 1, 'pas de placeholder COLLAS');
+  // 38 propriétaires CCG - 2 (ERILIA, COLLAS) = 36 comptes créés
+  assert.strictEqual(r.comptesCrees.length, 36);
+  assert.strictEqual(r.nbComptesProprietaires, 38); // 36 créés + julien + collas
 });
 
 test('réassignation : lots déjà owned par un placeholder sans email -> basculés sur le compte de la correspondance, placeholder supprimé', () => {

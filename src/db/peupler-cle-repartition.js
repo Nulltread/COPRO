@@ -74,7 +74,7 @@ function peuplerDepuisCCG(options = {}) {
   db.transaction(() => {
     // Comptes déjà liés à des lots (référentiel déjà peuplé) : dédup par propriétaire brut.
     const mapCle = new Map();
-    for (const row of db.prepare('SELECT proprietaire_brut, user_id FROM lots WHERE user_id IS NOT NULL').all()) {
+    for (const row of db.prepare('SELECT l.proprietaire_brut, l.user_id FROM lots l JOIN users u ON u.id = l.user_id WHERE l.user_id IS NOT NULL AND u.email IS NOT NULL').all()) {
       mapCle.set(normaliserCle(row.proprietaire_brut), row.user_id);
     }
     // Vieux comptes existants (actifs, hors admin) : indexés par nom + prénom
@@ -104,27 +104,32 @@ function peuplerDepuisCCG(options = {}) {
       const { nom, prenom } = decouperNomPrenom(brut);
       const cleNom = normaliserCle(`${nom} ${prenom}`);
       const existant = db.prepare('SELECT * FROM lots WHERE numero = ?').get(l.numero);
+      const existantOwner = existant && existant.user_id ? db.prepare('SELECT * FROM users WHERE id = ?').get(existant.user_id) : null;
       const emailCorr = correspondances.get(cle);
-      const corrUserId = emailCorr ? (parEmail.get(emailCorr) || null) : null;
-      let userId = corrUserId || (existant && existant.user_id) || mapCle.get(cle) || comptesExistants.get(cleNom) || null;
-      if (userId && !mapCle.has(cle) && !(existant && existant.user_id === userId)) rapport.comptesReutilises.push({ nom, prenom, proprietaire: brut, userId });
+      let userId = emailCorr ? (parEmail.get(emailCorr) || null) : null; // 1. correspondance explicite (ex. ERILIA)
+      if (!userId && existantOwner && existantOwner.email !== null) userId = existantOwner.id; // 2. propriétaire réel déjà en place
+      if (!userId) userId = mapCle.get(cle) || comptesExistants.get(cle) || comptesExistants.get(cleNom) || null; // 3. dédup lots / comptes existants (nom brut ou découpé)
+      if (!userId && existantOwner) userId = existantOwner.id; // 4. placeholder déjà en place (on garde)
+      const cree = !userId;
       if (!userId) {
         const info = db.prepare(
           "INSERT INTO users (email, password_hash, nom, prenom, telephone, role, statut) VALUES (NULL, ?, ?, ?, '', 'resident', 'actif')"
         ).run(crypto.randomBytes(24).toString('hex'), nom, prenom);
         userId = info.lastInsertRowid;
         rapport.comptesCrees.push({ nom, prenom, proprietaire: brut });
+      } else {
+        rapport.comptesReutilises.push({ nom, prenom, proprietaire: brut, userId });
       }
       mapCle.set(cle, userId);
+      comptesExistants.set(cle, userId);
       comptesExistants.set(cleNom, userId);
       if (existant) {
         rapport.lotsExistants++;
         if (userId && existant.user_id !== userId) {
-          // Réassignation (ex. correspondance explicite ERILIA) : le lot passe au compte trouvé.
-          const ancien = db.prepare('SELECT * FROM users WHERE id = ?').get(existant.user_id);
+          // Réassignation (correspondance ou compte réel retrouvé) : le lot passe au compte trouvé.
           db.prepare('UPDATE lots SET user_id = ?, proprietaire_brut = ? WHERE id = ?').run(userId, brut, existant.id);
           rapport.lotsReassignes++;
-          if (ancien && ancien.email === null) supprimerPlaceholderSiOrphelin(db, ancien.id, rapport);
+          if (existantOwner && existantOwner.email === null) supprimerPlaceholderSiOrphelin(db, existantOwner.id, rapport);
         } else if (!existant.user_id && userId) {
           // Lot déjà présent mais sans propriétaire : on rattache le compte trouvé/créé.
           db.prepare('UPDATE lots SET user_id = ?, proprietaire_brut = ? WHERE id = ?').run(userId, brut, existant.id);
