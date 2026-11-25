@@ -2,6 +2,8 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { getDb } = require('./index');
+const { UPLOAD_DIR } = require('../upload');
+const { synchroniserAliasCS } = require('../mailcow');
 
 function normaliserCle(brut) {
   return String(brut || '')
@@ -26,12 +28,49 @@ function decouperNomPrenom(brut) {
   return { nom, prenom };
 }
 
+// Nettoyage pre-prod : si des comptes de test existent (email en @copro.local,
+// hors compte admin), on les supprime ainsi que TOUS les tickets (ce sont des
+// tickets de test) avec leurs fichiers joints (lignes + disque), leurs
+// rattachements/sessions/notifications (cascade), les documents qu'ils ont
+// deposes, et on detache leurs lots. Les unites, le compte admin et les comptes
+// reels (ex. membres du CS avec leur vrai email) ne sont PAS touches.
+function nettoyerComptesTest(db, rapport) {
+  const testUsers = db.prepare("SELECT id, email FROM users WHERE email LIKE '%@copro.local' AND role != 'admin'").all();
+  if (!testUsers.length) return false;
+  const ids = testUsers.map(u => u.id);
+  const ph = ids.map(() => '?').join(',');
+  const nbTickets = db.prepare('SELECT COUNT(*) AS n FROM tickets').get().n;
+  const fichiersDisk = db.prepare('SELECT nom_stockage FROM fichiers').all()
+    .concat(db.prepare(`SELECT nom_stockage FROM documents WHERE auteur_id IN (${ph})`).all(...ids))
+    .map(r => r.nom_stockage);
+  db.transaction(() => {
+    db.prepare('DELETE FROM tickets').run();
+    db.prepare(`DELETE FROM documents WHERE auteur_id IN (${ph})`).run(...ids);
+    db.prepare(`DELETE FROM lot_units WHERE demande_par IN (${ph}) OR valide_par IN (${ph})`).run(...ids, ...ids);
+    db.prepare(`UPDATE lots SET user_id = NULL WHERE user_id IN (${ph})`).run(...ids);
+    db.prepare(`UPDATE lot_events SET auteur_id = NULL WHERE auteur_id IN (${ph})`).run(...ids);
+    db.prepare(`UPDATE rattachements SET valide_par = NULL WHERE valide_par IN (${ph})`).run(...ids);
+    db.prepare(`DELETE FROM users WHERE id IN (${ph})`).run(...ids);
+  })();
+  for (const nom of fichiersDisk) {
+    try { fs.unlinkSync(path.join(UPLOAD_DIR, nom)); } catch {}
+  }
+  synchroniserAliasCS();
+  rapport.nettoyage = {
+    comptesTestSupprimes: testUsers.map(u => u.email),
+    ticketsSupprimes: nbTickets,
+    fichiersSupprimes: fichiersDisk.length
+  };
+  return true;
+}
+
 function peuplerDepuisCCG(options = {}) {
   const db = getDb();
   const dataPath = options.fichier || path.join(__dirname, 'cle-repartition-ccg.json');
   const data = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
   const lots = Array.isArray(data) ? data : (data.lots || []);
-  const rapport = { lotsCrees: 0, lotsExistants: 0, lotsMisAJour: 0, comptesCrees: [], comptesReutilises: [], erreurs: [] };
+  const rapport = { lotsCrees: 0, lotsExistants: 0, lotsMisAJour: 0, comptesCrees: [], comptesReutilises: [], nettoyage: null, erreurs: [] };
+  if (options.nettoyage !== false) nettoyerComptesTest(db, rapport);
   db.transaction(() => {
     // Comptes déjà liés à des lots (référentiel déjà peuplé) : dédup par propriétaire brut.
     const mapCle = new Map();
@@ -86,7 +125,12 @@ function peuplerDepuisCCG(options = {}) {
 }
 
 if (require.main === module) {
-  const rapport = peuplerDepuisCCG();
+  const options = { nettoyage: !process.argv.includes('--sans-nettoyage') };
+  const rapport = peuplerDepuisCCG(options);
+  if (rapport.nettoyage) {
+    console.log(`Nettoyage pre-prod : ${rapport.nettoyage.comptesTestSupprimes.length} compte(s) de test supprimé(s) (${rapport.nettoyage.comptesTestSupprimes.join(', ') || 'aucun email'}), ${rapport.nettoyage.ticketsSupprimes} ticket(s) et ${rapport.nettoyage.fichiersSupprimes} fichier(s) supprimés (disque inclus).`);
+    console.log('Unités, compte admin et comptes réels (CS) inchangés.');
+  }
   console.log(`Peuplement depuis la clé CCG : ${rapport.lotsCrees} lots créés, ${rapport.lotsExistants} déjà existants${rapport.lotsMisAJour ? `, ${rapport.lotsMisAJour} sans propriétaire rattaché(s)` : ''} (total ${rapport.nbLots}).`);
   console.log(`${rapport.comptesCrees.length} comptes propriétaires créés (${rapport.nbComptesProprietaires} distincts au total, dont ${rapport.comptesReutilises.length} compte(s) existant(s) réutilisé(s) par nom), les nouveaux sans email.`);
   for (const c of rapport.comptesReutilises) console.log(`  ↳ lot de « ${c.proprietaire} » rattaché au compte existant #${c.userId} (${c.prenom} ${c.nom})`);

@@ -27,7 +27,7 @@ Le dossier [`mockups/`](mockups/) contient des pages statiques rendées avec le 
 ```bash
 npm install
 npm run seed     # jeu de données de démo (61 villas, 61 garages, comptes, tickets)
-npm run peupler  # peuplement lots + comptes propriétaires depuis la clé de répartition CCG (idempotent)
+npm run peupler  # peuplement lots + comptes propriétaires depuis la clé CCG (idempotent) ; nettoie d'abord les comptes/tickets de test *@copro.local (hors admin, --sans-nettoyage pour désactiver)
 npm start        # http://localhost:3000
 npm test         # tests API (18 tests)
 node scripts/smoke.js   # vérifications de bout en bout (23 contrôles)

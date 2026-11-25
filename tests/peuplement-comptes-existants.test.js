@@ -18,9 +18,9 @@ before(() => {
   const ins = db.prepare('INSERT INTO users (email, password_hash, nom, prenom, telephone, role, conseil_syndical, statut, email_verifie) VALUES (?,?,?,?,?,?,?,?,?)');
   // vieux comptes existants (ex. provisionnés en prod avant le peuplement)
   ins.run('admin@copro.local', mdp, 'Paletti', 'Sébastien', '0600', 'admin', 0, 'actif', 1); // admin : jamais propriétaire d'un lot
-  ins.run('paletti.resident@copro.local', mdp, 'Paletti', 'Sébastien', '0601', 'resident', 1, 'actif', 1); // homonyme résident
-  ins.run('clement.desactive@copro.local', mdp, 'Clement', 'Françoise', '0602', 'resident', 0, 'desactive', 0); // désactivé : non réutilisé
-  ins.run('locataire@copro.local', mdp, 'Locataire', 'Lisa', '0603', 'resident', 0, 'actif', 1); // pas dans la CCG : intact
+  ins.run('paletti.resident@exemple.fr', mdp, 'Paletti', 'Sébastien', '0601', 'resident', 1, 'actif', 1); // homonyme résident
+  ins.run('clement.desactive@exemple.fr', mdp, 'Clement', 'Françoise', '0602', 'resident', 0, 'desactive', 0); // désactivé : non réutilisé
+  ins.run('locataire@exemple.fr', mdp, 'Locataire', 'Lisa', '0603', 'resident', 0, 'actif', 1); // pas dans la CCG : intact
 });
 
 after(() => { fs.rmSync(dbDir, { recursive: true, force: true }); });
@@ -30,7 +30,7 @@ test('peuplement avec vieux comptes existants : rapprochement par nom (hors admi
   assert.strictEqual(r.erreurs.length, 0, r.erreurs.join('; '));
   assert.strictEqual(r.lotsCrees, 123);
   // le lot 35 (PALETTI Sébastien) est rattaché au compte résident existant, PAS au compte admin
-  const resident = db.prepare("SELECT id FROM users WHERE email = 'paletti.resident@copro.local'").get();
+  const resident = db.prepare("SELECT id FROM users WHERE email = 'paletti.resident@exemple.fr'").get();
   const admin = db.prepare("SELECT id FROM users WHERE role = 'admin'").get();
   const lot35 = db.prepare('SELECT * FROM lots WHERE numero = 35').get();
   assert.strictEqual(lot35.user_id, resident.id);
@@ -39,7 +39,7 @@ test('peuplement avec vieux comptes existants : rapprochement par nom (hors admi
   assert.strictEqual(db.prepare('SELECT COUNT(*) AS n FROM lots WHERE user_id = ?').get(admin.id).n, 0);
   // CLEMENT Françoise : le compte existant est désactivé -> un nouveau compte sans email est créé
   const lot3 = db.prepare('SELECT * FROM lots WHERE numero = 3').get();
-  assert.notStrictEqual(lot3.user_id, db.prepare("SELECT id FROM users WHERE email = 'clement.desactive@copro.local'").get().id);
+  assert.notStrictEqual(lot3.user_id, db.prepare("SELECT id FROM users WHERE email = 'clement.desactive@exemple.fr'").get().id);
   const nouveauClement = db.prepare('SELECT * FROM users WHERE id = ?').get(lot3.user_id);
   assert.strictEqual(nouveauClement.email, null);
   assert.strictEqual(nouveauClement.nom, 'CLEMENT');
@@ -47,7 +47,7 @@ test('peuplement avec vieux comptes existants : rapprochement par nom (hors admi
   assert.strictEqual(r.comptesCrees.length, 37);
   assert.strictEqual(r.nbComptesProprietaires, 38);
   // le compte hors CCG est intact
-  const loc = db.prepare("SELECT * FROM users WHERE email = 'locataire@copro.local'").get();
+  const loc = db.prepare("SELECT * FROM users WHERE email = 'locataire@exemple.fr'").get();
   assert.strictEqual(loc.statut, 'actif');
   assert.strictEqual(db.prepare('SELECT COUNT(*) AS n FROM lots WHERE user_id = ?').get(loc.id).n, 0);
 });

@@ -118,6 +118,24 @@ résidents.
   `npm run nettoyer-demo -- --tout` (base prête pour la prod) → diffusion du kit
   de com (`mise-en-prod/kit-com/`) à tous les résidents → auto-inscription ouverte.
 
+## Peuplement des lots et comptes depuis la clé de répartition CCG (spec 35)
+
+- Après `npm run provisionner` (compte admin + membres du CS avec leurs vrais emails) :
+  **`npm run peupler`** (`src/db/peupler-cle-repartition.js`) peuple les **123 lots de la
+  clé CCG** (tantièmes inclus) et crée **un compte par propriétaire** (sans email, donc
+  inaccessible tant qu'aucun email n'est renseigné — sauf les membres du CS, dont le
+  compte existant est retrouvé par nom et réutilisé, ex. `sebastien.paletti@gmail.com`).
+  Aucun lien lot → unité n'est créé (mapping lot/unités à renseigner au fil de l'eau par
+  les propriétaires, validé par le CS/admin).
+- Le script fait aussi le **nettoyage pre-prod** s'il détecte des comptes de test
+  (`*@copro.local`, **hors compte admin**) : comptes de test supprimés, **tous les
+  tickets supprimés avec leurs fichiers joints**, unités / admin / comptes réels
+  **inchangés** (`--sans-nettoyage` pour désactiver). Idempotent : une ré-exécution ne
+  crée rien de plus.
+- Ensuite, depuis la page Comptes (CS/admin), renseigner l'email de chaque
+  propriétaire : le **mail de réinitialisation du mot de passe est envoyé
+  automatiquement** (spec 36).
+
 ## Après la période de test
 
 - Nettoyage (`npm run nettoyer-demo -- --tout`), puis ouverture de
