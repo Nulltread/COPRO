@@ -18,8 +18,8 @@ function creerReferentielSiVide(db) {
 }
 
 function trouverUnit(db, type, numero) {
-  if (type === 'communes') return db.prepare("SELECT id FROM units WHERE type = 'communes'").get();
-  return db.prepare('SELECT id FROM units WHERE type = ? AND numero = ?').get(type, numero);
+  if (type === 'communes') return db.prepare("SELECT id, type FROM units WHERE type = 'communes'").get();
+  return db.prepare('SELECT id, type FROM units WHERE type = ? AND numero = ?').get(type, numero);
 }
 
 function mdpAleatoire() {
@@ -119,6 +119,10 @@ function provisionnerDepuisObjet(obj, options = {}) {
         continue;
       }
       const qualite = u.qualite === 'locataire' ? 'locataire' : 'proprietaire';
+      if (qualite === 'proprietaire' && unit.type !== 'communes') {
+        rapport.erreurs.push(`${email} : rattachement propriétaire direct interdit sur ${u.type} ${u.numero} — les propriétaires sont liés à leurs unités via leur lot (spec 35-lots) ; seuls les rattachements locataires et les parties communes sont directs.`);
+        continue;
+      }
       upsRat.run(unit.id, user.id, qualite, validePar);
       upsRes.run(unit.id, user.id, qualite);
     }

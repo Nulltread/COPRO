@@ -14,7 +14,7 @@
 - [x] L'application tourne déjà à `https://copro-pinede-gardanne.fr` (page de connexion, HTTPS Let's Encrypt via Caddy).
 - [ ] Sauvegarde quotidienne installée par `setup-server.sh` (vérifier la planification sur la Dedibox) ; complément : snapshots hebdomadaires de la Dedibox.
 
-## 3. Comptes du conseil syndical (pré-créés par l'admin)
+## 3. Comptes admin + conseil syndical (`npm run provisionner`)
 
 - [ ] Remplir `comptes-prod.json` (format ci-dessous) — **ce fichier n'est jamais versionné** (`.gitignore` : `comptes*.json`).
 - [ ] Sur le serveur, passer le fichier par stdin dans le conteneur (aucun secret ne traîne sur le disque) :
@@ -23,21 +23,20 @@
   cat comptes-prod.json | docker compose -f docker-compose.prod.yml exec -T copro node src/db/provisionner-comptes.js -
   ```
 
-  Le script crée le référentiel (61 villas, 61 garages, parties communes) si la base est vide, crée/met à jour les comptes (emails considérés comme vérifiés, rattachements acceptés d'office) et affiche une fois les mots de passe générés.
+  Le script crée le référentiel (61 villas, 61 garages, parties communes) si la base est vide, crée/met à jour les comptes (emails considérés comme vérifiés, rattachements acceptés d'office).
 
 - [ ] Format du JSON :
 
   ```json
   {
-    "admin": { "email": "vous@exemple.fr", "nom": "Votre Nom", "prenom": "Prénom", "telephone": "06…", "mot_de_passe": "…" },
+    "admin": { "email": "admin@copro-pinede-gardanne.fr", "nom": "Admin", "prenom": "Admin", "telephone": "" },
     "comptes": [
       {
         "email": "prenom.nom@exemple.fr", "nom": "Nom", "prenom": "Prénom", "telephone": "06…",
         "mot_de_passe": "laissé vide = généré automatiquement",
         "conseil_syndical": true,
         "unites": [
-          { "type": "villa", "numero": 12, "qualite": "proprietaire" },
-          { "type": "garage", "numero": 12, "qualite": "proprietaire" },
+          { "type": "garage", "numero": 43, "qualite": "locataire" },
           { "type": "communes", "qualite": "proprietaire" }
         ]
       }
@@ -45,31 +44,36 @@
   }
   ```
 
-  `type` : `villa` | `garage` | `communes` ; `qualite` : `proprietaire` | `locataire` (défaut `proprietaire`).
-  **Règle absolue** : le compte `admin` n'est **jamais** rattaché à une unité — ne mets aucune `unites` dans le bloc `admin`, et ne le liste pas dans `comptes` (le script le refuse de toute façon).
+  `unites` = **rattachements directs locataires uniquement + parties communes** : un rattachement propriétaire sur villa/garage est **refusé** (les propriétaires sont liés à leurs unités via leur lot — voir spec 35).
+  **Règle absolue** : le compte `admin` n'est **jamais** rattaché à une unité — aucune `unites` dans le bloc `admin`, et il n'est pas listé dans `comptes` (le script le refuse de toute façon).
 
-- [ ] Transmettre à chaque membre son mot de passe par un canal individuel (jamais dans le mail de groupe).
+- [ ] Depuis la page **Comptes** (CS/admin), cliquer « renvoyer le mail de réinitialisation du mot de passe » pour chaque membre du CS : chacun choisit son mot de passe via le lien reçu par mail (jamais de mot de passe en clair transmis).
 
-## 4. Données de test
+## 4. Peuplement des lots depuis la clé CCG (`npm run peupler`) — AVANT les données de test
 
-- [ ] **Jeu de démo existant (recommandé pour la v0)** : `docker compose -f docker-compose.prod.yml exec copro npm run seed` — 61 villas, 61 garages, parties communes, comptes de démo (mot de passe commun `demo1234` : `admin@copro.local`, `conseil1@copro.local`, `conseil2@copro.local`, `resident1…61@copro.local`, `locataire1…10@copro.local`) et 7 tickets à différents stades.
-- [ ] Alternative plus légère (tickets ciblés sur les unités des membres du CS) : `docker compose -f docker-compose.prod.yml exec copro npm run demo:creer` — 5 tickets marqués « [Démo] », supprimables ensuite avec `npm run demo:supprimer`.
+- [ ] `docker compose -f docker-compose.prod.yml exec copro npm run peupler`
+  → crée les **123 lots** (tantièmes inclus) + un compte par propriétaire (sans email), rattache les lots des membres du CS à leurs comptes (matching par nom + correspondances explicites ERILIA / couples), et fait le **nettoyage pre-prod intégré** (comptes de test `@copro.local` + **tous les tickets** supprimés ; unités, admin et comptes réels inchangés). Idempotent ; `--sans-nettoyage` pour désactiver le nettoyage.
+- [ ] Vérifier le rapport affiché (lots créés, comptes créés/réutilisés, nettoyage).
 
-## 5. Vérifications avant annonce
+## 5. Données de test (APRÈS `peupler`, qui vide les tickets)
+
+- [ ] **Jeu de démo complet** : `docker compose -f docker-compose.prod.yml exec copro npm run seed` — comptes de démo (`demo1234` : `admin@copro.local`, `conseil1/2@copro.local`, `resident1…61@copro.local`, …) et 7 tickets à différents stades.
+- [ ] Alternative plus légère : `docker compose -f docker-compose.prod.yml exec copro npm run demo:creer` — 5 tickets « [Démo] » ciblés (supprimables : `npm run demo:supprimer`).
+
+## 6. Vérifications avant annonce
 
 - [ ] `npm test` et `node scripts/smoke.js` passent en CI (GitHub Actions, branche `main`).
-- [ ] Connexion de chaque compte CS de test sur `https://copro-pinede-gardanne.fr` (page de connexion → liste des tickets).
-- [ ] Un ticket créé depuis un compte CS apparaît bien pour tout le monde.
+- [ ] Connexion de chaque compte CS de test sur `https://copro-pinede-gardanne.fr` (via le mail de réinitialisation reçu).
+- [ ] Chaque membre du CS voit bien **ses lots** (onglet Lots) et peut créer un ticket.
 
-## 6. Kit de communication et envoi du mail
+## 7. Kit de communication et envoi du mail
 
-- [ ] Kit v0 dans `mise-en-prod/kit-com/` : `doc-presentation.md` (présentation de l'outil, à diffuser à tous les résidents ensuite), `aide-inscription.md` (fiche « créer son compte » en 5 étapes), `mail-proposition.md` (mail de proposition au CS).
-- [ ] Personnaliser `{{URL}}` et la signature dans les 3 documents ; exporter les 2 docs en PDF (ou les copier dans un traitement de texte) pour les joindre au mail.
+- [ ] Kit v0 dans `mise-en-prod/kit-com/` : `doc-presentation.md`, `aide-inscription.md`, `mail-proposition.md`.
+- [ ] Personnaliser `{{URL}}` et la signature dans les 3 documents ; exporter les 2 docs en PDF (ou copier dans un traitement de texte) pour les joindre au mail.
 - [ ] Envoyer le mail de proposition au conseil syndical, avec `doc-presentation.md` et `aide-inscription.md` en pièce jointe.
-- [ ] Transmettre les identifiants (mot de passe) individuellement — jamais dans le mail de groupe.
 
-## 7. Avant l'ouverture aux vrais résidents (mise en prod réelle)
+## 8. Avant l'ouverture aux vrais résidents (mise en prod réelle)
 
-- [ ] Nettoyage sur le serveur : `docker compose -f docker-compose.prod.yml exec copro npm run nettoyer-demo -- --tout` — supprime les comptes fictifs (`@copro.local`), leurs tickets et fichiers, les tickets « [Démo] » et les entreprises orphelines ; **conserve** les unités (fixes : 61 villas, 61 garages, parties communes), ton compte, le compte admin et les comptes réels du CS.
+- [ ] Nettoyage final sur le serveur : `docker compose -f docker-compose.prod.yml exec copro npm run nettoyer-demo -- --tout` — supprime les comptes fictifs restants (`@copro.local`), tous les tickets de test et leurs fichiers, les tickets « [Démo] », les entreprises orphelines ; **conserve** les unités (fixes), les 123 lots, ton compte, le compte admin et les comptes réels du CS.
 - [ ] Vérifier : seuls les comptes réels restent, aucun ticket de test.
-- [ ] Ouvrir l'inscription à tous les résidents : diffuser `doc-presentation.md` + `aide-inscription.md` du kit (`mise-en-prod/kit-com/`) — affichage, mail à la liste de la copro.
+- [ ] Ouvrir l'auto-inscription (locataires) : diffuser `doc-presentation.md` + `aide-inscription.md` du kit — affichage, mail à la liste de la copro. Les propriétaires ont déjà leur compte (email renseigné depuis la page Comptes → mail de réinitialisation automatique).

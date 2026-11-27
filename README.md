@@ -99,16 +99,21 @@ Objectif : déployer sur `https://copro-pinede-gardanne.fr` avec les comptes du 
 # 1. Sur le serveur, comptes pré-créés depuis un JSON passé par stdin (jamais versionné, .gitignore) :
 cat comptes-prod.json | docker compose -f docker-compose.prod.yml exec -T copro npm run provisionner -- -
 
-# 2. Données de test (5 tickets marqués « [Démo] », supprimables ensuite) :
+# 2. Peupler les 123 lots depuis la clé CCG embarquée (+ nettoyage pre-prod intégré :
+#    comptes de test @copro.local et tous les tickets supprimés) — AVANT les données de test :
+docker compose -f docker-compose.prod.yml exec copro npm run peupler
+
+# 3. Données de test (après peupler) : seed complet, ou 5 tickets « [Démo] » ciblés :
+docker compose -f docker-compose.prod.yml exec copro npm run seed
 docker compose -f docker-compose.prod.yml exec copro npm run demo:creer
 docker compose -f docker-compose.prod.yml exec copro npm run demo:supprimer   # après la démo
 
-# 3. Avant l'ouverture aux vrais résidents : nettoyage (comptes fictifs @copro.local,
-#    tickets de démo, entreprises orphelines ; unités et comptes réels conservés) :
+# 4. Avant l'ouverture aux vrais résidents : nettoyage final (comptes fictifs restants,
+#    tickets de test, entreprises orphelines ; unités, lots et comptes réels conservés) :
 docker compose -f docker-compose.prod.yml exec copro npm run nettoyer-demo -- --tout
 ```
 
-Format de `comptes-prod.json` : `{ "admin": {...}, "comptes": [ { "email", "nom", "prenom", "telephone", "mot_de_passe" (facultatif, généré sinon), "conseil_syndical": true, "unites": [ { "type": "villa"|"garage"|"communes", "numero", "qualite": "proprietaire"|"locataire" } ] } ] }`. Les emails sont considérés comme vérifiés et les rattachements acceptés d'office. En local : `npm run provisionner -- comptes-prod.json` puis `npm run demo:creer`.
+Format de `comptes-prod.json` : `{ "admin": {...}, "comptes": [ { "email", "nom", "prenom", "telephone", "mot_de_passe" (facultatif, généré sinon), "conseil_syndical": true, "unites": [ { "type": "villa"|"garage"|"communes", "numero", "qualite": "proprietaire"|"locataire" } ] } ] }`. Les emails sont considérés comme vérifiés et les rattachements acceptés d'office. En local : `npm run provisionner -- comptes-prod.json` puis `npm run peupler` puis `npm run seed` (ou `npm run demo:creer`).
 
 ## Schéma de données
 

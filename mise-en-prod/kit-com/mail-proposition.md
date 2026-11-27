@@ -1,8 +1,9 @@
 # Mail de proposition au conseil syndical — version 0 de test
 
 > À personnaliser avant envoi : remplacer {{URL}}, {{Prénom Nom}}.
-> Les identifiants (mot de passe) ne partent **jamais** dans ce mail de groupe :
-> transmis individuellement (message séparé, SMS, ou remise en main propre).
+> **Aucun mot de passe n'est transmis par mail** : chaque membre du CS reçoit un
+> mail de réinitialisation individuel (lien unique et expirable) — envoyé depuis la
+> page Comptes, bouton « renvoyer le mail de réinitialisation ».
 > Pièces jointes : `doc-presentation.md` et `aide-inscription.md` (à exporter en PDF
 > ou copier dans un traitement de texte avant envoi).
 
@@ -16,7 +17,8 @@ Depuis plusieurs semaines, nous mettons au point un outil simple pour notre copr
 
 **Ce que je vous propose : une première version de test, en ligne dès maintenant à l'adresse {{URL}}.** Vous y trouverez :
 
-- **votre compte déjà créé** — identifiant : votre adresse email ; mot de passe transmis individuellement avec ce message (vous pourrez le changer ensuite dans « Mon profil ») ;
+- **votre compte déjà créé** — identifiant : votre adresse email ; **un mail avec un lien pour choisir votre mot de passe** vous est envoyé individuellement (aucun mot de passe en clair, jamais) ;
+- **vos lots déjà rattachés à votre compte** (onglet « Lots ») et **les 123 lots de la copropriété peuplés** depuis la clé de répartition ;
 - **des tickets de démonstration déjà chargés**, à différents stades, pour voir concrètement ce que ça donne ;
 - **deux documents en pièce jointe** : la présentation de l'outil, et une fiche « comment créer son compte » prête à être diffusée à tous les résidents le moment venu.
 

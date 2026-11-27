@@ -1,874 +1,884 @@
 {
- "source": "Clé de répartition CCG — copropriété La Pinède de Notre Dame (Gardanne). Seule source retenue (BAT A/B, GARAGE A/B, HORS LOT 39 ignorés).",
- "total_tantiemes": 10000,
- "lots": [
-  {
-   "numero": 1,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 19,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 2,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 32,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 3,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 32,
-   "proprietaire": "CLEMENT Francoise"
-  },
-  {
-   "numero": 4,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 19,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 5,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 19,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 6,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 19,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 7,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 14,
-   "proprietaire": "PENNACCHIO"
-  },
-  {
-   "numero": 8,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 17,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 9,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 17,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 10,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 20,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 11,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 20,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 12,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 17,
-   "proprietaire": "LLORCA Sonia"
-  },
-  {
-   "numero": 13,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 17,
-   "proprietaire": "COLLAS PRELE"
-  },
-  {
-   "numero": 14,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 20,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 15,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 20,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 16,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 19,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 17,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 19,
-   "proprietaire": "GIRAUD & GUIS Magali & Pascal"
-  },
-  {
-   "numero": 18,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 20,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 19,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 20,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 20,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 28,
-   "proprietaire": "CRABOL & GIULIANI Jonathan&Emilie"
-  },
-  {
-   "numero": 21,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 20,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 22,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 20,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 23,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 20,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 24,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 17,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 25,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 17,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 26,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 138,
-   "proprietaire": "LABROUSSE ."
-  },
-  {
-   "numero": 27,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 158,
-   "proprietaire": "MELLET Pascal"
-  },
-  {
-   "numero": 28,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 139,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 29,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 149,
-   "proprietaire": "RAMBAUD CAROLINE"
-  },
-  {
-   "numero": 30,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 148,
-   "proprietaire": "REGIS & MALINAS Alain&Anne-Laur"
-  },
-  {
-   "numero": 31,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 166,
-   "proprietaire": "CALIGARIS Jean-M &Elisab."
-  },
-  {
-   "numero": 32,
-   "designation": "Appt T3",
-   "type_lot": "Appartement",
-   "valeur": 109,
-   "proprietaire": "REYNAUD & FABRE ."
-  },
-  {
-   "numero": 33,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 153,
-   "proprietaire": "DUVAL Hervé"
-  },
-  {
-   "numero": 34,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 156,
-   "proprietaire": "GIRAUD & GUIS Magali & Pascal"
-  },
-  {
-   "numero": 35,
-   "designation": "Appt T5",
-   "type_lot": "Appartement",
-   "valeur": 164,
-   "proprietaire": "PALETTI Sébastien"
-  },
-  {
-   "numero": 36,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 142,
-   "proprietaire": "CRABOL & GIULIANI Jonathan&Emilie"
-  },
-  {
-   "numero": 37,
-   "designation": "Appt T5",
-   "type_lot": "Appartement",
-   "valeur": 163,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 38,
-   "designation": "Appt T5",
-   "type_lot": "Appartement",
-   "valeur": 156,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 39,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 145,
-   "proprietaire": "CASONI Lucidio"
-  },
-  {
-   "numero": 40,
-   "designation": "Appt T3",
-   "type_lot": "Appartement",
-   "valeur": 108,
-   "proprietaire": "BLAUVAC & HYPOLITE Olivier et Emilie"
-  },
-  {
-   "numero": 41,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 142,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 42,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 143,
-   "proprietaire": "COLLAS PRELE"
-  },
-  {
-   "numero": 43,
-   "designation": "Appt T5",
-   "type_lot": "Appartement",
-   "valeur": 157,
-   "proprietaire": "LLORCA Sonia"
-  },
-  {
-   "numero": 44,
-   "designation": "Appt T5",
-   "type_lot": "Appartement",
-   "valeur": 157,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 45,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 143,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 46,
-   "designation": "Appt T5",
-   "type_lot": "Appartement",
-   "valeur": 156,
-   "proprietaire": "BURLANDO Jérôme&Barbara"
-  },
-  {
-   "numero": 47,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 138,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 48,
-   "designation": "Appt T5",
-   "type_lot": "Appartement",
-   "valeur": 157,
-   "proprietaire": "CLEMENT Francoise"
-  },
-  {
-   "numero": 49,
-   "designation": "Appt T3",
-   "type_lot": "Appartement",
-   "valeur": 108,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 50,
-   "designation": "Jardin Privatif",
-   "type_lot": "Autre",
-   "valeur": 26,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 51,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 23,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 52,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 24,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 53,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 20,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 54,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 32,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 55,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 32,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 56,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 28,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 57,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 17,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 58,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 17,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 59,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 17,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 60,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 17,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 61,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 20,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 62,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 20,
-   "proprietaire": "FOUET & SPANU ."
-  },
-  {
-   "numero": 63,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 19,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 64,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 19,
-   "proprietaire": "BONNET Christian"
-  },
-  {
-   "numero": 65,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 20,
-   "proprietaire": "CONILL Patrice&Sandrin"
-  },
-  {
-   "numero": 66,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 20,
-   "proprietaire": "BRUNEL Yves"
-  },
-  {
-   "numero": 67,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 17,
-   "proprietaire": "DELAVALLEE Nathalie"
-  },
-  {
-   "numero": 68,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 26,
-   "proprietaire": "KADJI LANI Laurence"
-  },
-  {
-   "numero": 69,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 28,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 70,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 32,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 71,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 32,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 72,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 32,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 73,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 33,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 74,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 32,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 75,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 32,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 76,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 24,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 77,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 17,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 78,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 26,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 79,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 28,
-   "proprietaire": "JIOLAT Guillaume"
-  },
-  {
-   "numero": 80,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 20,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 81,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 20,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 82,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 20,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 83,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 20,
-   "proprietaire": "FAVALE & COTE Dimitri&Alexia"
-  },
-  {
-   "numero": 84,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 20,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 85,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 20,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 86,
-   "designation": "Garage",
-   "type_lot": "Garage",
-   "valeur": 20,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 87,
-   "designation": "Appt T5",
-   "type_lot": "Appartement",
-   "valeur": 161,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 88,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 133,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 89,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 141,
-   "proprietaire": "KADJI LANI Laurence"
-  },
-  {
-   "numero": 90,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 138,
-   "proprietaire": "MURA Antonello"
-  },
-  {
-   "numero": 91,
-   "designation": "Appt T5",
-   "type_lot": "Appartement",
-   "valeur": 173,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 92,
-   "designation": "Appt T3",
-   "type_lot": "Appartement",
-   "valeur": 114,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 93,
-   "designation": "Appt T5",
-   "type_lot": "Appartement",
-   "valeur": 165,
-   "proprietaire": "DUPIRE Laure & Yoann"
-  },
-  {
-   "numero": 94,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 145,
-   "proprietaire": "BRUNEL Yves"
-  },
-  {
-   "numero": 95,
-   "designation": "Appt T3",
-   "type_lot": "Appartement",
-   "valeur": 108,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 96,
-   "designation": "Appt T5",
-   "type_lot": "Appartement",
-   "valeur": 149,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 97,
-   "designation": "Appt T5",
-   "type_lot": "Appartement",
-   "valeur": 155,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 98,
-   "designation": "Appt T5",
-   "type_lot": "Appartement",
-   "valeur": 156,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 99,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 139,
-   "proprietaire": "CLAEYS Vicky"
-  },
-  {
-   "numero": 100,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 154,
-   "proprietaire": "ORY François&Laura"
-  },
-  {
-   "numero": 101,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 115,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 102,
-   "designation": "Appt T5",
-   "type_lot": "Appartement",
-   "valeur": 175,
-   "proprietaire": "BALAYE Marie-Claire"
-  },
-  {
-   "numero": 103,
-   "designation": "Appt T5",
-   "type_lot": "Appartement",
-   "valeur": 150,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 104,
-   "designation": "Appt T3",
-   "type_lot": "Appartement",
-   "valeur": 110,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 105,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 139,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 106,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 138,
-   "proprietaire": "JIOLAT Guillaume"
-  },
-  {
-   "numero": 107,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 137,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 108,
-   "designation": "Appt T3",
-   "type_lot": "Appartement",
-   "valeur": 108,
-   "proprietaire": "MARCHI BAPTISTE ET JOLIVET SABAS SARAH"
-  },
-  {
-   "numero": 109,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 144,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 110,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 144,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 111,
-   "designation": "Appt T3",
-   "type_lot": "Appartement",
-   "valeur": 108,
-   "proprietaire": "ROUVIER / PIGNOL Franck et Stéphanie"
-  },
-  {
-   "numero": 112,
-   "designation": "Appt T3",
-   "type_lot": "Appartement",
-   "valeur": 108,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 113,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 144,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 114,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 143,
-   "proprietaire": "FAVALE & COTE Dimitri&Alexia"
-  },
-  {
-   "numero": 115,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 146,
-   "proprietaire": "DELAVALLEE Nathalie"
-  },
-  {
-   "numero": 116,
-   "designation": "Appt T5",
-   "type_lot": "Appartement",
-   "valeur": 157,
-   "proprietaire": "MARIUS ."
-  },
-  {
-   "numero": 117,
-   "designation": "Appt T5",
-   "type_lot": "Appartement",
-   "valeur": 158,
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
-  },
-  {
-   "numero": 118,
-   "designation": "Appt T3",
-   "type_lot": "Appartement",
-   "valeur": 109,
-   "proprietaire": "CONILL Patrice&Sandrin"
-  },
-  {
-   "numero": 119,
-   "designation": "Appt T4",
-   "type_lot": "Appartement",
-   "valeur": 139,
-   "proprietaire": "PIRON Lois"
-  },
-  {
-   "numero": 120,
-   "designation": "Appt T5",
-   "type_lot": "Appartement",
-   "valeur": 157,
-   "proprietaire": "CORRAO"
-  },
-  {
-   "numero": 121,
-   "designation": "Appt T5",
-   "type_lot": "Appartement",
-   "valeur": 157,
-   "proprietaire": "GOMEZ David/Charlène"
-  },
-  {
-   "numero": 122,
-   "designation": "Appt T3",
-   "type_lot": "Appartement",
-   "valeur": 108,
-   "proprietaire": "BONNET Christian"
-  },
-  {
-   "numero": 123,
-   "designation": "Appt T3",
-   "type_lot": "Appartement",
-   "valeur": 108,
-   "proprietaire": "PLAZA CHRISTELLE"
-  }
- ],
- "correspondances": [
-  {
-   "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop",
-   "email": "julien.debastiani@erilia.fr",
-   "note": "Représentant ERILIA (bailleur social) : tous les lots ERILIA lui sont rattachés."
-  }
- ]
+  "source": "Clé de répartition CCG — copropriété La Pinède de Notre Dame (Gardanne). Seule source retenue (BAT A/B, GARAGE A/B, HORS LOT 39 ignorés).",
+  "total_tantiemes": 10000,
+  "lots": [
+    {
+      "numero": 1,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 19,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 2,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 32,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 3,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 32,
+      "proprietaire": "CLEMENT Francoise"
+    },
+    {
+      "numero": 4,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 19,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 5,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 19,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 6,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 19,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 7,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 14,
+      "proprietaire": "PENNACCHIO"
+    },
+    {
+      "numero": 8,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 17,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 9,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 17,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 10,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 20,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 11,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 20,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 12,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 17,
+      "proprietaire": "LLORCA Sonia"
+    },
+    {
+      "numero": 13,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 17,
+      "proprietaire": "COLLAS PRELE"
+    },
+    {
+      "numero": 14,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 20,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 15,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 20,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 16,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 19,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 17,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 19,
+      "proprietaire": "GIRAUD & GUIS Magali & Pascal"
+    },
+    {
+      "numero": 18,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 20,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 19,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 20,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 20,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 28,
+      "proprietaire": "CRABOL & GIULIANI Jonathan&Emilie"
+    },
+    {
+      "numero": 21,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 20,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 22,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 20,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 23,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 20,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 24,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 17,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 25,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 17,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 26,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 138,
+      "proprietaire": "LABROUSSE ."
+    },
+    {
+      "numero": 27,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 158,
+      "proprietaire": "MELLET Pascal"
+    },
+    {
+      "numero": 28,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 139,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 29,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 149,
+      "proprietaire": "RAMBAUD CAROLINE"
+    },
+    {
+      "numero": 30,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 148,
+      "proprietaire": "REGIS & MALINAS Alain&Anne-Laur"
+    },
+    {
+      "numero": 31,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 166,
+      "proprietaire": "CALIGARIS Jean-M &Elisab."
+    },
+    {
+      "numero": 32,
+      "designation": "Appt T3",
+      "type_lot": "Appartement",
+      "valeur": 109,
+      "proprietaire": "REYNAUD & FABRE ."
+    },
+    {
+      "numero": 33,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 153,
+      "proprietaire": "DUVAL Hervé"
+    },
+    {
+      "numero": 34,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 156,
+      "proprietaire": "GIRAUD & GUIS Magali & Pascal"
+    },
+    {
+      "numero": 35,
+      "designation": "Appt T5",
+      "type_lot": "Appartement",
+      "valeur": 164,
+      "proprietaire": "PALETTI Sébastien"
+    },
+    {
+      "numero": 36,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 142,
+      "proprietaire": "CRABOL & GIULIANI Jonathan&Emilie"
+    },
+    {
+      "numero": 37,
+      "designation": "Appt T5",
+      "type_lot": "Appartement",
+      "valeur": 163,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 38,
+      "designation": "Appt T5",
+      "type_lot": "Appartement",
+      "valeur": 156,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 39,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 145,
+      "proprietaire": "CASONI Lucidio"
+    },
+    {
+      "numero": 40,
+      "designation": "Appt T3",
+      "type_lot": "Appartement",
+      "valeur": 108,
+      "proprietaire": "BLAUVAC & HYPOLITE Olivier et Emilie"
+    },
+    {
+      "numero": 41,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 142,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 42,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 143,
+      "proprietaire": "COLLAS PRELE"
+    },
+    {
+      "numero": 43,
+      "designation": "Appt T5",
+      "type_lot": "Appartement",
+      "valeur": 157,
+      "proprietaire": "LLORCA Sonia"
+    },
+    {
+      "numero": 44,
+      "designation": "Appt T5",
+      "type_lot": "Appartement",
+      "valeur": 157,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 45,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 143,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 46,
+      "designation": "Appt T5",
+      "type_lot": "Appartement",
+      "valeur": 156,
+      "proprietaire": "BURLANDO Jérôme&Barbara"
+    },
+    {
+      "numero": 47,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 138,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 48,
+      "designation": "Appt T5",
+      "type_lot": "Appartement",
+      "valeur": 157,
+      "proprietaire": "CLEMENT Francoise"
+    },
+    {
+      "numero": 49,
+      "designation": "Appt T3",
+      "type_lot": "Appartement",
+      "valeur": 108,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 50,
+      "designation": "Jardin Privatif",
+      "type_lot": "Autre",
+      "valeur": 26,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 51,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 23,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 52,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 24,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 53,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 20,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 54,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 32,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 55,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 32,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 56,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 28,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 57,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 17,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 58,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 17,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 59,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 17,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 60,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 17,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 61,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 20,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 62,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 20,
+      "proprietaire": "FOUET & SPANU ."
+    },
+    {
+      "numero": 63,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 19,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 64,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 19,
+      "proprietaire": "BONNET Christian"
+    },
+    {
+      "numero": 65,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 20,
+      "proprietaire": "CONILL Patrice&Sandrin"
+    },
+    {
+      "numero": 66,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 20,
+      "proprietaire": "BRUNEL Yves"
+    },
+    {
+      "numero": 67,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 17,
+      "proprietaire": "DELAVALLEE Nathalie"
+    },
+    {
+      "numero": 68,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 26,
+      "proprietaire": "KADJI LANI Laurence"
+    },
+    {
+      "numero": 69,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 28,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 70,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 32,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 71,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 32,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 72,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 32,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 73,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 33,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 74,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 32,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 75,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 32,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 76,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 24,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 77,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 17,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 78,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 26,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 79,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 28,
+      "proprietaire": "JIOLAT Guillaume"
+    },
+    {
+      "numero": 80,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 20,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 81,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 20,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 82,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 20,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 83,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 20,
+      "proprietaire": "FAVALE & COTE Dimitri&Alexia"
+    },
+    {
+      "numero": 84,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 20,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 85,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 20,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 86,
+      "designation": "Garage",
+      "type_lot": "Garage",
+      "valeur": 20,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 87,
+      "designation": "Appt T5",
+      "type_lot": "Appartement",
+      "valeur": 161,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 88,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 133,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 89,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 141,
+      "proprietaire": "KADJI LANI Laurence"
+    },
+    {
+      "numero": 90,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 138,
+      "proprietaire": "MURA Antonello"
+    },
+    {
+      "numero": 91,
+      "designation": "Appt T5",
+      "type_lot": "Appartement",
+      "valeur": 173,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 92,
+      "designation": "Appt T3",
+      "type_lot": "Appartement",
+      "valeur": 114,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 93,
+      "designation": "Appt T5",
+      "type_lot": "Appartement",
+      "valeur": 165,
+      "proprietaire": "DUPIRE Laure & Yoann"
+    },
+    {
+      "numero": 94,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 145,
+      "proprietaire": "BRUNEL Yves"
+    },
+    {
+      "numero": 95,
+      "designation": "Appt T3",
+      "type_lot": "Appartement",
+      "valeur": 108,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 96,
+      "designation": "Appt T5",
+      "type_lot": "Appartement",
+      "valeur": 149,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 97,
+      "designation": "Appt T5",
+      "type_lot": "Appartement",
+      "valeur": 155,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 98,
+      "designation": "Appt T5",
+      "type_lot": "Appartement",
+      "valeur": 156,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 99,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 139,
+      "proprietaire": "CLAEYS Vicky"
+    },
+    {
+      "numero": 100,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 154,
+      "proprietaire": "ORY François&Laura"
+    },
+    {
+      "numero": 101,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 115,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 102,
+      "designation": "Appt T5",
+      "type_lot": "Appartement",
+      "valeur": 175,
+      "proprietaire": "BALAYE Marie-Claire"
+    },
+    {
+      "numero": 103,
+      "designation": "Appt T5",
+      "type_lot": "Appartement",
+      "valeur": 150,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 104,
+      "designation": "Appt T3",
+      "type_lot": "Appartement",
+      "valeur": 110,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 105,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 139,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 106,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 138,
+      "proprietaire": "JIOLAT Guillaume"
+    },
+    {
+      "numero": 107,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 137,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 108,
+      "designation": "Appt T3",
+      "type_lot": "Appartement",
+      "valeur": 108,
+      "proprietaire": "MARCHI BAPTISTE ET JOLIVET SABAS SARAH"
+    },
+    {
+      "numero": 109,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 144,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 110,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 144,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 111,
+      "designation": "Appt T3",
+      "type_lot": "Appartement",
+      "valeur": 108,
+      "proprietaire": "ROUVIER / PIGNOL Franck et Stéphanie"
+    },
+    {
+      "numero": 112,
+      "designation": "Appt T3",
+      "type_lot": "Appartement",
+      "valeur": 108,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 113,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 144,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 114,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 143,
+      "proprietaire": "FAVALE & COTE Dimitri&Alexia"
+    },
+    {
+      "numero": 115,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 146,
+      "proprietaire": "DELAVALLEE Nathalie"
+    },
+    {
+      "numero": 116,
+      "designation": "Appt T5",
+      "type_lot": "Appartement",
+      "valeur": 157,
+      "proprietaire": "MARIUS ."
+    },
+    {
+      "numero": 117,
+      "designation": "Appt T5",
+      "type_lot": "Appartement",
+      "valeur": 158,
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop"
+    },
+    {
+      "numero": 118,
+      "designation": "Appt T3",
+      "type_lot": "Appartement",
+      "valeur": 109,
+      "proprietaire": "CONILL Patrice&Sandrin"
+    },
+    {
+      "numero": 119,
+      "designation": "Appt T4",
+      "type_lot": "Appartement",
+      "valeur": 139,
+      "proprietaire": "PIRON Lois"
+    },
+    {
+      "numero": 120,
+      "designation": "Appt T5",
+      "type_lot": "Appartement",
+      "valeur": 157,
+      "proprietaire": "CORRAO"
+    },
+    {
+      "numero": 121,
+      "designation": "Appt T5",
+      "type_lot": "Appartement",
+      "valeur": 157,
+      "proprietaire": "GOMEZ David/Charlène"
+    },
+    {
+      "numero": 122,
+      "designation": "Appt T3",
+      "type_lot": "Appartement",
+      "valeur": 108,
+      "proprietaire": "BONNET Christian"
+    },
+    {
+      "numero": 123,
+      "designation": "Appt T3",
+      "type_lot": "Appartement",
+      "valeur": 108,
+      "proprietaire": "PLAZA CHRISTELLE"
+    }
+  ],
+  "correspondances": [
+    {
+      "proprietaire": "ERILIA-LOGIREM Dex Serv Coprop",
+      "email": "julien.debastiani@erilia.fr",
+      "note": "Représentant ERILIA (bailleur social) : tous les lots ERILIA lui sont rattachés."
+    },
+    {
+      "proprietaire": "BLAUVAC & HYPOLITE Olivier et Emilie",
+      "email": "olivier.blauvac@gmail.com",
+      "note": "Couple BLAUVAC & HYPOLITE : lot rattaché au compte d'Olivier (email commun du couple)."
+    },
+    {
+      "proprietaire": "GOMEZ David/Charlène",
+      "email": "davidgomez1143@gmail.com",
+      "note": "Couple GOMEZ : lot rattaché au compte de David (email commun du couple)."
+    }
+  ]
 }

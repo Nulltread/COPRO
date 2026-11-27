@@ -10,7 +10,7 @@ Une **page web**, utilisable sur **téléphone comme sur ordinateur**, pour déc
 
 ## Pour qui ?
 
-Tous les **résidents** de la Pinède — propriétaires et locataires — ont un compte. Le **conseil syndical** pilote le suivi : il fait consulter les entreprises, compare les devis et planifie les interventions.
+Tous les **résidents** de la Pinède ont un compte. **Propriétaires** : votre compte est créé d'avance par le conseil syndical à partir de la clé de répartition des lots — dès que votre email y est renseigné, vous recevez automatiquement un mail avec un lien pour **choisir votre mot de passe**. **Locataires** : auto-inscription en 5 minutes (voir la fiche jointe). Le **conseil syndical** pilote le suivi : il fait consulter les entreprises, compare les devis et planifie les interventions.
 
 ## Ce qu'on peut faire
 
@@ -21,6 +21,8 @@ Tous les **résidents** de la Pinède — propriétaires et locataires — ont u
 5. **Être averti à chaque étape** : la pastille « Notifications » dans le menu (les emails sont possibles en option, dans « Mon profil »).
 6. **Tout voir, ou se concentrer sur ses propres villas/garages** : recherche par mot, filtres par état et par urgence.
 7. **Un tableau de bord pour le conseil syndical** : tickets ouverts, en consultation, urgents, coûts cumulés de la copropriété.
+8. **Les documents de la copropriété** (juridique, procès-verbaux d'AG, comptabilité, technique) dans la page « Documents », avec niveaux de visibilité.
+9. **Les lots et leurs tantièmes** : chaque propriétaire retrouve ses lots dans « Mes lots » (Mon profil) ; le conseil syndical gère l'onglet « Lots ».
 
 ## Le parcours d'un ticket
 
@@ -48,7 +50,9 @@ Tous les **résidents** de la Pinède — propriétaires et locataires — ont u
 
 - Adresse : **{{URL}}** — l'identifiant est **votre adresse email**.
 - Sur téléphone, on peut **ajouter le site à l'écran d'accueil** depuis « Mon profil » : il s'ouvre alors comme une application.
-- Pour **créer un compte** : voir la fiche jointe « Aide — créer son compte et déclarer son premier ticket ».
+- **Locataires** : auto-inscription en 5 étapes — voir la fiche jointe « Aide — se connecter et déclarer son premier ticket ».
+- **Propriétaires** : votre compte existe déjà ; cliquez sur le lien du mail de réinitialisation du mot de passe reçu, puis connectez-vous avec votre email.
+- **Mot de passe oublié** : « Mot de passe oublié ? » sur la page de connexion → un mail avec un nouveau lien vous est envoyé.
 
 ## Une question, un problème, une idée ?
 

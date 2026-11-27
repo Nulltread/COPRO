@@ -25,8 +25,7 @@ const FICHIER = {
       email: 'cs1@exemple.fr', nom: 'Martin', prenom: 'Marie', telephone: '0611111111',
       conseil_syndical: true,
       unites: [
-        { type: 'villa', numero: 12, qualite: 'proprietaire' },
-        { type: 'garage', numero: 12, qualite: 'proprietaire' },
+        { type: 'garage', numero: 12, qualite: 'locataire' },
         { type: 'communes', qualite: 'proprietaire' }
       ]
     },
@@ -56,9 +55,9 @@ test('provisionnement : référentiel, comptes, rattachements, emails vérifiés
   assert.ok(verifyPassword('motdepasseadmin1', admin.password_hash));
 
   const rat = db.prepare(`SELECT r.*, u.type, u.numero FROM rattachements r JOIN units u ON u.id = r.unit_id WHERE r.user_id = ?`).all(cs.id);
-  assert.strictEqual(rat.length, 3);
+  assert.strictEqual(rat.length, 2);
   assert.ok(rat.every(x => x.statut === 'accepte'));
-  assert.strictEqual(db.prepare('SELECT COUNT(*) AS n FROM unit_residents WHERE user_id = ?').get(cs.id).n, 3);
+  assert.strictEqual(db.prepare('SELECT COUNT(*) AS n FROM unit_residents WHERE user_id = ?').get(cs.id).n, 2);
 
   const res = db.prepare('SELECT * FROM users WHERE email = ?').get('res1@exemple.fr');
   const ratRes = db.prepare('SELECT qualite, statut FROM rattachements WHERE user_id = ?').get(res.id);
@@ -67,13 +66,22 @@ test('provisionnement : référentiel, comptes, rattachements, emails vérifiés
   assert.strictEqual(res.conseil_syndical, 0);
 });
 
+test('provisionnement : rattachement propriétaire direct sur villa/garage refusé (spec 35, via le lot)', () => {
+  const r = provisionnerDepuisObjet({
+    comptes: [{ email: 'prop@exemple.fr', nom: 'Prop', prenom: 'Pierre', unites: [{ type: 'villa', numero: 5, qualite: 'proprietaire' }] }]
+  });
+  assert.ok(r.erreurs.some(e => e.includes('via leur lot')));
+  const u = db.prepare('SELECT id FROM users WHERE email = ?').get('prop@exemple.fr');
+  assert.strictEqual(db.prepare('SELECT COUNT(*) AS n FROM rattachements WHERE user_id = ?').get(u.id).n, 0);
+});
+
 test('provisionnement idempotent : rejoue sans doublon, mdp conservé si non fourni', () => {
   const avant = db.prepare('SELECT password_hash FROM users WHERE email = ?').get('cs1@exemple.fr').password_hash;
   const r = provisionnerDepuisObjet(FICHIER);
   assert.strictEqual(r.crees.length, 0);
   assert.strictEqual(r.misAJour.length, 3);
   assert.strictEqual(r.mdpGeneres.length, 0);
-  assert.strictEqual(db.prepare('SELECT COUNT(*) AS n FROM users').get().n, 3);
+  assert.strictEqual(db.prepare('SELECT COUNT(*) AS n FROM users').get().n, 4);
   const apres = db.prepare('SELECT password_hash FROM users WHERE email = ?').get('cs1@exemple.fr').password_hash;
   assert.strictEqual(avant, apres);
 });

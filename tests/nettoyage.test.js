@@ -4,7 +4,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-let db, nettoyerDemo, UPLOAD_DIR, dbDir, hashPassword, creerDonneesDemo;
+let db, nettoyerDemo, UPLOAD_DIR, dbDir, hashPassword, creerDonneesDemo, lotTestId;
 
 before(() => {
   dbDir = fs.mkdtempSync(path.join(os.tmpdir(), 'copro-nettoyage-'));
@@ -39,6 +39,17 @@ before(() => {
     .run(tid, stockage, csId);
 
   creerDonneesDemo({ auteurs: ['vrai-cs@exemple.fr'] });
+
+  const demoUser = db.prepare("SELECT id FROM users WHERE email = 'resident1@copro.local'").get();
+  const villa6 = db.prepare("SELECT id FROM units WHERE type = 'villa' AND numero = 6").get().id;
+  const lotId = db.prepare("INSERT INTO lots (numero, designation, type_lot, tantiemes, proprietaire_brut, user_id) VALUES (999, 'Lot test', 'Appartement', 100, 'RESIDENT TEST', ?)")
+    .run(demoUser.id).lastInsertRowid;
+  lotTestId = lotId;
+  db.prepare("INSERT INTO lot_units (lot_id, unit_id, statut, demande_par) VALUES (?, ?, 'accepte', ?)").run(lotId, villa6, demoUser.id);
+  db.prepare("INSERT INTO lot_events (lot_id, type, auteur_id, contenu) VALUES (?, 'creation', ?, 'lot de test')").run(lotId, demoUser.id);
+  fs.writeFileSync(path.join(UPLOAD_DIR, 'doc-test.pdf'), '%PDF-1.4 doc test');
+  db.prepare("INSERT INTO documents (titre, categorie, niveau, nom_original, nom_stockage, mime, taille, auteur_id) VALUES ('Doc test', 'juridique', 'commun', 'doc-test.pdf', 'doc-test.pdf', 'application/pdf', 10, ?)")
+    .run(demoUser.id);
 });
 
 test('nettoyage : comptes de démo, tickets de démo et seed supprimés, comptes réels et unités conservés', () => {
@@ -63,6 +74,12 @@ test('nettoyage : comptes de démo, tickets de démo et seed supprimés, comptes
   const restants = fs.readdirSync(UPLOAD_DIR);
   assert.deepStrictEqual(restants, ['fichier-test-reel.pdf']);
   assert.ok(avant > restants.length);
+
+  const lot = db.prepare('SELECT user_id FROM lots WHERE numero = 999').get();
+  assert.strictEqual(lot.user_id, null);
+  assert.strictEqual(db.prepare('SELECT COUNT(*) AS n FROM lot_units WHERE lot_id = ?').get(lotTestId).n, 0);
+  assert.strictEqual(db.prepare('SELECT auteur_id FROM lot_events WHERE lot_id = ?').get(lotTestId).auteur_id, null);
+  assert.strictEqual(db.prepare('SELECT COUNT(*) AS n FROM documents').get().n, 0);
 });
 
 test('nettoyage --tout : vide aussi les tickets restants, garde les comptes et les unités', () => {
