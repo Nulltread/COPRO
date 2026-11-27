@@ -18,6 +18,7 @@ const ORDRE = [
   ['liste', 'Liste des tickets et recherche'],
   ['documents', 'Documents de la copropriété'],
   ['lots', 'Lots et tantièmes'],
+  ['usage', 'Administration et mesure de l\'usage'],
   ['faq', 'Questions fréquentes']
 ];
 
@@ -32,6 +33,7 @@ const CORRESPONDANCE_PAGE_AIDE = [
   ['/rattachements', 'logement'],
   ['/admin/lots', 'lots'],
   ['/admin/comptes', 'compte'],
+  ['/admin/usage', 'usage'],
   ['/admin', 'compte'],
   ['/entreprises', 'consultations'],
   ['/consultation', 'consultations']

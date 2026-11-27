@@ -172,6 +172,11 @@ fieldset { border: 1px solid var(--bordure-input); border-radius: 2px; }
 .date { color: var(--texte-secondaire); font-size: 0.8rem; }
 .liste-simple { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .liste-simple li { border: 1px solid var(--bordure); background: var(--carte); border-radius: 2px; padding: 10px 12px; }
+.graphe { width: 100%; height: auto; display: block; margin: 8px 0 12px; }
+.graphe-barre { fill: var(--accent); }
+.graphe-axe { stroke: var(--bordure-input); stroke-width: 1; }
+.graphe-val { font-size: 13px; font-weight: 700; fill: var(--encre); }
+.graphe-jour { font-size: 12px; fill: var(--texte-secondaire); }
 .non-lue { border-left: 4px solid var(--bleu); font-weight: 600; }
 .lue { opacity: 0.65; }
 .cartes-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin: 14px 0; }

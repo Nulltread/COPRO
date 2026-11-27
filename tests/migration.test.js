@@ -200,7 +200,22 @@ test('migration v5 : tables sollicitations/acces_externes/consultation_dates, fi
   db.prepare("INSERT INTO fichiers (ticket_id, categorie, nom_original, nom_stockage, mime, taille, auteur_id, auteur_externe) VALUES (1, 'devis', 'd.pdf', 'd.pdf', 'application/pdf', 1, NULL, 'Plombier SARL')").run();
   const f = db.prepare("SELECT auteur_externe FROM fichiers WHERE nom_original='d.pdf'").get();
   assert.strictEqual(f.auteur_externe, 'Plombier SARL');
-  assert.strictEqual(db.pragma('user_version', { simple: true }), 6);
+  assert.strictEqual(db.pragma('user_version', { simple: true }), 7);
+});
+
+test('migration v7 : mesure de l\'usage (tables connexions, page_views, audit_log)', () => {
+  for (const t of ['connexions', 'page_views', 'audit_log']) {
+    const row = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(t);
+    assert.ok(row, `table ${t} presente`);
+  }
+  const acols = db.prepare('PRAGMA table_info(audit_log)').all().map(c => c.name);
+  for (const c of ['type', 'auteur_id', 'entite', 'entite_id', 'contenu', 'created_at']) {
+    assert.ok(acols.includes(c), `colonne audit_log.${c}`);
+  }
+  // auteur_id NULL accepte (action automatique ou prestataire externe)
+  db.prepare("INSERT INTO audit_log (type, auteur_id, entite, entite_id, contenu) VALUES ('ticket_etape', NULL, 'ticket', 1, 'Archivage automatique')").run();
+  assert.strictEqual(db.prepare("SELECT auteur_id FROM audit_log WHERE type='ticket_etape'").get().auteur_id, null);
+  assert.strictEqual(db.pragma('user_version', { simple: true }), 7);
 });
 
 test('migration v6 : email facultatif avec unicite parmi les actifs, statut desactive, tables lots/lot_units/lot_events/password_resets', () => {

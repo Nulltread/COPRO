@@ -163,6 +163,12 @@ router.post('/profil/supprimer', (req, res) => {
   db.prepare("UPDATE rattachements SET statut = 'refuse' WHERE user_id = ? AND statut IN ('en_attente','accepte')").run(id);
   db.prepare('DELETE FROM notifications WHERE user_id = ?').run(id);
   db.prepare('DELETE FROM sessions WHERE user_id = ?').run(id);
+  // Mesure de l'usage (spec 38) : connexions et pages vues supprimees,
+  // journal d'activite anonymise (auteur_id = NULL, le contenu ne contient
+  // aucun nom).
+  db.prepare('DELETE FROM connexions WHERE user_id = ?').run(id);
+  db.prepare('DELETE FROM page_views WHERE user_id = ?').run(id);
+  db.prepare('UPDATE audit_log SET auteur_id = NULL WHERE auteur_id = ?').run(id);
   db.prepare('UPDATE users SET email = ?, password_hash = ?, nom = ?, prenom = ?, telephone = ?, statut = ?, email_verifie = 0 WHERE id = ?')
     .run(`supprime-${id}@invalid.local`, crypto.randomBytes(32).toString('hex'), 'Compte supprimé', '', '', 'supprime', id);
   synchroniserAliasCS();

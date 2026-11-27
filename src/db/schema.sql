@@ -326,3 +326,41 @@ CREATE TABLE IF NOT EXISTS password_resets (
   used_at TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- Mesure de l'usage (spec 38) : une ligne par connexion reussie.
+CREATE TABLE IF NOT EXISTS connexions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_connexions_user ON connexions(user_id);
+CREATE INDEX IF NOT EXISTS idx_connexions_created ON connexions(created_at);
+
+-- Mesure de l'usage (spec 38) : une ligne par consultation de page HTML
+-- (GET, utilisateur connecte ; hors racine, telechargements et export).
+CREATE TABLE IF NOT EXISTS page_views (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  chemin TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_page_views_created ON page_views(created_at);
+CREATE INDEX IF NOT EXISTS idx_page_views_chemin ON page_views(chemin);
+CREATE INDEX IF NOT EXISTS idx_page_views_user ON page_views(user_id);
+
+-- Mesure de l'usage (spec 38) : journal des creations/modifications
+-- (tickets, fichiers, documents). Le contenu ne contient PAS le nom de
+-- l'auteur (joint par auteur_id) : a la suppression du compte, auteur_id
+-- passe a NULL et l'historique reste lisible ("Compte supprimé").
+CREATE TABLE IF NOT EXISTS audit_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  type TEXT NOT NULL,
+  auteur_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  entite TEXT NOT NULL DEFAULT '',
+  entite_id INTEGER,
+  contenu TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at);
+CREATE INDEX IF NOT EXISTS idx_audit_log_type ON audit_log(type);
+CREATE INDEX IF NOT EXISTS idx_audit_log_auteur ON audit_log(auteur_id);

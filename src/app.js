@@ -5,6 +5,7 @@ const { getDb } = require('./db');
 const { getSessionUser } = require('./auth');
 const { nonLues } = require('./notifications');
 const { isGestionnaire } = require('./droits');
+const { enregistrerPageVue, cheminTrace } = require('./audit');
 
 function createApp() {
   const app = express();
@@ -19,6 +20,15 @@ function createApp() {
     res.locals.user = req.user;
     res.locals.nonLues = req.user ? nonLues(req.user.id) : 0;
     res.locals.cheminCourant = req.path;
+    next();
+  });
+
+  // Mesure de l'usage (spec 38) : une ligne par consultation de page HTML
+  // d'un utilisateur connecte (les statiques sont servis avant, donc exclus).
+  app.use((req, res, next) => {
+    if (req.method === 'GET' && req.user && !req.xhr && req.accepts('html') && cheminTrace(req.path)) {
+      enregistrerPageVue(req.user.id, req.path);
+    }
     next();
   });
 

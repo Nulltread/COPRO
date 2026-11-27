@@ -6,6 +6,7 @@ const { isGestionnaire, isCS, isAdmin } = require('../droits');
 const { getParametre, setParametre } = require('../parametres');
 const { synchroniserAliasCS } = require('../mailcow');
 const { envoyerMailResetAvecLimite } = require('../mail');
+const { TYPES_AUDIT, ETIQUETTES_AUDIT } = require('../audit');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -158,6 +159,85 @@ router.post('/comptes/:id/conseil', (req, res) => {
   res.redirect('/admin/comptes?message=' + encodeURIComponent(
     veutCS ? `${cible.prenom} ${cible.nom} est maintenant membre du conseil syndical.` : `${cible.prenom} ${cible.nom} n'est plus membre du conseil syndical.`
   ));
+});
+
+// Mesure de l'usage (spec 38) : reserve a l'admin seul. Trois sections :
+// connexions par compte, consultations des pages sur 7 jours (barregraphe
+// filtrable par page, ?page=), journal d'activite (filtre ?type=, pagination ?p=).
+router.get('/usage', (req, res) => {
+  if (!isAdmin(req.user)) {
+    return res.status(403).render('erreur', { user: req.user, message: 'Réservé à l\'administrateur.' });
+  }
+  const db = getDb();
+
+  // 1. Connexions par compte (total, semaine, derniere connexion).
+  const connexions = db.prepare(
+    `SELECT u.id, u.prenom, u.nom, u.email, u.role, u.conseil_syndical, u.statut,
+            COUNT(c.id) AS total,
+            SUM(CASE WHEN c.created_at >= datetime('now', '-7 days') THEN 1 ELSE 0 END) AS semaine,
+            MAX(c.created_at) AS derniere
+     FROM users u LEFT JOIN connexions c ON c.user_id = u.id
+     GROUP BY u.id
+     ORDER BY (derniere IS NULL), derniere DESC, total DESC, u.nom`
+  ).all();
+
+  // 2. Consultations des pages sur les 7 derniers jours (aujourd'hui inclus),
+  //    filtre par page facultatif.
+  const pageFiltre = typeof req.query.page === 'string' ? req.query.page : '';
+  const pagesOptions = db.prepare(
+    `SELECT chemin, COUNT(*) AS n FROM page_views
+     WHERE created_at >= datetime('now', '-7 days')
+     GROUP BY chemin ORDER BY n DESC, chemin`
+  ).all();
+  const totalPages7j = db.prepare(
+    "SELECT COUNT(*) AS n FROM page_views WHERE created_at >= datetime('now', '-7 days')"
+  ).get().n;
+  const lignesJour = db.prepare(
+    `SELECT date(created_at) AS jour, COUNT(*) AS n FROM page_views
+     WHERE created_at >= datetime('now', '-7 days')` + (pageFiltre ? ' AND chemin = ?' : '') +
+    ` GROUP BY jour ORDER BY jour`
+  ).all(...(pageFiltre ? [pageFiltre] : []));
+  const parJour = {};
+  for (const l of lignesJour) parJour[l.jour] = l.n;
+  const jours = [];
+  for (let i = 6; i >= 0; i--) {
+    const iso = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
+    jours.push({ iso, label: iso.slice(8, 10) + '/' + iso.slice(5, 7), n: parJour[iso] || 0 });
+  }
+  const max = Math.max(1, ...jours.map(j => j.n));
+  // Barres du graphe SVG (viewBox 700 x 210, ligne de base y = 186).
+  const LARG = 700, HAUT = 210, BASE = 186, MARGE = 10;
+  const slot = (LARG - 2 * MARGE) / 7;
+  const barres = jours.map((j, i) => {
+    const h = Math.round((j.n / max) * (BASE - 34));
+    return { x: Math.round(MARGE + i * slot + 7), w: Math.round(slot - 14), y: BASE - h, h, label: j.label, n: j.n };
+  });
+
+  // 3. Journal d'activite, filtre par type + pagination (50/page).
+  const typeFiltre = TYPES_AUDIT.includes(req.query.type) ? req.query.type : '';
+  const pageNum = Math.max(1, Number.parseInt(req.query.p, 10) || 1);
+  const PAR_PAGE = 50;
+  const where = typeFiltre ? 'WHERE a.type = ?' : '';
+  const totalEntrees = db.prepare(`SELECT COUNT(*) AS n FROM audit_log a ${where}`)
+    .get(...(typeFiltre ? [typeFiltre] : [])).n;
+  const entrees = db.prepare(
+    `SELECT a.*, u.prenom AS auteur_prenom, u.nom AS auteur_nom FROM audit_log a
+     LEFT JOIN users u ON u.id = a.auteur_id ${where}
+     ORDER BY a.created_at DESC, a.id DESC LIMIT ? OFFSET ?`
+  ).all(...(typeFiltre ? [typeFiltre] : []), PAR_PAGE, (pageNum - 1) * PAR_PAGE);
+  const nbPages = Math.max(1, Math.ceil(totalEntrees / PAR_PAGE));
+
+  const fmtDate = (s) => s
+    ? s.slice(8, 10) + '/' + s.slice(5, 7) + '/' + s.slice(0, 4) + ' ' + s.slice(11, 16)
+    : '—';
+
+  res.render('admin-usage', {
+    user: req.user,
+    connexions, fmtDate,
+    barres, LARG, HAUT, BASE, max, pageFiltre, pagesOptions, totalPages7j,
+    entrees, types: TYPES_AUDIT, etiquettesAudit: ETIQUETTES_AUDIT, typeFiltre,
+    pageNum, nbPages, totalEntrees, parPage: PAR_PAGE
+  });
 });
 
 module.exports = router;

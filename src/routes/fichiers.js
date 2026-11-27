@@ -5,6 +5,7 @@ const { getDb } = require('../db');
 const { requireAuth } = require('../auth');
 const { peutVoirTicket, isGestionnaire, estResidentConcerne } = require('../droits');
 const { UPLOAD_DIR } = require('../upload');
+const { enregistrerAction } = require('../audit');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -31,6 +32,7 @@ router.post('/fichiers/:id/supprimer', (req, res) => {
     return res.status(403).render('erreur', { user: req.user, message: 'Seules les photos de la description peuvent être supprimées, et seulement aux étapes « Créé » et « En consultation » (jusqu\'au début des travaux) par une personne concernée (ou par le conseil syndical).' });
   }
   const chemin = path.join(UPLOAD_DIR, f.nom_stockage);
+  enregistrerAction('fichier_supprime', req.user.id, 'ticket', f.ticket_id, `Photo supprimée : ${f.nom_original}`);
   db.prepare('DELETE FROM fichiers WHERE id = ?').run(f.id);
   if (fs.existsSync(chemin)) fs.unlinkSync(chemin);
   db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'edition', ?, ?)")

@@ -15,13 +15,13 @@
 
 - Le lien « ? » appelle **`GET /aide?depuis=<chemin de la page courante>`** (le chemin est exposé à toutes les vues via `res.locals.cheminCourant`).
 - `GET /aide` résout `depuis` via une table de correspondance **préfixe de chemin → page d'aide** (correspondance la plus longue ; slugs toujours validés contre la liste des pages existantes, aucun redirect ouvert) :
-  - `/tickets` → `ticket` ; `/tableau-de-bord` → `liste` ; `/documents` → `documents` ; `/notifications` → `notifications` ; `/profil` et `/rattachements` → `logement` ; `/admin/lots` → `lots` ; `/admin/comptes` et `/admin` → `compte` ; `/entreprises` et `/consultation` → `consultations`.
+  - `/tickets` → `ticket` ; `/tableau-de-bord` → `liste` ; `/documents` → `documents` ; `/notifications` → `notifications` ; `/profil` et `/rattachements` → `logement` ; `/admin/lots` → `lots` ; `/admin/comptes` et `/admin` → `compte` ; `/admin/usage` → `usage` ; `/entreprises` et `/consultation` → `consultations`.
 - Si `depuis` correspond à une page d'aide connue : l'aide s'ouvre **directement sur cette page** (même en période de test). Sinon (paramètre absent ou inconnu) : accueil par défaut (`accueil-test` si `periode_test='1'`, sinon `presentation`).
 
 
 ## Pages (contenu)
 
-Accueil (voir ci-dessous), présentation de l'outil, mon compte (inscription locataires, connexion, mot de passe oublié, profil), **mon logement** (rattachement propriétaire via le lot / locataire direct), déclarer et suivre un ticket, consultations et devis, bilans et acceptation, notifications, liste des tickets et recherche, documents, lots et tantièmes, FAQ + contact.
+Accueil (voir ci-dessous), présentation de l'outil, mon compte (inscription locataires, connexion, mot de passe oublié, profil), **mon logement** (rattachement propriétaire via le lot / locataire direct), déclarer et suivre un ticket, consultations et devis, bilans et acceptation, notifications, liste des tickets et recherche, documents, lots et tantièmes, **mesure de l'usage (admin)**, FAQ + contact.
 
 ## Page d'accueil « période de test » (temporaire)
 

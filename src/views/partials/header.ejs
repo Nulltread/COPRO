@@ -29,6 +29,7 @@
     <% } %>
     <% if (user.role === 'admin') { %>
       <a href="/admin">Administration</a>
+      <a href="/admin/usage">Usage</a>
     <% } %>
     <a href="/profil">👤 <%= user.prenom || user.nom %><% if (user.conseil_syndical === 1) { %> <span class="tag-cs">CS</span><% } %></a>
   </nav>
@@ -52,6 +53,7 @@
     <% } %>
     <% if (user.role === 'admin') { %>
       <a href="/admin">Administration</a>
+      <a href="/admin/usage">Usage</a>
     <% } %>
     <a href="/profil">👤 <%= user.prenom || user.nom %><% if (user.conseil_syndical === 1) { %> <span class="tag-cs">CS</span><% } %></a>
     <a href="/aide?depuis=<%= encodeURIComponent(typeof cheminCourant !== 'undefined' ? cheminCourant : '/') %>">❓ Aide</a>

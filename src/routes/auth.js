@@ -4,6 +4,7 @@ const { hashPassword, verifyPassword, createSession, destroySession } = require(
 const { notifierCS } = require('../notifications');
 const { envoyerMailVerification } = require('../mail');
 const { synchroniserAliasCS } = require('../mailcow');
+const { enregistrerConnexion } = require('../audit');
 
 const router = express.Router();
 
@@ -88,6 +89,7 @@ router.post('/connexion', (req, res) => {
     });
   }
   const sid = createSession(user.id);
+  enregistrerConnexion(user.id); // mesure de l'usage (spec 38)
   res.cookie('sid', sid, { httpOnly: true, sameSite: 'lax', maxAge: 30 * 86400000 });
   const suite = req.body.suite || '';
   res.redirect(suite.startsWith('/') && suite !== '/' ? suite : '/tickets');

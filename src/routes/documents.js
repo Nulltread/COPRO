@@ -8,6 +8,7 @@ const {
   CATEGORIES_DOCUMENT, ETIQUETTES_CATEGORIES_DOCUMENT, NIVEAUX_ACCES, ETIQUETTES_NIVEAUX
 } = require('../droits');
 const { uploadDocuments, enregistrerDocument, UPLOAD_DIR, TAILLE_MAX_DOC } = require('../upload');
+const { enregistrerAction } = require('../audit');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -180,6 +181,8 @@ router.post('/', requireGestionnaire, (req, res) => {
         docIds.push(Number(info.lastInsertRowid));
         const ins = db.prepare('INSERT OR IGNORE INTO document_tags (document_id, tag_id) VALUES (?, ?)');
         for (const tid of tagIds) ins.run(info.lastInsertRowid, tid);
+        enregistrerAction('document_ajoute', req.user.id, 'document', Number(info.lastInsertRowid),
+          `Document ajouté : ${f.originalname} (${ETIQUETTES_CATEGORIES_DOCUMENT[categorie] || categorie}, ${ETIQUETTES_NIVEAUX[niveau] || niveau})`);
       }
     } catch (e) {
       for (const nom of ecrits) {
@@ -232,6 +235,7 @@ router.post('/:id/tags', requireGestionnaire, (req, res) => {
   db.prepare('DELETE FROM document_tags WHERE document_id = ?').run(doc.id);
   const ins = db.prepare('INSERT OR IGNORE INTO document_tags (document_id, tag_id) VALUES (?, ?)');
   for (const tid of tagIds) ins.run(doc.id, tid);
+  enregistrerAction('document_modifie', req.user.id, 'document', doc.id, `Tags modifiés : ${tagIds.length ? tagIds.length + ' tag(s)' : 'aucun'}`);
   res.redirect('/documents/' + doc.id + '?message=' + encodeURIComponent('Tags mis à jour.'));
 });
 
@@ -239,6 +243,7 @@ router.post('/:id/supprimer', requireGestionnaire, (req, res) => {
   const db = getDb();
   const doc = docValide(req.user, req.params.id);
   if (!doc) return res.status(404).render('erreur', { user: req.user, message: 'Document introuvable.' });
+  enregistrerAction('document_supprime', req.user.id, 'document', doc.id, `Document supprimé : ${doc.titre}`);
   db.prepare('DELETE FROM documents WHERE id = ?').run(doc.id);
   const chemin = path.join(UPLOAD_DIR, doc.nom_stockage);
   if (fs.existsSync(chemin)) fs.unlinkSync(chemin);

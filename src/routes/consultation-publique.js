@@ -5,6 +5,7 @@ const { getDb } = require('../db');
 const { upload, UPLOAD_DIR } = require('../upload');
 const { trouverAccesValide, chargerContexte, unitesLabels, photosDescription, notifierDevisPrestataire, notifierDatesProposees, mailPrestataire } = require('../sollicitations');
 const { notifierCS } = require('../notifications');
+const { enregistrerAction } = require('../audit');
 
 // Espace prestataire (sans compte) : version reduite du ticket via un jeton
 // personnel valable 7 jours max (voir specifications/sollicitations-relances.md).
@@ -118,6 +119,8 @@ router.post('/:token/devis', (req, res) => {
     ).run(c.ticket_id, req.file.originalname, req.file.filename, req.file.mimetype, req.file.size, montant, c.id, raison || entreprise.raison_sociale);
     const fichierId = info.lastInsertRowid;
     const raisonAffichee = raison || entreprise.raison_sociale;
+    enregistrerAction('fichier_ajoute', null, 'ticket', c.ticket_id,
+      `Devis déposé par le prestataire « ${raisonAffichee} » : ${req.file.originalname} (${montant.toFixed(2)} €)`);
     db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'devis_prestataire', NULL, ?)")
       .run(ticket.id, `Le prestataire « ${raisonAffichee} » a déposé un devis (${montant.toFixed(2)} €, ${req.file.originalname})`);
     notifierDevisPrestataire(db, ticket, entreprise, fichierId, montant, raisonAffichee);

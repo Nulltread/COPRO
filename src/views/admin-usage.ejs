@@ -1,0 +1,101 @@
+<%- include('partials/header', { titre: 'Mesure de l\'usage' }) %>
+<h1>Mesure de l'usage</h1>
+<p class="aide">Réservé à l'administrateur. Connexions par compte, consultations des pages sur les 7 derniers jours et journal des créations/modifications (tickets, fichiers joints, documents).</p>
+<nav class="filtres" aria-label="Sections">
+  <a href="#connexions">Connexions</a>
+  <a href="#pages">Pages consultées</a>
+  <a href="#journal">Journal d'activité</a>
+</nav>
+
+<section class="bloc" id="connexions">
+  <h2>Connexions par compte</h2>
+  <% if (connexions.length === 0) { %>
+    <p class="aide">Aucun compte.</p>
+  <% } else { %>
+  <ul class="liste-simple">
+    <% for (const c of connexions) { %>
+      <li>
+        <strong><%= c.prenom %> <%= c.nom %></strong>
+        <% if (c.conseil_syndical === 1) { %><span class="tag-cs">CS</span><% } %>
+        <% if (c.role === 'admin') { %><span class="auteur">admin</span><% } %>
+        <% if (c.statut !== 'actif') { %><span class="auteur">compte <%= c.statut === 'desactive' ? 'désactivé' : 'supprimé' %></span><% } %>
+        — <%= c.total %> connexion(s), dont <%= c.semaine %> cette semaine — dernière connexion : <%= fmtDate(c.derniere) %>
+      </li>
+    <% } %>
+  </ul>
+  <% } %>
+</section>
+
+<section class="bloc" id="pages">
+  <h2>Pages consultées — 7 derniers jours</h2>
+  <p class="aide"><%= totalPages7j %> consultation(s) de pages au total sur la semaine<%= pageFiltre ? ` — page « ${pageFiltre} »` : '' %>.</p>
+  <form method="get" action="/admin/usage#pages" class="filtres">
+    <% if (typeFiltre) { %><input type="hidden" name="type" value="<%= typeFiltre %>"><% } %>
+    <label>Page
+      <select name="page" onchange="this.form.submit()">
+        <option value="">Toutes les pages</option>
+        <% for (const p of pagesOptions) { %>
+          <option value="<%= p.chemin %>" <%= pageFiltre === p.chemin ? 'selected' : '' %>><%= p.chemin %> (<%= p.n %>)</option>
+        <% } %>
+      </select>
+    </label>
+    <noscript><button class="bouton-secondaire" type="submit">Filtrer</button></noscript>
+  </form>
+  <svg class="graphe" viewBox="0 0 <%= LARG %> <%= HAUT %>" role="img" aria-label="Barregraphe des consultations de pages par jour sur les 7 derniers jours<%= pageFiltre ? ', filtré sur la page ' + pageFiltre : '' %>">
+    <line x1="0" y1="<%= BASE %>" x2="<%= LARG %>" y2="<%= BASE %>" class="graphe-axe"/>
+    <% for (const b of barres) { %>
+      <rect x="<%= b.x %>" y="<%= b.y %>" width="<%= b.w %>" height="<%= b.h %>" rx="2" class="graphe-barre"/>
+      <text x="<%= b.x + b.w / 2 %>" y="<%= b.y - 6 %>" text-anchor="middle" class="graphe-val"><%= b.n %></text>
+      <text x="<%= b.x + b.w / 2 %>" y="<%= BASE + 18 %>" text-anchor="middle" class="graphe-jour"><%= b.label %></text>
+    <% } %>
+  </svg>
+  <% if (pagesOptions.length) { %>
+  <ul class="liste-simple">
+    <% for (const p of pagesOptions) { %>
+      <li><code><%= p.chemin %></code> — <%= p.n %> consultation(s) cette semaine</li>
+    <% } %>
+  </ul>
+  <% } %>
+</section>
+
+<section class="bloc" id="journal">
+  <h2>Journal d'activité</h2>
+  <form method="get" action="/admin/usage#journal" class="filtres">
+    <% if (pageFiltre) { %><input type="hidden" name="page" value="<%= pageFiltre %>"><% } %>
+    <label>Type
+      <select name="type" onchange="this.form.submit()">
+        <option value="">Tous les types</option>
+        <% for (const t of types) { %>
+          <option value="<%= t %>" <%= typeFiltre === t ? 'selected' : '' %>><%= etiquettesAudit[t] %></option>
+        <% } %>
+      </select>
+    </label>
+    <noscript><button class="bouton-secondaire" type="submit">Filtrer</button></noscript>
+  </form>
+  <% if (entrees.length === 0) { %>
+    <p class="aide">Aucune action enregistrée pour ce filtre.</p>
+  <% } else { %>
+  <ul class="liste-simple">
+    <% for (const e of entrees) { %>
+      <li>
+        <span class="auteur"><%= fmtDate(e.created_at) %></span> —
+        <strong><%= etiquettesAudit[e.type] || e.type %></strong> —
+        <%= e.contenu %> —
+        par <%= e.auteur_id ? (e.auteur_prenom + ' ' + e.auteur_nom) : 'Compte supprimé' %><% if (e.auteur_id === null && e.type === 'fichier_ajoute') { %> (prestataire externe)<% } %>
+        <% if (e.entite === 'ticket' && e.entite_id) { %>(<a href="/tickets/<%= e.entite_id %>">ticket n°<%= e.entite_id %></a>)<% } %>
+        <% if (e.entite === 'document' && e.entite_id) { %>(<a href="/documents/<%= e.entite_id %>">document n°<%= e.entite_id %></a>)<% } %>
+      </li>
+    <% } %>
+  </ul>
+  <% if (nbPages > 1) { %>
+    <nav class="filtres" aria-label="Pagination du journal">
+      <% if (pageNum > 1) { %><a class="bouton-secondaire" href="/admin/usage?p=<%= pageNum - 1 %><%= typeFiltre ? '&type=' + encodeURIComponent(typeFiltre) : '' %><%= pageFiltre ? '&page=' + encodeURIComponent(pageFiltre) : '' %>#journal">← Précédent</a><% } %>
+      <span class="aide">Page <%= pageNum %> / <%= nbPages %> — <%= totalEntrees %> action(s)</span>
+      <% if (pageNum < nbPages) { %><a class="bouton-secondaire" href="/admin/usage?p=<%= pageNum + 1 %><%= typeFiltre ? '&type=' + encodeURIComponent(typeFiltre) : '' %><%= pageFiltre ? '&page=' + encodeURIComponent(pageFiltre) : '' %>#journal">Suivant →</a><% } %>
+    </nav>
+  <% } else { %>
+    <p class="aide"><%= totalEntrees %> action(s) au total pour ce filtre.</p>
+  <% } %>
+  <% } %>
+</section>
+<%- include('partials/footer') %>

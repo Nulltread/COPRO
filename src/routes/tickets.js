@@ -16,6 +16,7 @@ const { getParametreJours } = require('../parametres');
 const { notifierTicket, notifierCS } = require('../notifications');
 const { upload, enregistrerFichiers, UPLOAD_DIR } = require('../upload');
 const { solliciterConsultation, envoyerMailDatesSelection, notifierDateRetenue } = require('../sollicitations');
+const { enregistrerAction } = require('../audit');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -171,6 +172,8 @@ function faireTransition(db, ticket, nouvelleEtape, auteurId, contenu) {
   db.prepare("UPDATE tickets SET etape = ?, updated_at = datetime('now') WHERE id = ?").run(nouvelleEtape, ticket.id);
   db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu, donnees) VALUES (?, 'changement_etape', ?, ?, ?)")
     .run(ticket.id, auteurId, contenu, JSON.stringify({ etape: nouvelleEtape }));
+  enregistrerAction('ticket_etape', auteurId || null, 'ticket', ticket.id,
+    `${contenu} — « ${ETIQUETTES_ETAPES[ancienne]} » → « ${ETIQUETTES_ETAPES[nouvelleEtape]} »`);
   const t = db.prepare('SELECT * FROM tickets WHERE id = ?').get(ticket.id);
   notifierTicket(t, 'changement_etape', `Le ticket « ${t.titre} » passe à l'étape « ${ETIQUETTES_ETAPES[nouvelleEtape]} »${auteurId ? '' : ' (automatique)'} — ${contenu}`, auteurId, !!t.urgent);
   return ancienne;
@@ -254,6 +257,7 @@ function creerTicket(req, res) {
   for (const id of ids) ins.run(tid, Number(id));
   db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'creation', ?, ?)")
     .run(tid, req.user.id, `Ticket déclaré${urgent ? ' (URGENT)' : ''} : ${titre.trim()}`);
+  enregistrerAction('ticket_cree', req.user.id, 'ticket', tid, `Ticket créé : « ${titre.trim().slice(0, 120)} »`);
   // Photos : moment cadre n°1 = la creation du ticket (contexte 'creation').
   if ((req.files || []).length > 0) {
     enregistrerFichiers(db, tid, 'photo', req.files, {}, req.user.id, 'creation');
@@ -334,6 +338,10 @@ function enregistrerDevis(db, ticketId, consultationId, devis, auteurId) {
   );
   for (const d of devis) {
     ins.run(ticketId, d.fichier.originalname, d.fichier.filename, d.fichier.mimetype, d.fichier.size, d.montant, consultationId, auteurId);
+  }
+  if (devis.length) {
+    enregistrerAction('fichier_ajoute', auteurId || null, 'ticket', ticketId,
+      `Devis ajouté(s) : ${devis.map(d => d.fichier.originalname).join(', ')}`);
   }
 }
 
@@ -726,6 +734,8 @@ router.post('/:id/factures', (req, res) => {
     ).run(ticket.id, req.file.originalname, req.file.filename, req.file.mimetype, req.file.size, montant, req.user.id);
     db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'fichier', ?, ?)")
       .run(ticket.id, req.user.id, `${req.user.nom} a ajouté une facture (${montant.toFixed(2)} €)`);
+    enregistrerAction('fichier_ajoute', req.user.id, 'ticket', ticket.id,
+      `Facture ajoutée : ${req.file.originalname} (${montant.toFixed(2)} €)`);
     res.redirect('/tickets/' + ticket.id + '#factures');
   });
 });
@@ -758,6 +768,7 @@ router.post('/:id/accepter', (req, res) => {
     db.prepare("UPDATE tickets SET etape = 'travaux_acceptes', acceptes_at = datetime('now'), notif_archive_j3 = 0, notif_archive_j1 = 0, updated_at = datetime('now') WHERE id = ?").run(ticket.id);
     db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu, donnees) VALUES (?, 'changement_etape', ?, ?, ?)")
       .run(ticket.id, req.user.id, 'Passage à « Travaux acceptés » (un seul acceptant a suffi)', JSON.stringify({ etape: 'travaux_acceptes' }));
+    enregistrerAction('ticket_etape', req.user.id, 'ticket', ticket.id, 'Passage à « Travaux acceptés »');
     const t = db.prepare('SELECT * FROM tickets WHERE id = ?').get(ticket.id);
     notifierTicket(t, 'changement_etape', `Le ticket « ${t.titre} » passe à l'étape « Travaux acceptés »`, req.user.id, !!t.urgent);
     res.redirect('/tickets/' + ticket.id);
@@ -791,6 +802,7 @@ router.post('/:id/refuser', (req, res) => {
     db.prepare("UPDATE tickets SET etape = 'consultation', acceptes_at = NULL, cycle = cycle + 1, notif_archive_j3 = 0, notif_archive_j1 = 0, updated_at = datetime('now') WHERE id = ?").run(ticket.id);
     db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu, donnees) VALUES (?, 'changement_etape', ?, ?, ?)")
       .run(ticket.id, req.user.id, `Travaux refusés par ${req.user.nom} — retour en consultation — « ${commentaire.slice(0, 120)} » (${req.files.length} photo(s)) ; consultations et acceptations précédentes caduques, bilans figés (cycle suivant)`, JSON.stringify({ etape: 'consultation' }));
+    enregistrerAction('ticket_etape', req.user.id, 'ticket', ticket.id, 'Travaux refusés — retour en « En consultation » (cycle suivant)');
     const t = db.prepare('SELECT * FROM tickets WHERE id = ?').get(ticket.id);
     notifierTicket(t, 'changement_etape', `Le ticket « ${t.titre} » est refusé et repasse en « En consultation »`, req.user.id, !!t.urgent);
     res.redirect('/tickets/' + ticket.id);
@@ -826,6 +838,7 @@ router.post('/:id/reouvrir', (req, res) => {
     db.prepare("UPDATE tickets SET etape = 'consultation', acceptes_at = NULL, cycle = cycle + 1, notif_archive_j3 = 0, notif_archive_j1 = 0, updated_at = datetime('now') WHERE id = ?").run(ticket.id);
     db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu, donnees) VALUES (?, 'changement_etape', ?, ?, ?)")
       .run(ticket.id, req.user.id, `Ticket rouvert par ${req.user.nom} — retour en consultation — « ${commentaire.slice(0, 120)} » (${req.files.length} photo(s)) ; consultations et validations précédentes caduques`, JSON.stringify({ etape: 'consultation' }));
+    enregistrerAction('ticket_etape', req.user.id, 'ticket', ticket.id, 'Ticket rouvert — retour en « En consultation »');
     const t = db.prepare('SELECT * FROM tickets WHERE id = ?').get(ticket.id);
     notifierTicket(t, 'changement_etape', `Le ticket « ${t.titre} » est rouvert et repasse en « En consultation »`, req.user.id, !!t.urgent);
     res.redirect('/tickets/' + ticket.id);
@@ -859,6 +872,7 @@ router.post('/:id/urgent', (req, res) => {
     db.prepare("UPDATE tickets SET urgent = ?, updated_at = datetime('now') WHERE id = ?").run(urgent, ticket.id);
     db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'edition', ?, ?)")
       .run(ticket.id, req.user.id, `${req.user.nom} a ${urgent ? 'marqué le ticket comme URGENT' : 'retiré le caractère urgent du ticket'}`);
+    enregistrerAction('ticket_modifie', req.user.id, 'ticket', ticket.id, urgent ? 'Ticket marqué URGENT' : 'Caractère urgent retiré');
   }
   res.redirect('/tickets/' + ticket.id);
 });
@@ -905,6 +919,7 @@ router.post('/:id/unites', (req, res) => {
   ).get(...ids.map(Number)).l;
   db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'edition', ?, ?)")
     .run(id, req.user.id, `${req.user.nom} a modifié les unités du ticket : ${labels}`);
+  enregistrerAction('ticket_modifie', req.user.id, 'ticket', id, `Unités modifiées : ${labels}`);
   res.redirect('/tickets/' + id);
 });
 
@@ -923,6 +938,7 @@ router.post('/:id/editer', (req, res) => {
     db.prepare("UPDATE tickets SET description = ?, updated_at = datetime('now') WHERE id = ?").run(nouvelleDescription, id);
     db.prepare("INSERT INTO ticket_events (ticket_id, type, auteur_id, contenu) VALUES (?, 'edition', ?, ?)")
       .run(id, req.user.id, `${req.user.nom} a modifié la description du ticket`);
+    enregistrerAction('ticket_modifie', req.user.id, 'ticket', id, 'Description modifiée');
   }
   res.redirect('/tickets/' + id);
 });
@@ -977,6 +993,7 @@ router.post('/:id/supprimer', (req, res) => {
   if (!peutSupprimerTicket(req.user, ticket)) {
     return res.status(403).render('erreur', { user: req.user, message: 'Suppression réservée au créateur, à un membre du CS ou à l\'admin, et uniquement tant que le ticket est à l\'étape « Créé ».' });
   }
+  enregistrerAction('ticket_supprime', req.user.id, 'ticket', id, `Ticket supprimé : « ${ticket.titre.slice(0, 120)} »`);
   db.prepare('DELETE FROM tickets WHERE id = ?').run(id);
   res.redirect('/tickets');
 });

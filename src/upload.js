@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const sharp = require('sharp');
+const { enregistrerAction } = require('./audit');
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, '..', 'uploads');
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -92,6 +93,12 @@ function enregistrerFichiers(db, ticketId, categorie, files, meta, auteurId, con
   for (const f of files || []) {
     ins.run(ticketId, categorie, f.originalname, f.filename, f.mimetype, f.size,
       meta.montant ?? null, meta.entreprise || null, meta.delai || null, contexte, cycle, auteurId);
+  }
+  if ((files || []).length) {
+    // Mesure de l'usage (spec 38) : ajout de fichier trace dans le journal.
+    const label = categorie === 'photo' ? 'Photo(s)' : categorie;
+    enregistrerAction('fichier_ajoute', auteurId || null, 'ticket', ticketId,
+      `${label} ajouté(s) : ${files.map(f => f.originalname).join(', ')}`);
   }
 }
 

@@ -68,7 +68,46 @@ function migrate() {
     db.pragma('user_version = 6');
     console.log('Migration v6 : email facultatif (unicite comptes actifs), statut desactive, lots, reinitialisation du mot de passe.');
   }
+  // v7 (spec 38) : mesure de l'usage — tables connexions, page_views, audit_log.
+  if (db.pragma('user_version', { simple: true }) < 7) {
+    migrationV7(db);
+    db.pragma('user_version = 7');
+    console.log('Migration v7 : mesure de l\'usage (connexions, page_views, audit_log).');
+  }
   return sansCat;
+}
+
+function migrationV7(db) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS connexions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_connexions_user ON connexions(user_id);
+    CREATE INDEX IF NOT EXISTS idx_connexions_created ON connexions(created_at);
+    CREATE TABLE IF NOT EXISTS page_views (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      chemin TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_page_views_created ON page_views(created_at);
+    CREATE INDEX IF NOT EXISTS idx_page_views_chemin ON page_views(chemin);
+    CREATE INDEX IF NOT EXISTS idx_page_views_user ON page_views(user_id);
+    CREATE TABLE IF NOT EXISTS audit_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      type TEXT NOT NULL,
+      auteur_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      entite TEXT NOT NULL DEFAULT '',
+      entite_id INTEGER,
+      contenu TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at);
+    CREATE INDEX IF NOT EXISTS idx_audit_log_type ON audit_log(type);
+    CREATE INDEX IF NOT EXISTS idx_audit_log_auteur ON audit_log(auteur_id);
+  `);
 }
 
 function migrationV6(db) {
