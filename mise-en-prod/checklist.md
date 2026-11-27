@@ -108,8 +108,8 @@ docker compose -f docker-compose.prod.yml exec copro node -e 'const {getDb}=requ
 Puis : envoi du mail de lancement au CS = **brouillon Gmail v3** (`r1092702707680646022`, 9 destinataires),
 envoyé via le connecteur Gmail **uniquement sur GO explicite de Sébastien**.
 
-- [ ] `seed:realiste` exécuté sur le serveur (11 tickets, 9 entreprises)
-- [ ] Vérification des compteurs (étape 2 ci-dessus)
-- [ ] Mails de réinitialisation envoyés aux 9 comptes CS
-- [ ] Mail de lancement v3 envoyé (brouillon `r1092702707680646022`)
-- [ ] Test de connexion d'au moins 2 comptes CS sur https://copro-pinede-gardanne.fr
+- [x] `seed:realiste` exécuté sur le serveur le 27/11 — 11 tickets, 9 entreprises (10 au total), 123 lots, 9 comptes CS
+- [x] Vérification des compteurs : tickets 11, entreprises 10, lots 123, comptes CS 9
+- [x] Mails de réinitialisation envoyés aux 9 comptes CS (27/11)
+- [x] Mail de lancement v3 envoyé le 27/11 (brouillon `r1092702707680646022` → message envoyé `1a21af218f303b88`, thread `1a21adf0d6a55dca`)
+- [ ] Test de connexion d'au moins 2 comptes CS sur https://copro-pinede-gardanne.fr (à faire pendant la semaine de test)
