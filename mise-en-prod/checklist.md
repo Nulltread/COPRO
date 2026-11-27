@@ -77,3 +77,39 @@
 - [ ] Nettoyage final sur le serveur : `docker compose -f docker-compose.prod.yml exec copro npm run nettoyer-demo -- --tout` — supprime les comptes fictifs restants (`@copro.local`), tous les tickets de test et leurs fichiers, les tickets « [Démo] », les entreprises orphelines ; **conserve** les unités (fixes), les 123 lots, ton compte, le compte admin et les comptes réels du CS.
 - [ ] Vérifier : seuls les comptes réels restent, aucun ticket de test.
 - [ ] Ouvrir l'auto-inscription (locataires) : diffuser `doc-presentation.md` + `aide-inscription.md` du kit — affichage, mail à la liste de la copro. Les propriétaires ont déjà leur compte (email renseigné depuis la page Comptes → mail de réinitialisation automatique).
+
+---
+
+## 9. Lancement v0 — période de test CS (27/11/2026) : runbook exact
+
+Le déploiement auto (GitHub Actions → `scripts/deploy.sh`) a déjà livré le code sur le serveur.
+Sur le serveur, **dans le dossier de l'app** (là où tourne `docker compose -f docker-compose.prod.yml`) :
+
+```bash
+# 0. (optionnel) s'assurer d'avoir le dernier code déployé
+cd /chemin/de/lapp && git pull --ff-only origin main
+
+# 1. Peupler la base avec les tickets de test RÉALISTES (issus des vrais mails copro / CG IMMO)
+#    Idempotent : relancer ne duplique rien. Ne touche ni aux comptes ni aux lots.
+docker compose -f docker-compose.prod.yml exec copro npm run seed:realiste
+#   attendu : « Seed réaliste : 11 ticket(s) créé(s), 0 déjà présent(s), 9 entreprise(s) enregistrée(s) »
+
+# 2. Vérifier le peuplement
+docker compose -f docker-compose.prod.yml exec copro node -e 'const {getDb}=require("./src/db");const db=getDb();console.log("tickets:",db.prepare("SELECT COUNT(*) c FROM tickets").get().c,"entreprises:",db.prepare("SELECT COUNT(*) c FROM entreprises").get().c,"lots:",db.prepare("SELECT COUNT(*) c FROM lots").get().c,"comptes CS:",db.prepare("SELECT COUNT(*) c FROM users WHERE conseil_syndical=1").get().c)'
+
+# 3. Renvoyer le mail individuel de réinitialisation du mot de passe à chaque compte CS
+#    (le mail de lancement annonce ces mails séparés). Nécessite MAIL_ENABLED=true dans .env.
+#    (limite anti-spam : 1 mail/min/compte — les comptes datent d'avant, donc OK)
+docker compose -f docker-compose.prod.yml exec copro node -e 'const {getDb}=require("./src/db");const {envoyerMailResetAvecLimite}=require("./src/mail");const db=getDb();for(const u of db.prepare("SELECT * FROM users WHERE conseil_syndical=1 AND email IS NOT NULL").all()){if(u.statut!="actif"||u.role=="admin")continue;console.log(u.email,envoyerMailResetAvecLimite(u)?"mail reset envoyé":"déjà envoyé il y a <1 min")}'
+#    Alternative sans CLI : connecté en admin sur https://copro-pinede-gardanne.fr → /admin/comptes
+#    → bouton « renvoyer le mail de réinitialisation » sur chaque compte CS.
+```
+
+Puis : envoi du mail de lancement au CS = **brouillon Gmail v3** (`r1092702707680646022`, 9 destinataires),
+envoyé via le connecteur Gmail **uniquement sur GO explicite de Sébastien**.
+
+- [ ] `seed:realiste` exécuté sur le serveur (11 tickets, 9 entreprises)
+- [ ] Vérification des compteurs (étape 2 ci-dessus)
+- [ ] Mails de réinitialisation envoyés aux 9 comptes CS
+- [ ] Mail de lancement v3 envoyé (brouillon `r1092702707680646022`)
+- [ ] Test de connexion d'au moins 2 comptes CS sur https://copro-pinede-gardanne.fr
