@@ -19,6 +19,7 @@ router.get('/', (req, res) => {
     user: req.user,
     peremption: getParametre('peremption_rattachement_jours'),
     archivage: getParametre('archivage_auto_jours'),
+    periodeTest: getParametre('periode_test') === '1',
     message: req.query.message || null,
     erreur: null
   });
@@ -35,12 +36,14 @@ router.post('/', (req, res) => {
       user: req.user,
       peremption: req.body.peremption_rattachement_jours,
       archivage: req.body.archivage_auto_jours,
+      periodeTest: req.body.periode_test === '1',
       message: null,
       erreur: 'Les deux délais doivent être des nombres entiers de jours supérieurs ou égaux à 1.'
     });
   }
   setParametre('peremption_rattachement_jours', peremption);
   setParametre('archivage_auto_jours', archivage);
+  setParametre('periode_test', req.body.periode_test === '1' ? '1' : '0');
   res.redirect('/admin?message=' + encodeURIComponent('Réglages enregistrés.'));
 });
 

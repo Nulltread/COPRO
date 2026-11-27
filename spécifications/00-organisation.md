@@ -6,6 +6,7 @@ Ce dossier est l'emplacement canonique des spécifications du projet. À chaque 
 
 - Les spécifications sont **regroupées par thématique fonctionnelle**, pas par chronologie : chaque fichier est autosuffisant sur son sujet.
 - Les spécifications sont **stateless** : il n'y a plus de règle de priorité entre fichiers (plus de « le préfixe le plus élevé fait foi »). Aucun doublon ni contradiction ne doit subsister entre fichiers. En cas de contradiction résiduelle constatée entre deux fichiers, c'est un défaut à corriger dans le fichier concerné et à signaler — aucun fichier ne prime automatiquement sur un autre.
+- **Toute modification fonctionnelle de l'application doit impacter l'aide en ligne** (`37-aide-en-ligne.md`) dans le même commit : contenu à jour, nouvelle page si nouvelle fonctionnalité.
 - Toute **nouvelle spécification** (décision du demandeur) est consignée dans un **nouveau fichier .md** dédié, ou modifie le fichier thématique concerné si elle porte sur un point déjà spécifié dans ce fichier.
 
 ## Sources historiques (sans valeur normative)
@@ -37,6 +38,7 @@ Ce dossier est l'emplacement canonique des spécifications du projet. À chaque 
 | `ag-et-pv.md` | Assemblées générales : convocation, ODJ, feuille de présence, votes, PV, registre des délibérations |
 | `tantiemes.md` | Page dédiée des tantièmes par unité (référentiel pur, non liée à la facturation) |
 | `mise-en-production.md` | Première mise en prod : comptes CS pré-créés, données de test, mail d'annonce, checklist |
+| `37-aide-en-ligne.md` | Aide en ligne wiki embarquée (sommaire + recherche plain text), page d'accueil période de test temporaire |
 | `33-unites-modifiables-jusqua-travaux-planifies.md` | Unités d'un ticket modifiables jusqu'au passage en « Travaux planifiés » |
 | `34-documents-copropriete.md` | Page « Documents » : dépôt CS/admin, 4 catégories thématiques et 3 niveaux d'accès obligatoires, limite 2 Mo (images compressées), tags custom, recherche/filtres, devis et factures des tickets listés |
 | `35-lots.md` | Lots (clé de répartition CCG, seule source), lien lot ↔ unités, onglet « Lots », rachat d'un lot, tantièmes au niveau du lot, peuplement depuis la CCG |

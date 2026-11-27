@@ -83,6 +83,7 @@ function createApp() {
   app.use('/rattachements', require('./routes/rattachements'));
   app.use('/', require('./routes/profil'));
   app.use('/notifications', require('./routes/notifications'));
+  app.use('/aide', require('./routes/aide'));
 
   app.use((req, res) => res.status(404).render('erreur', { user: req.user, message: 'Page introuvable.' }));
 

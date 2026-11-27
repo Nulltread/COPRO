@@ -12,6 +12,11 @@
     <input type="number" name="archivage_auto_jours" min="1" step="1" required value="<%= archivage %>">
     <span class="aide">Un ticket « Travaux acceptés » est archivé automatiquement après ce délai, si au moins une facture est jointe (défaut : 31). Alertes à J-3 et J-1.</span>
   </label>
+  <label class="case">
+    <input type="checkbox" name="periode_test" value="1" <%= periodeTest ? 'checked' : '' %>>
+    Période de test (page d'accueil de l'aide en ligne « test » affichée)
+    <span class="aide">À désactiver à la mise en production réelle : la page d'accueil de test de l'aide en ligne disparaît.</span>
+  </label>
   <button class="bouton" type="submit">Enregistrer</button>
 </form>
 <%- include('partials/footer') %>

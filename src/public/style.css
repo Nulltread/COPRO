@@ -298,3 +298,34 @@ fieldset { border: 1px solid var(--bordure-input); border-radius: 2px; }
 .ligne-date { display: flex; gap: 12px; flex-wrap: wrap; }
 .ligne-date label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; flex: 1; min-width: 140px; }
 .ligne-date input { font-size: 1rem; padding: 12px; border: 1px solid var(--bordure-input); border-radius: 2px; background: #fff; width: 100%; }
+
+/* Aide en ligne (wiki) */
+.nav-aide { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 1.5px solid var(--accent); border-radius: 50%; color: var(--accent); font-weight: 700; text-decoration: none; font-size: 1rem; }
+.nav-aide:hover { background: var(--accent); color: #fff; }
+.aide-layout { display: flex; gap: 24px; align-items: flex-start; }
+.aide-side { flex: 0 0 250px; position: sticky; top: 12px; display: flex; flex-direction: column; gap: 12px; }
+.aide-recherche input { width: 100%; font-size: 0.95rem; padding: 10px 12px; border: 1px solid var(--bordure-input); border-radius: 2px; background: #fff; }
+.aide-nav { display: flex; flex-direction: column; gap: 2px; background: var(--bande); border: 1px solid var(--bordure); border-radius: 2px; padding: 8px; }
+.aide-nav a { padding: 9px 10px; border-radius: 2px; color: var(--encre); text-decoration: none; font-weight: 600; font-size: 0.95rem; }
+.aide-nav a:hover { background: #fff; }
+.aide-nav a.active { background: var(--accent); color: #fff; }
+.aide-contenu { flex: 1; min-width: 0; background: var(--carte); border: 1px solid var(--bordure); border-radius: 2px; padding: 20px 24px; }
+.aide-page h1 { font-size: 1.5rem; margin: 0 0 12px; color: var(--accent-fonce); }
+.aide-page h2 { font-size: 1.2rem; margin: 20px 0 8px; color: var(--accent-fonce); border-bottom: 1px solid var(--bordure); padding-bottom: 4px; }
+.aide-page h3 { font-size: 1.05rem; margin: 16px 0 6px; }
+.aide-page p, .aide-page li { line-height: 1.55; }
+.aide-page ul, .aide-page ol { padding-left: 22px; margin: 8px 0; }
+.aide-page blockquote { margin: 10px 0; padding: 8px 12px; background: var(--bande); border-left: 3px solid var(--accent); color: var(--texte-secondaire); }
+.aide-page code { background: var(--bande); padding: 1px 5px; border-radius: 2px; font-size: 0.9em; }
+.aide-page a { color: var(--accent); }
+.aide-resultat { border-bottom: 1px solid var(--bordure); padding: 10px 0; }
+.aide-resultat h2 { font-size: 1.05rem; margin: 0 0 4px; }
+.aide-resultat h2 a { color: var(--accent); text-decoration: none; }
+.aide-resultat p { margin: 0; color: var(--texte-secondaire); line-height: 1.5; }
+.aide-resultat mark, .aide-page mark { background: #FFF3B0; padding: 0 1px; }
+@media (max-width: 760px) {
+  .aide-layout { flex-direction: column; }
+  .aide-side { position: static; flex: none; width: 100%; }
+  .aide-nav { flex-direction: row; flex-wrap: wrap; }
+  .aide-contenu { width: 100%; padding: 14px 16px; }
+}

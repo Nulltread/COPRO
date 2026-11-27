@@ -3,7 +3,8 @@ const { getDb } = require('./db');
 // Parametres globaux (panneau d'administration, reserve a l'admin).
 const DEFAUTS = {
   peremption_rattachement_jours: '14',
-  archivage_auto_jours: '31'
+  archivage_auto_jours: '31',
+  periode_test: '1'
 };
 
 function getParametre(cle) {

@@ -1,0 +1,33 @@
+<%- include('partials/header', { titre: titre }) %>
+<div class="aide-layout">
+  <aside class="aide-side" aria-label="Sommaire de l'aide">
+    <form method="get" action="/aide/recherche" class="aide-recherche" role="search">
+      <input type="search" name="q" value="<%= recherche ? recherche.q : '' %>" placeholder="Rechercher dans l'aide (un mot ou une phrase)…" aria-label="Rechercher dans l'aide">
+    </form>
+    <nav class="aide-nav">
+      <a href="/aide" class="<%= !page || page.slug === (periodeTest ? 'accueil-test' : 'presentation') ? 'active' : '' %>">🏠 Accueil</a>
+      <% for (const p of pages) { %>
+        <a href="/aide/<%= p.slug %>" class="<%= p.active ? 'active' : '' %>"><%= p.titre %></a>
+      <% } %>
+    </nav>
+  </aside>
+  <section class="aide-contenu">
+    <% if (recherche) { %>
+      <h1>Résultats pour « <%= recherche.q %> »</h1>
+      <% if (!recherche.resultats.length) { %>
+        <p>Aucun résultat. Essayez un autre mot ou une autre phrase (ex. « mot de passe », « ajouter ma villa », « devis »).</p>
+      <% } %>
+      <% for (const r of recherche.resultats) { %>
+        <article class="aide-resultat">
+          <h2><a href="/aide/<%= r.slug %>"><%= r.titre %></a></h2>
+          <p><%- recherche.surligner(r.extrait) %>…</p>
+        </article>
+      <% } %>
+    <% } else { %>
+      <article class="aide-page">
+        <%- contenuHtml %>
+      </article>
+    <% } %>
+  </section>
+</div>
+<%- include('partials/footer') %>
