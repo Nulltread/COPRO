@@ -20,4 +20,4 @@ Hébergées sur le serveur de la copropriété, sauvegarde quotidienne, jamais r
 
 ## Besoin d'aide ?
 
-Menu **? Aide** en haut à droite, ou écrivez à Sébastien PALETTI (sebastien.paletti@gmail.com, 06 78 97 59 28).
+Menu **? Aide** en haut à droite — il s'ouvre **directement sur la page d'aide correspondant à l'écran où vous vous trouvez** (ex. « ? » depuis un ticket ouvre la page « Déclarer et suivre un ticket »). Sinon, écrivez à Sébastien PALETTI (sebastien.paletti@gmail.com, 06 78 97 59 28).

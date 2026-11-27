@@ -109,3 +109,39 @@ test('aide : periode_test=0 → accueil = présentation, page de test retirée d
   assert.ok(!html.includes('/aide/accueil-test'), 'page de test retirée du sommaire');
   setParametre('periode_test', '1');
 });
+
+test('aide : ouverture contextuelle via ?depuis=<chemin de la page>', async () => {
+  const c = await client();
+  await login(c);
+  const r1 = await c.req('GET', '/aide?depuis=' + encodeURIComponent('/tickets'));
+  assert.strictEqual(r1.status, 200);
+  const h1 = await r1.text();
+  assert.ok(h1.includes('Déclarer et suivre un ticket'), 'depuis /tickets → page ticket');
+  const r2 = await c.req('GET', '/aide?depuis=' + encodeURIComponent('/tickets/12'));
+  const h2 = await r2.text();
+  assert.ok(h2.includes('Déclarer et suivre un ticket'), 'depuis /tickets/12 → page ticket (préfixe)');
+  const r3 = await c.req('GET', '/aide?depuis=' + encodeURIComponent('/documents'));
+  const h3 = await r3.text();
+  assert.ok(h3.includes('Documents de la copropriété'), 'depuis /documents → page documents');
+  const r4 = await c.req('GET', '/aide?depuis=' + encodeURIComponent('/admin/lots'));
+  const h4 = await r4.text();
+  assert.ok(h4.includes('Lots et tantièmes'), 'depuis /admin/lots → page lots (préfixe le plus long)');
+  const r5 = await c.req('GET', '/aide?depuis=' + encodeURIComponent('/page-inconnue'));
+  const h5 = await r5.text();
+  assert.strictEqual(r5.status, 200);
+  assert.ok(h5.includes('période de test'), 'depuis inconnu → accueil par défaut (période de test)');
+  setParametre('periode_test', '0');
+  const r6 = await c.req('GET', '/aide?depuis=' + encodeURIComponent('/notifications'));
+  const h6 = await r6.text();
+  assert.ok(h6.includes('Notifications'), 'hors période de test, depuis gagne encore sur l\'accueil');
+  setParametre('periode_test', '1');
+});
+
+test('aide : le lien « ? » du header embarque le chemin courant (depuis=)', async () => {
+  const c = await client();
+  await login(c);
+  const res = await c.req('GET', '/tickets');
+  assert.strictEqual(res.status, 200);
+  const html = await res.text();
+  assert.ok(html.includes('/aide?depuis=' + encodeURIComponent('/tickets')), 'lien ? avec depuis=/tickets');
+});

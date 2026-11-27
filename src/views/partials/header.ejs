@@ -33,7 +33,7 @@
     <a href="/profil">👤 <%= user.prenom || user.nom %><% if (user.conseil_syndical === 1) { %> <span class="tag-cs">CS</span><% } %></a>
   </nav>
   <div class="barre-droite">
-    <a href="/aide" class="nav-aide" aria-label="Aide en ligne" title="Aide en ligne">?</a>
+    <a href="/aide?depuis=<%= encodeURIComponent(typeof cheminCourant !== 'undefined' ? cheminCourant : '/') %>" class="nav-aide" aria-label="Aide en ligne" title="Aide en ligne">?</a>
     <a href="/notifications" class="nav-notif" aria-label="Notifications">🔔<% if (nonLues > 0) { %><span class="badge"><%= nonLues %></span><% } %></a>
     <a href="/tickets/nouveau" class="bouton-nav nav-creation">+ Nouveau ticket</a>
     <button type="button" id="menu-burger" class="menu-burger" aria-expanded="false" aria-controls="menu-panneau" aria-label="Ouvrir le menu">
@@ -54,7 +54,7 @@
       <a href="/admin">Administration</a>
     <% } %>
     <a href="/profil">👤 <%= user.prenom || user.nom %><% if (user.conseil_syndical === 1) { %> <span class="tag-cs">CS</span><% } %></a>
-    <a href="/aide">❓ Aide</a>
+    <a href="/aide?depuis=<%= encodeURIComponent(typeof cheminCourant !== 'undefined' ? cheminCourant : '/') %>">❓ Aide</a>
   </nav>
 </header>
 <% } %>

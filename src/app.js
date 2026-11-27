@@ -18,6 +18,7 @@ function createApp() {
     req.user = getSessionUser(req.cookies.sid);
     res.locals.user = req.user;
     res.locals.nonLues = req.user ? nonLues(req.user.id) : 0;
+    res.locals.cheminCourant = req.path;
     next();
   });
 

@@ -21,9 +21,40 @@ const ORDRE = [
   ['faq', 'Questions fréquentes']
 ];
 
+// Ouverture contextuelle : le bouton « ? » de l'application appelle /aide?depuis=<chemin>
+// et l'aide s'ouvre directement sur la page correspondant à l'écran courant (spec 37).
+const CORRESPONDANCE_PAGE_AIDE = [
+  ['/tickets', 'ticket'],
+  ['/tableau-de-bord', 'liste'],
+  ['/documents', 'documents'],
+  ['/notifications', 'notifications'],
+  ['/profil', 'logement'],
+  ['/rattachements', 'logement'],
+  ['/admin/lots', 'lots'],
+  ['/admin/comptes', 'compte'],
+  ['/admin', 'compte'],
+  ['/entreprises', 'consultations'],
+  ['/consultation', 'consultations']
+];
+
+function slugPourChemin(chemin) {
+  const p = String(chemin || '').split('?')[0];
+  let meilleure = null;
+  for (const [prefixe, slug] of CORRESPONDANCE_PAGE_AIDE) {
+    if ((p === prefixe || p.startsWith(prefixe + '/')) && (!meilleure || prefixe.length > meilleure.prefixe.length)) {
+      meilleure = { prefixe, slug };
+    }
+  }
+  return meilleure ? meilleure.slug : null;
+}
+
 router.get('/', (req, res) => {
   const periodeTest = getParametre('periode_test') === '1';
-  const slug = periodeTest ? 'accueil-test' : 'presentation';
+  const pages = chargerPages();
+  const depuis = slugPourChemin(req.query.depuis);
+  const slug = (depuis && pages.some(p => p.slug === depuis))
+    ? depuis
+    : (periodeTest ? 'accueil-test' : 'presentation');
   rendrePage(req, res, slug, periodeTest);
 });
 
