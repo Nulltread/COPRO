@@ -1,13 +1,16 @@
-# Mail de lancement au conseil syndical — v0 de test (27/11/2026) — v2
+# Mail de lancement au conseil syndical — v0 de test (27/11/2026) — v3
 
 > **Canal d'envoi** : connecteur Gmail de Sébastien — **brouillon uniquement**.
 > L'envoi effectif ne se fera que sur demande explicite de Sébastien.
 > **Aucune pièce jointe** : toute l'aide est en ligne dans l'application (bouton « ? »).
 >
-> **Historique des brouillons Gmail** : v1 = brouillon `r4375582934563626056`
-> (à supprimer manuellement dans Gmail : l'API ne permet ni de modifier ni de
-> supprimer un brouillon existant). **v2 = nouveau brouillon** créé avec le contenu
-> ci-dessous (sans l'emoji sapin, formulation « je » / initiative personnelle).
+> **Historique des brouillons Gmail** (l'API ne permet ni de modifier ni de supprimer
+> un brouillon : chaque version = un nouveau brouillon, les anciennes sont à supprimer
+> manuellement dans Gmail) :
+> - v1 = `r4375582934563626056` (emoji sapin, « nous »)
+> - v2 = `r-3342795053297377134` (sans sapin, « de mon initiative personnelle »)
+> - **v3 = brouillon courant** (ci-dessous) : « j'ai créé » (pas d'équivoque, sans « nous »,
+>   sans « initiative personnelle »).
 >
 > **Note style / UX** : aucun « skill d'UX design » n'est accessible dans cet
 > environnement (registre des skills, prompts, Drive, Gmail et bibliothèque de
@@ -22,7 +25,7 @@
 > prele.collas@laposte.net, nathalie.delavallee9@gmail.com, davidgomez1143@gmail.com,
 > soniallorca75@gmail.com, julien.debastiani@erilia.fr, yohkun@gmail.com
 >
-> **Objet :** La Pinède de Notre-Dame — je vous propose de tester mon outil en ligne (1 semaine de test, votre compte est déjà créé)
+> **Objet :** La Pinède de Notre-Dame — je vous propose de tester l'outil que j'ai créé (1 semaine de test, votre compte est déjà créé)
 >
 > **URL de l'app :** https://copro-pinede-gardanne.fr
 
@@ -32,7 +35,7 @@
 
 Bonjour à toutes et à tous,
 
-C'est **de mon initiative personnelle** que je vous propose de **tester pendant une semaine la première version en ligne d'un outil de suivi pour notre copropriété** : **Copro La Pinède de Notre-Dame**, à l'adresse :
+**J'ai créé** pour notre copropriété un outil en ligne de suivi des travaux et sinistres : **Copro La Pinède de Notre-Dame**. Je vous propose de le tester pendant une semaine, à l'adresse :
 
 **https://copro-pinede-gardanne.fr**
 
@@ -89,14 +92,14 @@ Aucune pièce jointe : toute l'aide est en ligne dans l'application, via le bout
     <!-- En-tête -->
     <div style="background:#2e5d3a;color:#ffffff;padding:28px 32px;">
       <div style="font-size:13px;letter-spacing:2px;text-transform:uppercase;opacity:.9;">Copropriété « La Pinède de Notre-Dame » — Gardanne</div>
-      <div style="font-size:26px;font-weight:bold;margin-top:6px;line-height:1.3;">Testez mon nouvel outil en ligne</div>
+      <div style="font-size:26px;font-weight:bold;margin-top:6px;line-height:1.3;">Testez l'outil que j'ai créé</div>
       <div style="font-size:15px;margin-top:8px;opacity:.95;">Une semaine de test · votre compte est déjà créé · aucune installation</div>
     </div>
 
     <div style="padding:28px 32px;">
 
       <p style="font-size:16px;line-height:1.6;">Bonjour à toutes et à tous,</p>
-      <p style="font-size:16px;line-height:1.6;">C'est <strong>de mon initiative personnelle</strong> que je vous propose de <strong>tester pendant une semaine la première version en ligne d'un outil de suivi pour notre copropriété</strong> :</p>
+      <p style="font-size:16px;line-height:1.6;"><strong>J'ai créé</strong> pour notre copropriété un <strong>outil en ligne de suivi des travaux et sinistres</strong> — et je vous propose de le tester pendant une semaine :</p>
 
       <div style="text-align:center;margin:24px 0;">
         <a href="https://copro-pinede-gardanne.fr" style="display:inline-block;background:#2e5d3a;color:#ffffff;text-decoration:none;font-size:18px;font-weight:bold;padding:14px 28px;border-radius:8px;">https://copro-pinede-gardanne.fr</a>
@@ -172,7 +175,7 @@ Aucune pièce jointe : toute l'aide est en ligne dans l'application, via le bout
 - [x] Nettoyage à l'issue de la semaine → jouer librement ensuite
 - [x] Email configuré sur le compte → mails possibles même en démo
 - [x] Bloc « comment se connecter » dans le mail (email + lien de réinitialisation individuel, valable 24 h, aucun mot de passe en clair)
-- [x] « Je » / initiative personnelle (plus de « nous »)
+- [x] « J'ai créé » (pas d'équivoque sur l'auteur, plus de « nous », sans « initiative personnelle »)
 - [x] Plus d'emoji sapin ; mise en forme HTML conservée (couleurs validées par Sébastien) + revue UX (préheader, contrastes, CTA unique, CSS inline)
 - [x] Signature Sébastien PALETTI
 - [x] Aucune PJ : aide en ligne dans l'app (bouton « ? » contextuel), page « Mon logement » pour le rattachement pendant les tests
